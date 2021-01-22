@@ -1,0 +1,86 @@
+FROM ubuntu:16.04
+
+ARG WORKING_DIR=/home/docker
+ARG DEBIAN_FRONTEND=noninteractive
+ARG CONDA_INSTALL_DIR=/opt/conda
+ARG GUROBI_TAR=gurobi9.0.2_linux64.tar.gz
+ARG GUROBI_EXTRACTED_FILENAME=gurobi902
+
+ENV PATH "$PATH:${CONDA_INSTALL_DIR}/bin:${CONDA_INSTALL_DIR}/miniconda2/envs:/opt/samtools-1.7/bin:/opt/bcftools-1.7/bin"
+ENV PYTHONPATH "${PYTHONPATH}:/opt/bnpy-dev/bnpy"
+ENV BNPYOUTDIR "${WORKING_DIR}/output"
+ENV CONDA_DEFAULT_ENV hatchet
+ENV GUROBI_LIB /opt/gurobi/linux64/lib/libgurobi90.so
+ENV GRB_LICENSE_FILE ${WORKING_DIR}/license/gurobi.lic
+
+RUN mkdir -p ${WORKING_DIR} ${WORKING_DIR}/input ${WORKING_DIR}/output ${WORKING_DIR}/license
+
+COPY patch/BBot.py /opt
+COPY gurobi/gurobi9.0.2_linux64.tar.gz /opt
+
+RUN apt-get update -qq && \
+    apt-get upgrade -y && \
+    apt-get clean all && \
+    apt-get install -y \
+        wget \
+        build-essential \
+        libssl-dev \
+        libncurses5-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        liblzma-dev \
+        mesa-utils \
+        cmake-curses-gui \
+        git && \
+    apt-get clean && \
+    apt-get purge && \
+    cd ${WORKING_DIR} && \
+    wget https://github.com/samtools/samtools/releases/download/1.7/samtools-1.7.tar.bz2 && \
+        tar -xjvf samtools-1.7.tar.bz2 && \
+        cd samtools-1.7 && \
+        ./configure --prefix=/opt/samtools-1.7 && \
+        make && \
+        make install && \
+        cd ${WORKING_DIR} && \
+        rm -rf samtools-1.7 samtools-1.7.tar.bz2 && \
+    wget https://github.com/samtools/bcftools/releases/download/1.7/bcftools-1.7.tar.bz2 && \
+        tar -xjvf bcftools-1.7.tar.bz2 && \
+        cd bcftools-1.7 && \
+        ./configure --prefix=/opt/bcftools-1.7 && \
+        make && \
+        make install && \
+        cd ${WORKING_DIR} && \
+        rm -rf bcftools-1.7 bcftools-1.7.tar.bz2 && \
+    wget https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh && \
+        /bin/bash Miniconda2-latest-Linux-x86_64.sh -b -p ${CONDA_INSTALL_DIR} && \
+        rm Miniconda2-latest-Linux-x86_64.sh && \
+    . "/opt/conda/etc/profile.d/conda.sh" && \
+    conda create -n hatchet python=2.7 && \
+    conda activate hatchet && \
+    conda install pip cmake pandas matplotlib seaborn && \
+    conda install -c conda-forge matplotlib-venn && \
+    cd /opt && \
+    git clone https://michaelchughes@bitbucket.org/michaelchughes/bnpy-dev && \
+    git clone https://github.com/raphael-group/hatchet.git && \
+    mv /opt/hatchet/utils/BBot.py /opt/hatchet/utils/BBot.orig.py && \
+    mv /opt/BBot.py /opt/hatchet/utils/ && \
+    cd /opt && \
+        tar -xvzf ${GUROBI_TAR} && \
+        rm ${GUROBI_TAR} && \
+        cd /opt/${GUROBI_EXTRACTED_FILENAME}/linux64/src/build/ && \
+        make && \
+        cp libgurobi_c++.a ../../lib/ && \
+        cd /opt/hatchet && \
+        sed -i 's/set(GUROBI_HOME \"\" )/set(GUROBI_HOME \"\/opt\/'${GUROBI_EXTRACTED_FILENAME}'\")/g' FindGUROBI.cmake && \
+        sed -i 's/set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )/set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread" )/g' CMakeLists.txt && \
+        mkdir build && \
+        cd build && \
+        cmake .. -DGUROBI_CPP_LIB=/opt/${GUROBI_EXTRACTED_FILENAME}/linux64/lib/libgurobi_c++.a -DGUROBI_INCLUDE_DIR=/opt/${GUROBI_EXTRACTED_FILENAME}/linux64/include/ -DGUROBI_LIB=/opt/${GUROBI_EXTRACTED_FILENAME}/linux64/lib/libgurobi90.so && \
+        make && \
+    cd ${WORKING_DIR} && \
+    touch README && \
+        echo "To start conda environment, run these commands in the terminal:" > README && \
+        echo "\t. \"/opt/conda/etc/profile.d/conda.sh\"" >> README && \
+        echo "\tconda activate hatchet" >> README
+
+WORKDIR ${WORKING_DIR}
