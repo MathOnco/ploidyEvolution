@@ -25,7 +25,7 @@ On Mac:
 ```
 1. Download Julia from https://julialang.org/downloads/
 2. Open julia in terminal and add the required packages
-3. Add package by typing ```]``` then ```add <package name>```
+3. Add package: type "]" then "add <package name>"
 ```
 
 ## Running tests
