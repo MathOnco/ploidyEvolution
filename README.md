@@ -32,7 +32,7 @@ On Mac:
 To run the script, open Julia from terminal and type
 
 ```
-include("<path/to/file/<filename>")
+include("path/to/file/<filename>")
 ```
 
 where ```filename``` is either ```computeCriticalCurveBisection.jl``` or ```testPloidyMovement_v4.jl```.
