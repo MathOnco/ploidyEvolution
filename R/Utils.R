@@ -6,6 +6,31 @@
 }
 
 
+# calcMSimprints <-function(loci, p, cnColumn="CN_Estimate") { return(sum(loci$seglength * round(abs(loci[,cnColumn]-round(p))), na.rm = T)/sum(loci$seglength, na.rm=T) ) }
+calcCNV_abundance <-function(loci, p,cnColumn="CN_Estimate") { return(cnvAbundance(cbs = loci, ii = which(abs(loci[,cnColumn]-round(p))>0.2))) }
+
+########################################################
+### Calculate % genome affected by mis-segregations ####
+########################################################
+calcMSimprints <-function(loci, p, cnColumn="CN_Estimate", precision=1) { 
+  loci_chr = lapply(1:22, function(x) loci[loci$chr==x & !is.na(loci[,cnColumn]),]) 
+  names(loci_chr) = as.character(1:22)
+  loci_chr = sapply(loci_chr, function(x) grpstats(as.matrix(x$seglength),round(x[,cnColumn],precision), "sum")$sum)
+  loci_chr = loci_chr[!sapply(loci_chr, isempty)]
+  if(class(loci_chr)=="numeric"){ 
+    cnv = loci_chr
+    cnv[T] = round(p)
+    return(list(pct = 0, landscape=cnv))
+  }
+  ## applies whenever there is at least one CNV somewhere in the genome:
+  cnv = sapply(loci_chr, function(x) as.numeric(rownames(x)[which.max(x[,1])]) - round(p))
+  loci_chr = sapply(names(loci_chr), function(x) max(loci_chr[[x]][,1]) * abs(cnv[x])  )
+  out = list(pct = sum(loci_chr)/sum(loci$seglength, na.rm=T), landscape=cnv)
+  return(out)
+}
+
+
+
 #######################################################
 ### Interpolate and visualize birth rate landscape ####
 interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, save=NULL, nrep = 1, usePCA=T, ipolmethod = "polyharmonic", markState=NULL){
@@ -60,8 +85,11 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
           xy = as.matrix(expand.grid(mat_$x, mat_$y))
           for(k in 1:nrow(lm)){
             synthetic = data[ii,]
+            if(!is.null(markState)){
+              synthetic = markState
+            }
             synthetic[,c(dim1,dim2)] = repmat(xy[k,], nrow(synthetic),1)
-            mat_$z[lm[k,1],lm[k,2]] = max(apply(synthetic, 1, ipol_birth))
+            mat_$z[lm[k,1],lm[k,2]] = mean(apply(synthetic, 1, ipol_birth))
           }
           
           mat[[cnt]] = mat_
@@ -88,8 +116,13 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
       pdf(save);
     }
     par(mfrow=c(3,3))
+    
+    ## Break points for birth rate color code
+    brk = sapply(mat, function(x) quantile(x$z, c(0,0.25,0.5,0.75,0.97), na.rm=T))
+    brk = quantile(brk,seq(0,1, by=1/64))
     for(mat_ in mat){
-      fields::image.plot(mat_, xlab=mat_$xlab, ylab=mat_$ylab,legend.lab = "birth rate", legend.cex = 1, horizontal = T)
+      fields::image.plot(mat_, xlab="", ylab=mat_$ylab,legend.lab = "birth rate", legend.cex = 1, horizontal = T, breaks=brk)
+      mtext(mat_$xlab)
       ## Mark initial condition on tensor:
       if(!is.null(markState)){
         points(markState[,mat_$xlab], markState[,mat_$ylab], pch=18, col="white", cex=4)
@@ -114,7 +147,7 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
 ############################################
 #### Estimate S-phase duration per clone ###
 ############################################
-S_Phase_Duration_PerClone <- function(cellLineInfo, outF="Duration_PerCellCyclePhase_PerClone.txt"){
+S_Phase_Duration_PerClone <- function(cellLineInfo, outF="data/Duration_PerCellCyclePhase_PerClone.txt"){
   
   THESTATES=c("G0G1","apoptotic","S")
   allCPC = list()
@@ -160,12 +193,15 @@ S_Phase_Duration_PerClone <- function(cellLineInfo, outF="Duration_PerCellCycleP
 #########################################
 #### Polymerase expression vs. ploidy ###
 #########################################
-PolymeraseExpression_Ploidy <- function(cellLines, indir, outF =  "Ploidy_PolyE_PerCellCyclePhase_PerClone.txt"){
+PolymeraseExpression_Ploidy <- function(cellLines, indir, outF =  "data/Ploidy_PolyE_PerCellCyclePhase_PerClone.txt"){
   ## DNA polymerase epsilon is a member of the DNA polymerase family of enzymes found in eukaryotes. 
   ## It is composed of the following four subunits: POLE (central catalytic unit), POLE2 (subunit 2), POLE3 (subunit 3), and POLE4
   ## DNA polymerase delta (DNA Pol δ) is an enzyme complex found in eukaryotes that is involved in DNA replication and repair. 
   ## The DNA polymerase delta complex consists of 4 subunits: POLD1, POLD2, POLD3, and POLD4.
   ## DNA Pol δ is an enzyme used for both leading and lagging strand synthesis
+  RNA="TranscriptomePerspective"; ##Abbreviation
+  DNA="GenomePerspective"; ##Abbreviation
+  
   goi = c("POLD1", "POLD2", "POLD3", "POLD4", "POLE", "POLE2", "POLE3", "POLE4")
   O = list()
   for (sName in cellLines){
@@ -196,6 +232,8 @@ PolymeraseExpression_Ploidy <- function(cellLines, indir, outF =  "Ploidy_PolyE_
 #### Gather genome- and transcriptome perspectives per clone ####
 ################################################################
 gatherGenome_TranscriptomePerspective_PerClone <- function(sName, outdir){
+  RNA="TranscriptomePerspective"; ##Abbreviation
+  DNA="GenomePerspective"; ##Abbreviation
   print(paste("Reading genome- and transcriptome perspectives for", sName, "..."))
   
   rc=cloneid::getSubclones(sName,RNA)
