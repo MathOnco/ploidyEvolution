@@ -1,5 +1,5 @@
-# S-phase duration asa function of dNTP substrate concentration in the TME
-  
+# S-phase duration as a function of dNTP substrate concentration
+
 Using ploidy as proxy of the number of Polymerases expressed in a cell and prior estimates of Michaelis-Menten parameters for the average DNA replication rates of a single polymerase, we project how the time required for a cell to complete S-phase increases with decreasing dNTP concentrations in stomach cancer (STAD) and with decreasing dNTP substarte concentration in Glioblastoma (GBM).
 
 ### Prerequisites
@@ -25,11 +25,10 @@ R packages:
 ```
 
 ### Installing
-On Mac:
 
 ```
 1. Start R and add the required packages
-2. Load R function via "source('EnergyParameterization_dNTP_O2')" 
+2. Load R function via "source('EnergyParameterization_dNTP_O2.R')" 
 ```
 
 ## Running
