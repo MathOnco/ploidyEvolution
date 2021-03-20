@@ -62,14 +62,16 @@ function ploidyModel(du,u,pars,t)
 			flowRate = q(parentCN,focalCN,misRate,nChrom)
 
 			# Will need to have this be the index in the future
-			inflow += birthRate*flowRate*u[Int.(parentCN)...]
+			inflow += birthRate*flowRate*u[Int.(parentCN)...] # *(1 - 1/avg(CN))
 
 		end
 
 		# Grab the focal cells birth rate
 		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 
-		outflow = (misRate*birthRate + deathRate)*u[focal...]
+		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
+
+		outflow = deathRate*u[focal...]
 
 		if debugging && (inflow != 0.0 || outflow != 0.0)
 			@show t,focalCN,inflow,outflow, u[focal...]
@@ -78,8 +80,6 @@ function ploidyModel(du,u,pars,t)
 		du[focal...] = inflow - outflow
 		
 	end
-
-	@show t
 
 end
 
@@ -90,7 +90,7 @@ function calculateParents(offspring::Vector{T}, minChrom::Int,
 	[ (x = copy(offspring); x[idx] = v; x)
 		for idx in 1 : length(offspring)
 			for v in max(offspring[idx]-1,minChrom):stepChrom:
-				min(offspring[idx]+1,maxChrom) ]
+				min(offspring[idx]+1,maxChrom) if v != offspring[idx] ]
 
 end
 
@@ -151,10 +151,29 @@ nComp = prod(length(arr) for arr in chromArray)
 deathRate = 0.01
 misRate = 0.15
 
-tspan = (0.0,30.0)
+finalDay = 30.0
+tspan = (0.0,finalDay)
 u0 = zeros(5,5,5,5,5)
 u0[(3,2,2,2,2)...] = 1.0
 
 odePars = (interp,nChrom,chromArray,misRate,deathRate)
 prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5)
+sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1)
+
+# convert to array for output
+soln = reshape(Array(sol),nComp,length(sol.t))
+
+# Grab compartment -> CN array
+cnArray = Array{Float64}(undef,nComp,nChrom)
+for (i,focal)
+	in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+		cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+end
+
+# Concatnate the solution
+output = hcat(cnArray,soln)
+
+# save to file
+writedlm( "testing123.csv",  output, ',')
+
+nothing
