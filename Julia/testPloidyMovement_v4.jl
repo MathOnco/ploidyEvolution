@@ -165,8 +165,8 @@ soln = reshape(Array(sol),nComp,length(sol.t))
 
 # Grab compartment -> CN array
 cnArray = Array{Float64}(undef,nComp,nChrom)
-for (i,focal)
-	in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+for (i,focal) in enumerate(
+	Iterators.product((1:length(j) for j in chromArray)...))
 		cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
 end
 
