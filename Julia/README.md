@@ -12,30 +12,31 @@ To run the code you will need to install:
 
 ```
 Julia (version 1.5 or greater)
-Julia packages:
-	KrylovKit
-	LinearAlgebra
-	DelimitedFiles
-	DifferentialEquations
 ```
 
 ### Installing
-On Mac:
+On Mac, the following set of instructions will get all packages and corresponding dependencies needed to run the project.
 
 ```
-1. Download Julia from https://julialang.org/downloads/
-2. Open julia in terminal and add the required packages
-3. Add package: type "]" then "add <package name>"
+1. Open terminal and go to directory where you want to clone repository
+2. clone git https://github.com/MathOnco/ploidyEvolution.git
+3. cd ploidyEvolution/Julia
+4. julia --project=. install.jl
 ```
 
 ## Running tests
-To run the script, open Julia from terminal and type
+Run the script from terminal by
 
 ```
-include("path/to/file/<filename>")
+julia --project=. -L ploidyMovement.jl driver.jl
 ```
 
-where ```filename``` is either ```computeCriticalCurveBisection.jl``` or ```testPloidyMovement_v4.jl```.
+for help on running and options type
+
+```
+julia driver.jl -h
+```
+
 
 ## Authors
 
