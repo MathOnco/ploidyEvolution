@@ -126,7 +126,7 @@ end
 #############################################
 
 function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray)
+	startingPopCN::AbstractArray,outputFile::String)
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
@@ -135,8 +135,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	maxChrom,
 	deathRate,
 	misRate,
-	finalDay,
-	outputFile) = params
+	finalDay) = params
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)

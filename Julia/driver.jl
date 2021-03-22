@@ -18,6 +18,9 @@ function parse_commandline()
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
 			default = "myY.txt"
+		"--outputfile","-o"
+			help = "Specifies the filename for saving data from the simulation"
+			default = "testing_0.csv"
 		"--u0"
 			help = "Array that contains CN of initial condition"
 			default = "[1,1,1,1,1]"
@@ -38,7 +41,7 @@ end
 	finalDay::Real = 30.0				# end of simulation
 	# CNmatFilename::String = "myX.txt"	# file containing CNs
 	# birthFilename::String = "myY.txt"	# file with birthrates
-	outputFile::String = "testing.csv"	# name of file for [CN soln(t)]	
+	# outputFile::String = "testing.csv"	# name of file for [CN soln(t)]	
 
 end
 
@@ -57,16 +60,7 @@ function Input(inputFile::String)
 	finalDay=get(data,"finalDay",30.0)
 	# CNmatFilename=get(data,"CNmatFilename","myX.txt")
 	# birthFilename=get(data,"birthFilename","myY.txt")
-	outputFile=get(data,"outputFile","testing.csv")
-
-	# Avoid overwriting an old .csv file if using default
-	count = 1
-	while isfile(outputFile)
-		outputParent, outputExtension = split(outputFile,".")
-		outputFile = outputParent * "_" * string(count) * "." * outputExtension
-		count += 1
-	end
-
+	# outputFile=get(data,"outputFile","testing.csv")
 
 	Input(
 		debugging,
@@ -75,10 +69,10 @@ function Input(inputFile::String)
 		maxChrom,
 		deathRate,
 		misRate,
-		finalDay,
+		finalDay
 		# CNmatFilename,
 		# birthFilename,
-		outputFile
+		# outputFile
 		)
 
 end
@@ -105,6 +99,9 @@ function initialize()
 	# Grab file containing birth rates
 	birthFilename = parsed_args["birthRateFile"]
 
+	# Grab output file name
+	outputFile = parsed_args["outputfile"]
+
 	# Grab initial condition (it is a string so we parse and convert)
 	u0 = Int.(JSON.parse(parsed_args["u0"]))
 
@@ -116,6 +113,14 @@ function initialize()
 		error("$birthFilename file cannot be found")
 	end
 
+	# Avoid overwriting an old .csv file if using default
+	count = 1
+	while isfile(outputFile)
+		outputParent, outputExtension = split(outputFile,".")
+		outputFile = outputParent * "_" * string(count) * "." * outputExtension
+		count += 1
+	end
+
 	# Check to see if input file is given
     if verbosity
 		println("parsed_args:")
@@ -124,14 +129,15 @@ function initialize()
 		end
 	end
 
-	return data, CNmatFilename, birthFilename, u0, verbosity
+	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
 end
 
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0, verbosity = initialize()
+	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
 
+	# Printing stuff to terminal
 	if verbosity
 		println("Input:")
 		for name in fieldnames(typeof(data)) 
@@ -155,7 +161,7 @@ function main()
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	runPloidyMovement(data,X,Y,u0)
+	runPloidyMovement(data,X,Y,u0,outputfile)
 	
 end
 
