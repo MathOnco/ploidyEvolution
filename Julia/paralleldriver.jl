@@ -162,8 +162,7 @@ function main()
 
 	pmap(enumerate(eachrow(u0mat))) do (i,u0)
 		outputfile = "output_$i.csv"
-		@show myid(),i,u0, outputfile
-		runPloidyMovement(Data,X, Y, u0, outputfile)
+		runPloidyMovement(Data,X,Y,u0,outputfile)
 	end
 	
 end
