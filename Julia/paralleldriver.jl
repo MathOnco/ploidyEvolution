@@ -1,3 +1,7 @@
+using Pkg
+
+Pkg.instantiate()
+
 using TOML, DelimitedFiles, ArgParse, JSON, Distributed
 
 import Base.@kwdef
