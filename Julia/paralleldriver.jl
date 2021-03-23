@@ -1,5 +1,6 @@
 using Pkg
 
+Pkg.activate(".")
 Pkg.instantiate()
 
 using TOML, DelimitedFiles, ArgParse, JSON, Distributed
