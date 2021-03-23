@@ -161,8 +161,11 @@ function main()
 	end
 
 	pmap(enumerate(eachrow(u0mat))) do (i,u0)
+		ploidy,cnv = u0[1],u0[2:end]
+		cn = Int.(round.(ploidy .+ cnv))
 		outputfile = "output_$i.csv"
 		runPloidyMovement(Data,X,Y,u0,outputfile)
+		# @show myid(),cn,outputfile
 	end
 	
 end
