@@ -1,7 +1,3 @@
-using Pkg
-
-Pkg.instantiate()
-
 using DifferentialEquations
 using LinearAlgebra
 using DelimitedFiles
