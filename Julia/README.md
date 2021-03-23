@@ -19,7 +19,7 @@ On Mac, the following set of instructions will get all packages and correspondin
 
 ```
 1. Open terminal and go to directory where you want to clone repository
-2. clone git https://github.com/MathOnco/ploidyEvolution.git
+2. git clone https://github.com/MathOnco/ploidyEvolution.git
 3. cd ploidyEvolution/Julia
 4. julia --project=. install.jl
 ```
@@ -28,7 +28,8 @@ On Mac, the following set of instructions will get all packages and correspondin
 Run the script from terminal by
 
 ```
-julia --project=. -L ploidyMovement.jl driver.jl
+1. cd <path/to/repo>/Julia
+2. julia --project=. -L ploidyMovement.jl driver.jl
 ```
 
 for help on running and options type
