@@ -1,3 +1,5 @@
+using Pkg;Pkg.activate(".");Pkg.instantiate();
+
 using DifferentialEquations
 using LinearAlgebra
 using DelimitedFiles

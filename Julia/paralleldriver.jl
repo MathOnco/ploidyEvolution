@@ -1,6 +1,8 @@
+using Pkg;Pkg.activate(".");Pkg.instantiate();
+
 using TOML, DelimitedFiles, ArgParse, JSON, Distributed
 
-import Base.@kwdef
+@everywhere import Base.@kwdef
 
 # Used to search through command line for particular arguments
 function parse_commandline()
@@ -12,24 +14,24 @@ function parse_commandline()
         "--verbosity", "-v"
             help = "Prints information to command line for debugging"
             action = :store_true
-		"--cnFile", "-c"
-			help = "Contains numeric array of copy numbers"
-			default = "myX.txt"
-		"--birthRateFile", "-b"
-			help = "Contains numeric vector of birth rates"
-			default = "myY.txt"
-		"--outputfile","-o"
-			help = "Specifies the filename for saving data from the simulation"
-			default = "testing_0.csv"
-		"--u0file"
-			help = "file that contains initial condition"
+                "--cnFile", "-c"
+                        help = "Contains numeric array of copy numbers"
+                        default = "myX.txt"
+                "--birthRateFile", "-b"
+                        help = "Contains numeric vector of birth rates"
+                        default = "myY.txt"
+                "--outputfile","-o"
+                        help = "Specifies the filename for saving data from the simulation"
+                        default = "testing_0.csv"
+                "--u0file"
+                        help = "file that contains initial condition"
     end
-	
+
     return parse_args(s)
 end
 
 # Struct containing input data needed for simulation with default values
-@kwdef struct Input
+@everywhere @kwdef struct Input
 
 	debugging::Bool = false				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
@@ -41,7 +43,7 @@ end
 
 end
 
-function Input(inputFile::String)
+@everywhere function Input(inputFile::String)
 
 	# Dictionary that contains info from the toml (INPUT) file
 	data = TOML.tryparsefile(inputFile)
@@ -164,8 +166,8 @@ function main()
 		ploidy,cnv = u0[1],u0[2:end]
 		cn = Int.(round.(ploidy .+ cnv))
 		outputfile = "output_$i.csv"
-		runPloidyMovement(Data,X,Y,u0,outputfile)
-		# @show myid(),cn,outputfile
+		runPloidyMovement(data,X,Y,cn,outputfile)
+		# @show myid(),cn,outputfile,data
 	end
 	
 end

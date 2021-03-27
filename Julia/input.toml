@@ -4,5 +4,5 @@ minChrom = 1.0
 maxChrom = 5.0
 deathRate = 0.1
 misRate = 0.15
-finalDay = 3.0
+finalDay = 30.0
 outputFile = "mytest.csv"
