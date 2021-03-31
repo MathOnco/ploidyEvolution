@@ -22,7 +22,7 @@ function parse_commandline()
                         default = "myY.txt"
                 "--outputfile","-o"
                         help = "Specifies the filename for saving data from the simulation"
-                        default = "testing_0.csv"
+                        default = "output_0.csv"
                 "--u0file"
                         help = "file that contains initial condition"
     end
@@ -33,13 +33,15 @@ end
 # Struct containing input data needed for simulation with default values
 @everywhere @kwdef struct Input
 
-	debugging::Bool = false				# prints info from ploidyMovement
+	debugging::Int = 0				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
 	minChrom::Real = 1.0				# minimum chromosome allowed
 	maxChrom::Real = 5.0				# maximum chromosome allowed
 	deathRate::Float64 = 0.1			# universal death rate
 	misRate::Float64 = 0.15				# universal missegregation rate
 	finalDay::Real = 30.0				# end of simulation
+	replating::Bool = false				# Whether we replate the cells
+	maxPop::Float64 = 1e6				# Max population before replating
 
 end
 
@@ -49,13 +51,15 @@ end
 	data = TOML.tryparsefile(inputFile)
 
 	# Get the parameters for the struct.
-	debugging=get(data,"debugging",false)
+	debugging=get(data,"debugging",0)
 	stepsize=get(data,"stepsize",1.0)
 	minChrom=get(data,"minChrom",1.0)
 	maxChrom=get(data,"maxChrom",5.0)
 	deathRate=get(data,"deathRate",0.1)
 	misRate=get(data,"misRate",0.15)
 	finalDay=get(data,"finalDay",30.0)
+	replating=get(data,"replating",false)
+	maxPop=get(data,"maxPop",1e6)
 
 	Input(
 		debugging,
@@ -64,7 +68,9 @@ end
 		maxChrom,
 		deathRate,
 		misRate,
-		finalDay
+		finalDay,
+		replating,
+		maxPop
 		)
 
 end
@@ -108,8 +114,7 @@ function initialize()
 	# Avoid overwriting an old .csv file if using default
 	count = 1
 	while isfile(outputFile)
-		outputParent, outputExtension = split(outputFile,".")
-		outputFile = outputParent * "_" * string(count) * "." * outputExtension
+		outputfile = "output_$i.csv"
 		count += 1
 	end
 
@@ -162,12 +167,12 @@ function main()
 		u0mat = readdlm(u0file,'\t')
 	end
 
+	# Parallelization of the initial condition file (u0mat)
 	pmap(enumerate(eachrow(u0mat))) do (i,u0)
 		ploidy,cnv = u0[1],u0[2:end]
 		cn = Int.(round.(ploidy .+ cnv))
 		outputfile = "output_$i.csv"
 		runPloidyMovement(data,X,Y,cn,outputfile)
-		# @show myid(),cn,outputfile,data
 	end
 	
 end

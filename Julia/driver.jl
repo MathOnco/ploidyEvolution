@@ -20,7 +20,7 @@ function parse_commandline()
 			default = "myY.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
-			default = "testing_0.csv"
+			default = "output_0.csv"
 		"--u0"
 			help = "Array that contains CN of initial condition"
 			default = "[1,1,1,1,1]"
@@ -32,16 +32,15 @@ end
 # Struct containing input data needed for simulation with default values
 @kwdef struct Input
 
-	debugging::Bool = false				# prints info from ploidyMovement
+	debugging::Int = 0				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
 	minChrom::Real = 1.0				# minimum chromosome allowed
 	maxChrom::Real = 5.0				# maximum chromosome allowed
 	deathRate::Float64 = 0.1			# universal death rate
 	misRate::Float64 = 0.15				# universal missegregation rate
 	finalDay::Real = 30.0				# end of simulation
-	# CNmatFilename::String = "myX.txt"	# file containing CNs
-	# birthFilename::String = "myY.txt"	# file with birthrates
-	# outputFile::String = "testing.csv"	# name of file for [CN soln(t)]	
+	replating::Bool = false				# Whether we replate the cells
+	maxPop::Float64 = 1e6				# Max population before replating
 
 end
 
@@ -51,16 +50,15 @@ function Input(inputFile::String)
 	data = TOML.tryparsefile(inputFile)
 
 	# Get the parameters for the struct.
-	debugging=get(data,"debugging",false)
+	debugging=get(data,"debugging",0)
 	stepsize=get(data,"stepsize",1.0)
 	minChrom=get(data,"minChrom",1.0)
 	maxChrom=get(data,"maxChrom",5.0)
 	deathRate=get(data,"deathRate",0.1)
 	misRate=get(data,"misRate",0.15)
 	finalDay=get(data,"finalDay",30.0)
-	# CNmatFilename=get(data,"CNmatFilename","myX.txt")
-	# birthFilename=get(data,"birthFilename","myY.txt")
-	# outputFile=get(data,"outputFile","testing.csv")
+	replating=get(data,"replating",false)
+	maxPop=get(data,"maxPop",1e6)
 
 	Input(
 		debugging,
@@ -69,10 +67,9 @@ function Input(inputFile::String)
 		maxChrom,
 		deathRate,
 		misRate,
-		finalDay
-		# CNmatFilename,
-		# birthFilename,
-		# outputFile
+		finalDay,
+		replating,
+		maxPop
 		)
 
 end
@@ -116,8 +113,7 @@ function initialize()
 	# Avoid overwriting an old .csv file if using default
 	count = 1
 	while isfile(outputFile)
-		outputParent, outputExtension = split(outputFile,".")
-		outputFile = outputParent * "_" * string(count) * "." * outputExtension
+		outputfile = "output_$i.csv"
 		count += 1
 	end
 
@@ -161,7 +157,7 @@ function main()
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	runPloidyMovement(data,X,Y,u0,outputfile)
+	runPloidyMovement(data,X,Y,u0,outputFile)
 	
 end
 

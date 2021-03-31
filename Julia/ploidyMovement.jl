@@ -75,7 +75,7 @@ function ploidyModel(du,u,pars,t)
 		outflow = deathRate*u[focal...]
 
 		# Information if debugging
-		if debugging && (inflow != 0.0 || outflow != 0.0)
+		if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
 			@show t,focalCN,inflow,outflow, u[focal...]
 		end
 
@@ -137,7 +137,9 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	maxChrom,
 	deathRate,
 	misRate,
-	finalDay) = params
+	finalDay,
+	replating,
+	maxPop) = params
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
@@ -159,10 +161,33 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 	u0[startingPopCN...] = 1.0
 
+	# If we are replating, we do so when the population is million-fold in size
+	callback = nothing
+	if replating
+		# Replate if above maxPop
+		condition = (u,t,integrator) -> sum(u) - maxPop	
+
+		# This replates so that u sums to 1 (as in the initial condition)
+		affect!(integrator) = begin
+			if debugging > 1
+				println("Max population reached at t = $(integrator.t)...replating.")
+			end
+			integrator.u /= sum(integrator.u)
+		end
+
+		# Create callback
+		callback = ContinuousCallback(condition,affect!,nothing)
+
+	end
+
+	if debugging > 0
+		println("Beginning simulation...")
+	end
+
 	# run simulation
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1)
+	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
 	# convert to array for output
 	soln = reshape(Array(sol),nComp,length(sol.t))
