@@ -1,6 +1,6 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
-using TOML, DelimitedFiles, ArgParse, JSON, Distributed
+using TOML, DelimitedFiles, ArgParse, JSON, Distributed, Dates
 
 @everywhere import Base.@kwdef
 
@@ -127,6 +127,8 @@ function main()
 	# Grab input parameters and whether to print info to terminal
 	data, CNmatFilename, birthFilename, u0file, outputFile, verbosity = initialize()
 
+	date = today() # Get today's date to add to outputfile string
+
 	# Printing stuff to terminal
 	if verbosity
 		println("Input:")
@@ -164,7 +166,7 @@ function main()
 	pmap(enumerate(eachrow(u0mat))) do (i,u0)
 		ploidy,cnv = u0[1],u0[2:end]
 		cn = Int.(round.(ploidy .+ cnv))
-		outputfile = "output_$(today())_run-$i.csv"
+		outputfile = "output_$(date)_run-$i.csv"
 		runPloidyMovement(data,X,Y,cn,outputfile)
 	end
 	
