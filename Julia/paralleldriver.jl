@@ -111,13 +111,6 @@ function initialize()
 		error("$birthFilename file cannot be found")
 	end
 
-	# Avoid overwriting an old .csv file if using default
-	count = 1
-	while isfile(outputFile)
-		outputfile = "output_$i.csv"
-		count += 1
-	end
-
 	# Check to see if input file is given
     if verbosity
 		println("parsed_args:")
