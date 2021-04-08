@@ -41,7 +41,9 @@ end
 	misRate::Float64 = 0.15				# universal missegregation rate
 	finalDay::Real = 30.0				# end of simulation
 	replating::Bool = false				# Whether we replate the cells
-	maxPop::Float64 = 1e6				# Max population before replating
+	startPop::Real = 1e3		# Starting population size 
+	maxPop::Real = 1e6				# Max population before replating
+	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
 
 end
 
@@ -59,7 +61,9 @@ end
 	misRate=get(data,"misRate",0.15)
 	finalDay=get(data,"finalDay",30.0)
 	replating=get(data,"replating",false)
+	startPop=get(data,"startPop",1e3)
 	maxPop=get(data,"maxPop",1e6)
+	compartmentMinimum=get(data,"compartmentMinimum",false)
 
 	Input(
 		debugging,
@@ -70,7 +74,9 @@ end
 		misRate,
 		finalDay,
 		replating,
-		maxPop
+		startPop,
+		maxPop,
+		compartmentMinimum
 		)
 
 end

@@ -30,7 +30,13 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,compartmentMinimum,
+	debugging) = pars
+
+	# If this is true, we artificially set the compartment to 0 if <1
+	if compartmentMinimum
+		u[u .< 1.0] .= 0.0
+	end
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -139,7 +145,9 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	misRate,
 	finalDay,
 	replating,
-	maxPop) = params
+	startPop,
+	maxPop,
+	compartmentMinimum) = params
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
@@ -159,7 +167,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = 1.0
+	u0[startingPopCN...] = startPop
 
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
@@ -185,7 +193,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,
+	compartmentMinimum,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
