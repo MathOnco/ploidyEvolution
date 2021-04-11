@@ -1,4 +1,4 @@
-using Pkg;Pkg.activate(".");Pkg.instantiate();
+# using Pkg;Pkg.activate(".");Pkg.instantiate();
 
 using DifferentialEquations
 using LinearAlgebra
@@ -30,13 +30,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,compartmentMinimum,
-	debugging) = pars
-
-	# If this is true, we artificially set the compartment to 0 if <1
-	if compartmentMinimum
-		u[u .< 1.0] .= 0.0
-	end
+	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -90,6 +84,10 @@ function ploidyModel(du,u,pars,t)
 		
 	end
 
+	if debugging > 3
+		@show t,sum(u)
+	end
+
 end
 
 function calculateParents(offspring::Vector{T}, minChrom::Int,
@@ -134,7 +132,7 @@ end
 #############################################
 
 function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray,outputFile::String)
+	startingPopCN::AbstractArray)
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
@@ -167,7 +165,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = startPop
+	u0[startingPopCN...] = 1.0
 
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
@@ -180,7 +178,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 			if debugging > 1
 				println("Max population reached at t = $(integrator.t)...replating.")
 			end
-			integrator.u /= sum(integrator.u)
+			integrator.u /= maxPop
 		end
 
 		# Create callback
@@ -188,13 +186,16 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	end
 
+	# If we artificially set populations below threshold to 0
+	# if compartmentMinimum
+	# 	condition = (u,t,integrator)
+
 	if debugging > 0
 		println("Beginning simulation...")
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,
-	compartmentMinimum,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
@@ -208,12 +209,18 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 			cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
 	end
 
-	# Concatnate the solution
-	output = hcat(cnArray,soln)
+	# Concatnate the chrom indices with soln output
+	results = hcat(cnArray,soln)
 
-	# save to file
-	writedlm( outputFile,  output, ',')
+	# # create header for the solution output
+	# header = permutedims(vcat(["chr$i" for i in 1 : nChrom],sol.t))
 
-	return
+	# # concatnate the header with the results array
+	# output = vcat(header,results)
+
+	# # save to file
+	# writedlm( outputFile,  output, ',')
+
+	return results, sol.t
 
 end

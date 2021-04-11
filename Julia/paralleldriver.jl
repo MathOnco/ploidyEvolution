@@ -15,16 +15,16 @@ function parse_commandline()
             help = "Prints information to command line for debugging"
             action = :store_true
                 "--cnFile", "-c"
-                        help = "Contains numeric array of copy numbers"
-                        default = "myX.txt"
+					help = "Contains numeric array of copy numbers and header of which chromosomes"
+					default = "birthLandscapeBrainCancer.txt"
                 "--birthRateFile", "-b"
-                        help = "Contains numeric vector of birth rates"
-                        default = "myY.txt"
+					help = "Contains numeric vector of birth rates"
+					default = "myY.txt"
                 "--outputfile","-o"
-                        help = "Specifies the filename for saving data from the simulation"
-                        default = "output_0.csv"
+					help = "Specifies the filename for saving data from the simulation"
+                    default = "output_0.csv"
                 "--u0file"
-                        help = "file that contains initial condition"
+                    help = "file that contains initial condition"
     end
 
     return parse_args(s)
@@ -147,13 +147,16 @@ function main()
 	X = readdlm(CNmatFilename, '\t')
 	Y = readdlm(birthFilename, '\t')
 
-	# FIXME!!!!!!! At the moment we assume ploidy is not included
-	X .+= 2.0 # adding ploidy by hand.
+	# FIXME!!!!!
+	header, cn = X[1,:],Float64.(X[2:end,3:end])
 
 	# Error if the elements in X or Y are not all subtypes of real
-	if any((eltype(X),eltype(Y)) .>: Real)
-		error("X and Y must contain only numeric values")
+	if any((eltype(cn),eltype(Y)) .>: Real)
+		error("cn and Y must contain only numeric values")
 	end
+
+	# FIXME!!!!!!! At the moment we assume ploidy is not included
+	cn .+= 2.0 # adding ploidy by hand.
 
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	Y = dropdims(Y,dims=2)
@@ -171,9 +174,24 @@ function main()
 	# Parallelization of the initial condition file (u0mat)
 	pmap(enumerate(eachrow(u0mat))) do (i,u0)
 		ploidy,cnv = u0[1],u0[2:end]
-		cn = Int.(round.(ploidy .+ cnv))
+		initCN = Int.(round.(ploidy .+ cnv))
 		outputfile = "output_$(date)_run-$i.csv"
-		runPloidyMovement(data,X,Y,cn,outputfile)
+		results, time = runPloidyMovement(data,cn,Y,initCN)
+
+		# create header for the solution output
+		outputHeader = permutedims(
+			vcat(
+				["Chr$chr" for chr in header if typeof(chr) == Int],
+				time
+				)
+				)
+
+		# concatnate the header with the results array
+		output = vcat(outputHeader,results)
+
+		# save to file
+		writedlm( outputFile,  output, ',')
+
 	end
 	
 end

@@ -13,8 +13,8 @@ function parse_commandline()
             help = "Prints information to command line for debugging"
             action = :store_true
 		"--cnFile", "-c"
-			help = "Contains numeric array of copy numbers"
-			default = "myX.txt"
+			help = "Contains numeric array of copy numbers and header of which chromosomes"
+			default = "CNs brain cancer CLs.txt"
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
 			default = "myY.txt"
@@ -119,7 +119,7 @@ function initialize()
 	# Avoid overwriting an old .csv file if using default
 	count = 1
 	while isfile(outputFile)
-		outputfile = "output_$i.csv"
+		outputfile = "output_$count.csv"
 		count += 1
 	end
 
@@ -151,19 +151,35 @@ function main()
 	X = readdlm(CNmatFilename, '\t')
 	Y = readdlm(birthFilename, '\t')
 
-	# FIXME!!!!!!! At the moment we assume ploidy is not included
-	X .+= 2.0 # adding ploidy by hand.
+	header, cn = X[1,:],Float64.(X[2:end,3:end])
 
 	# Error if the elements in X or Y are not all subtypes of real
-	if any((eltype(X),eltype(Y)) .>: Real)
-		error("X and Y must contain only numeric values")
+	if any((eltype(cn),eltype(Y)) .>: Real)
+		error("cn and Y must contain only numeric values")
 	end
+
+	# FIXME!!!!!!! At the moment we assume ploidy is not included
+	cn .+= 2.0 # adding ploidy by hand.
 
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	runPloidyMovement(data,X,Y,u0,outputFile)
+	results, time = runPloidyMovement(data,cn,Y,u0)
+
+	# create header for the solution output
+	outputHeader = permutedims(
+		vcat(
+			["Chr$chr" for chr in header if typeof(chr) == Int],
+			time
+			)
+			)
+
+	# concatnate the header with the results array
+	output = vcat(outputHeader,results)
+
+	# save to file
+	writedlm( outputFile,  output, ',')
 	
 end
 
