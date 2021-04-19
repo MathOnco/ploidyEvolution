@@ -1,6 +1,6 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
-using TOML, DelimitedFiles, ArgParse, JSON, Distributed, Dates
+using TOML, DataFrames, CSV, ArgParse, Distributed, Dates
 
 @everywhere import Base.@kwdef
 
@@ -9,22 +9,22 @@ function parse_commandline()
     s = ArgParseSettings()
 
     @add_arg_table! s begin
-        "--input","-i"
+        "--paramFile","-p"
             help = "Specifies an inputfile to replace default parameters"
         "--verbosity", "-v"
             help = "Prints information to command line for debugging"
             action = :store_true
-                "--cnFile", "-c"
-					help = "Contains numeric array of copy numbers and header of which chromosomes"
-					default = "birthLandscapeBrainCancer.txt"
-                "--birthRateFile", "-b"
-					help = "Contains numeric vector of birth rates"
-					default = "myY.txt"
-                "--outputfile","-o"
-					help = "Specifies the filename for saving data from the simulation"
-                    default = "output_0.csv"
-                "--u0file"
-                    help = "file that contains initial condition"
+		"--cnFile", "-c"
+			help = "Contains numeric array of copy numbers and header of which chromosomes"
+			default = "birthLandscapeBrainCancer.txt"
+		"--birthRateFile", "-b"
+			help = "Contains numeric vector of birth rates"
+			default = "myY.txt"
+		"--outputfile","-o"
+			help = "Specifies the filename for saving data from the simulation"
+			default = "output_0.csv"
+		"--initfile", "-i"
+			help = "file that contains simulation information"
     end
 
     return parse_args(s)
@@ -47,23 +47,23 @@ end
 
 end
 
-@everywhere function Input(inputFile::String)
+@everywhere function Input(paramFile::String)
 
 	# Dictionary that contains info from the toml (INPUT) file
-	data = TOML.tryparsefile(inputFile)
+	params = TOML.tryparsefile(paramFile)
 
 	# Get the parameters for the struct.
-	debugging=get(data,"debugging",0)
-	stepsize=get(data,"stepsize",1.0)
-	minChrom=get(data,"minChrom",1.0)
-	maxChrom=get(data,"maxChrom",5.0)
-	deathRate=get(data,"deathRate",0.1)
-	misRate=get(data,"misRate",0.15)
-	finalDay=get(data,"finalDay",30.0)
-	replating=get(data,"replating",false)
-	startPop=get(data,"startPop",1e3)
-	maxPop=get(data,"maxPop",1e6)
-	compartmentMinimum=get(data,"compartmentMinimum",false)
+	debugging=get(params,"debugging",0)
+	stepsize=get(params,"stepsize",1.0)
+	minChrom=get(params,"minChrom",1.0)
+	maxChrom=get(params,"maxChrom",5.0)
+	deathRate=get(params,"deathRate",0.1)
+	misRate=get(params,"misRate",0.15)
+	finalDay=get(params,"finalDay",30.0)
+	replating=get(params,"replating",false)
+	startPop=get(params,"startPop",1e3)
+	maxPop=get(params,"maxPop",1e6)
+	compartmentMinimum=get(params,"compartmentMinimum",false)
 
 	Input(
 		debugging,
@@ -84,14 +84,14 @@ end
 function initialize()
 
 	# Default values to be fed into ploidyMovement
-	data = Input()
+	params = Input()
 
 	# Grab command line args
 	parsed_args = parse_commandline()
 
 	# Replaces default parameters if input file is given
-	if !isnothing(parsed_args["input"])
-		data = Input(parsed_args["input"])
+	if !isnothing(parsed_args["paramFile"]) && isfile(parsed_args["paramFile"])
+		params = Input(parsed_args["paramFile"])
 	end
 
 	# Prints info if set to true
@@ -107,7 +107,7 @@ function initialize()
 	outputFile = parsed_args["outputfile"]
 
 	# Grab initial condition file
-	u0file = parsed_args["u0file"]
+	initfile = parsed_args["initfile"]
 
 	# Error checking
 	if !isfile(CNmatFilename)
@@ -125,58 +125,82 @@ function initialize()
 		end
 	end
 
-	return data, CNmatFilename, birthFilename, u0file, outputFile, verbosity
+	return params, CNmatFilename, birthFilename, initfile, outputFile, verbosity
 end
 
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0file, outputFile, verbosity = initialize()
+	params, CNmatFilename, birthFilename, initfile, outputFile, verbosity = initialize()
 
 	date = today() # Get today's date to add to outputfile string
 
 	# Printing stuff to terminal
 	if verbosity
 		println("Input:")
-		for name in fieldnames(typeof(data)) 
-			println("  $name => $(getfield(data,name))")
+		for name in fieldnames(typeof(params)) 
+			println("  $name => $(getfield(params,name))")
 		end
 	end
 
 	# Read the birth rate file to be used for the interpolation
 	X = readdlm(CNmatFilename, '\t')
-	Y = readdlm(birthFilename, '\t')
+	birthRates = readdlm(birthFilename, '\t')
 
 	# FIXME!!!!!
 	header, cn = X[1,:],Float64.(X[2:end,3:end])
 
-	# Error if the elements in X or Y are not all subtypes of real
-	if any((eltype(cn),eltype(Y)) .>: Real)
-		error("cn and Y must contain only numeric values")
+	# Error if the elements in X or birthRates are not all subtypes of real
+	if any((eltype(cn),eltype(birthRates)) .>: Real)
+		error("cn and birthRates must contain only numeric values")
 	end
 
 	# FIXME!!!!!!! At the moment we assume ploidy is not included
 	cn .+= 2.0 # adding ploidy by hand.
 
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
-	Y = dropdims(Y,dims=2)
+	birthRates = dropdims(birthRates,dims=2)
 
 	# Load initial condition from file if available:
-	if !isfile(u0file)
-		if verbosity
-			println("Initial condition file NOT found. using default")
-		end
-		u0 = [2,2,2,2,2]
+	if !isfile(initfile)
+		error("paralleldriver must have an initfile")
 	else
-		u0mat = readdlm(u0file,'\t')
+		df = CSV.read(initfile,DataFrame)
+	end
+
+	# Grab the initial conditions and convert to integer for now
+	u0mat = Int.(round.(convert(Matrix,df[:,[name for name in names(df)
+	if occursin(r"Chr*",name)]])))
+
+	# check if we update either of the two rates
+	changeDeathRate = "deathRate" in names(df) ? true : false
+	changeMisRate = "missegregationRate" in names(df) ? true : false
+
+	if verbosity
+		println("Running simulation in parallel with $(nworkers()) workers")
 	end
 
 	# Parallelization of the initial condition file (u0mat)
-	pmap(enumerate(eachrow(u0mat))) do (i,u0)
-		ploidy,cnv = u0[1],u0[2:end]
-		initCN = Int.(round.(ploidy .+ cnv))
+	pmap(enumerate(eachrow(u0mat))) do (i,initCN)
+
+		# Define the outputfile string
 		outputFile = "output_$(date)_run-$i.csv"
-		results, time = runPloidyMovement(data,cn,Y,initCN)
+
+		# Check to see if we replace the death or misRate
+		if changeDeathRate
+			deathRate = df[i,"deathRate"]
+		else
+			deathRate = -1.0
+		end
+		if changeMisRate
+			misRate = df[i,"missegregationRate"]
+		else
+			misRate = -1.0
+		end
+
+		# run the simulation
+		results, time = runPloidyMovement(params,cn,birthRates,initCN,deathRate,
+		misRate)
 
 		# create header for the solution output
 		outputHeader = permutedims(

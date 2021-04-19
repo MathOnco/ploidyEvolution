@@ -1,4 +1,4 @@
-# using Pkg;Pkg.activate(".");Pkg.instantiate();
+using Pkg;Pkg.activate(".");Pkg.instantiate();
 
 using DifferentialEquations
 using LinearAlgebra
@@ -132,7 +132,8 @@ end
 #############################################
 
 function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray)
+	startingPopCN::AbstractArray,
+	newDeathRate::Float64=-1.0,newMisRate::Float64=-1.0)
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
@@ -146,6 +147,15 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startPop,
 	maxPop,
 	compartmentMinimum) = params
+
+	# Overwrite rates (this is used if the parallel driver file
+	# contains different rates)
+	if newDeathRate >= 0
+		deathRate = newDeathRate
+	end
+	if newMisRate >= 0
+		misRate = newMisRate
+	end
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
