@@ -31,7 +31,7 @@ function parse_commandline()
 end
 
 # Struct containing input data needed for simulation with default values
-@everywhere @kwdef struct Input
+@everywhere @kwdef mutable struct Input
 
 	debugging::Int = 0				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
@@ -185,22 +185,24 @@ function main()
 
 		# Define the outputfile string
 		outputFile = "output_$(date)_run-$i.csv"
+		outputParams = "output_$(date)_run-$(i)_params.csv"
 
-		# Check to see if we replace the death or misRate
+		# Check to see if we replace the death or misRate from the initfile
 		if changeDeathRate
-			deathRate = df[i,"deathRate"]
-		else
-			deathRate = -1.0
+			params.deathRate = df[i,"deathRate"]
+			if verbosity
+				println("new death rate: $(params.deathRate)")
+			end
 		end
 		if changeMisRate
-			misRate = df[i,"missegregationRate"]
-		else
-			misRate = -1.0
+			params.misRate = df[i,"missegregationRate"]
+			if verbosity
+				println("new missegregation rate: $(params.misRate)")
+			end
 		end
 
 		# run the simulation
-		results, time = runPloidyMovement(params,cn,birthRates,initCN,deathRate,
-		misRate)
+		results, time = runPloidyMovement(params,cn,birthRates,initCN)
 
 		# create header for the solution output
 		outputHeader = permutedims(
@@ -214,7 +216,9 @@ function main()
 		output = vcat(outputHeader,results)
 
 		# save to file
-		writedlm( outputFile,  output, ',')
+		writedlm( outputFile,  output)
+		CSV.write( outputParams, [params])
+		
 
 	end
 	

@@ -132,8 +132,7 @@ end
 #############################################
 
 function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray,
-	newDeathRate::Float64=-1.0,newMisRate::Float64=-1.0)
+	startingPopCN::AbstractArray)
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
@@ -147,15 +146,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startPop,
 	maxPop,
 	compartmentMinimum) = params
-
-	# Overwrite rates (this is used if the parallel driver file
-	# contains different rates)
-	if newDeathRate >= 0
-		deathRate = newDeathRate
-	end
-	if newMisRate >= 0
-		misRate = newMisRate
-	end
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
@@ -208,6 +198,10 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
+
+	if debugging > 0
+		println("Simulation complete. Collecting results...")
+	end
 
 	# convert to array for output
 	soln = reshape(Array(sol),nComp,length(sol.t))
