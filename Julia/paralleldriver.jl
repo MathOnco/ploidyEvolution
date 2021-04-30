@@ -155,9 +155,6 @@ function main()
 		error("cn and birthRates must contain only numeric values")
 	end
 
-	# FIXME!!!!!!! At the moment we assume ploidy is not included
-	cn .+= 2.0 # adding ploidy by hand.
-
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	birthRates = dropdims(birthRates,dims=2)
 

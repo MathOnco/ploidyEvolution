@@ -158,9 +158,6 @@ function main()
 		error("cn and Y must contain only numeric values")
 	end
 
-	# FIXME!!!!!!! At the moment we assume ploidy is not included
-	cn .+= 2.0 # adding ploidy by hand.
-
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	Y = dropdims(Y,dims=2)
 
