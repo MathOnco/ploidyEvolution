@@ -4,7 +4,7 @@ using DelimitedFiles
 using Plots
 
 # Load the file that contains the Polyharmonic interpolator function
-include("polyHarmonicInterp_v4.jl")
+include("polyHarmonicInterp.jl")
 include("bisectionMethod.jl")
 
 function calculateParents(offspring::Vector{T}, minChrom::Int,
@@ -13,8 +13,8 @@ function calculateParents(offspring::Vector{T}, minChrom::Int,
 
 	[ (x = copy(offspring); x[idx] = v; x)
 		for idx in 1 : length(offspring)
-			for v in max(offspring[idx]-1,minChrom):stepChrom:
-				min(offspring[idx]+1,maxChrom) if v != offspring[idx] ]
+			for v in max(offspring[idx]-1,minChrom):stepChrom:min(offspring[idx]+1,maxChrom)
+				 if v != offspring[idx] ]
 
 end
 

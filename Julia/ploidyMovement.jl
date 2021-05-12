@@ -96,8 +96,8 @@ function calculateParents(offspring::Vector{T}, minChrom::Int,
 
 	[ (x = copy(offspring); x[idx] = v; x)
 		for idx in 1 : length(offspring)
-			for v in max(offspring[idx]-1,minChrom):stepChrom:
-				min(offspring[idx]+1,maxChrom) if v != offspring[idx] ]
+			for v in max(offspring[idx]-1,minChrom):stepChrom:min(offspring[idx]+1,maxChrom) 
+				if v != offspring[idx] ]
 
 end
 
