@@ -181,8 +181,8 @@ function main()
 	pmap(enumerate(eachrow(u0mat))) do (i,initCN)
 
 		# Define the outputfile string
-		outputFile = "output_$(date)_run-$i.csv"
-		outputParams = "output_$(date)_run-$(i)_params.csv"
+		outputFile = "$(initfile)_$(date)_run-$i.csv"
+		outputParams = "$(initfile)_$(date)_run-$(i)_params.csv"
 
 		# Check to see if we replace the death or misRate from the initfile
 		if changeDeathRate
