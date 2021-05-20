@@ -147,7 +147,7 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
 ############################################
 #### Estimate S-phase duration per clone ###
 ############################################
-S_Phase_Duration_PerClone <- function(cellLineInfo, outF="data/Duration_PerCellCyclePhase_PerClone.txt"){
+S_Phase_Duration_PerClone <- function(cellLineInfo, outF="../data/Duration_PerCellCyclePhase_PerClone.txt"){
   
   THESTATES=c("G0G1","apoptotic","S")
   allCPC = list()
@@ -193,7 +193,7 @@ S_Phase_Duration_PerClone <- function(cellLineInfo, outF="data/Duration_PerCellC
 #########################################
 #### Polymerase expression vs. ploidy ###
 #########################################
-PolymeraseExpression_Ploidy <- function(cellLines, indir, outF =  "data/Ploidy_PolyE_PerCellCyclePhase_PerClone.txt"){
+PolymeraseExpression_Ploidy <- function(cellLines, indir, outF =  "../data/Ploidy_PolyE_PerCellCyclePhase_PerClone.txt"){
   ## DNA polymerase epsilon is a member of the DNA polymerase family of enzymes found in eukaryotes. 
   ## It is composed of the following four subunits: POLE (central catalytic unit), POLE2 (subunit 2), POLE3 (subunit 3), and POLE4
   ## DNA polymerase delta (DNA Pol δ) is an enzyme complex found in eukaryotes that is involved in DNA replication and repair. 

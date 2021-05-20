@@ -6,15 +6,18 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
   setwd("~/Projects/PMO/HighPloidy_DoubleEdgedSword/code/MathModel/GrowOrGo_PloidyEnergyRobustness/R")
   source("Utils.R")
-  indir = "./data/"
+  indir = "../data/"
   cellLines <- c("SNU-16","MKN-45", "NUGC-4","SNU-638", "KATOIII", "NCI-N87", "HGC-27", "SNU-668", "SNU-601")
-  UNITS = list(dNTP="mMol", o2="mmHg")
+  UNITS = list(dNTP="mMol", o2="mmHg", po4="mmol_per_liter")
   F_SDURATION = paste0(indir,"S-phase_duration_Params.xlsx")
   F_CCDURATION = paste0(indir,"Duration_PerCellCyclePhase_PerClone.txt")
   F_PLOIDYPOLYE= paste0(indir,"Ploidy_PolyE_PerCellCyclePhase_PerClone.txt")
-  if(cancer=="STAD"){
+  if(cancer=="CL"){
     FLAG_SAMPLECOHORT = "Stomach Cell Lines"
     FLAG_SUBSTRATE = names(UNITS)[1]
+  }else if(cancer=="STAD"){
+    FLAG_SAMPLECOHORT = "Stomach Cancer"
+    FLAG_SUBSTRATE = names(UNITS)[3]
   }else if(cancer=="GBM"){
     FLAG_SAMPLECOHORT = "Glioblastoma"
     FLAG_SUBSTRATE = names(UNITS)[2]
@@ -43,7 +46,7 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   params = read.xlsx(F_SDURATION, sheetIndex = "Params",as.data.frame = T)
   rownames(params)=params$Parameter
   P = as.data.frame(t(params[,"Value", drop=F]))
-  cc_params = read.xlsx(F_SDURATION, sheetIndex = "O2_dNTP_CellCycle",as.data.frame = T)
+  cc_params = read.xlsx(F_SDURATION, sheetIndex = "O2_PO4_dNTP_CellCycle",as.data.frame = T)
   rownames(cc_params) = cc_params$CellCycle
   ##nondividing cells consume oxygen at a rate of:
   o2_nd =  P$O2_consumption_WT * 0.000001;  ## umol/cell/h
@@ -92,13 +95,15 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     cpc$Sample = paste("Clone",sapply(strsplit(rownames(cpc),"ID"),"[[", 2))
     cpc$Size = sapply(strsplit(rownames(cpc),"_"),"[[", 2)
     cpc = cpc[sort(cpc$Size, decreasing = T, index.return=T)$ix,]
+    cpc$ploidy = c(4,3,2)
     
-    col = gg_color_hue(nrow(cpc));
+    # col = gg_color_hue(nrow(cpc));
+    col = c("darkolivegreen3","yellow","darkred")
     names(col) = cpc$Sample
-    cpc = cpc[sort(abs(cpc$ploidy-2), index.return=T)$ix,]
+    cpc = cpc[sort(abs(cpc$ploidy-2), decreasing = T, index.return=T)$ix,]
     doi = P$O2_brain; #O2_avail
     
-    x=(40:(5000*P$K_M_poly*3))/5000
+    x=(30:(10000*P$K_M_poly*3))/5000
   }
   
   
@@ -123,13 +128,16 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
       ## Replication time vs. O2 levels
       x_ = (cc_params["S",]$O2_mmHg - max(cc_params[c("M","G1"),]$O2_mmHg))* dNTP/800; ## conversion from cite{carreau_why_2011,leeds_dna_1985,akber_oxygen_2013}
       # o2_d = o2_nd * 1.6*(dNTP/ntp_nd)/3.2
+    }else if(FLAG_SUBSTRATE=="po4"){
+      ## Replication time vs. PO4 levels
+      x_ = (cc_params["S",]$PO4_mMol_per_liter - max(cc_params[c("M","G1"),]$PO4_mMol_per_liter))* dNTP/800; ## conversion from XX
     }
     out[[cpc$Sample[i]]] = humanGenome/(numPolymerases* y)
     
     if(i ==1){
       plot(x_, out[[cpc$Sample[i]]], xlab=paste0(FLAG_SUBSTRATE," (",UNITS[[FLAG_SUBSTRATE]],")"), ylab="hours to replicate genome",log=logF,col="white")
     }
-    lines(x_, out[[cpc$Sample[i]]], col=col[cpc$Sample[i]])
+    lines(x_, out[[cpc$Sample[i]]], col=col[cpc$Sample[i]], lwd=5)
     points(x_, out[[cpc$Sample[i]]], cex=0.4, col=col[cpc$Sample[i]], pch=20)
     ## plot single data point
     idx = which.min(abs(x_-doi))
