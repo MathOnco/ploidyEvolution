@@ -35,7 +35,7 @@ calcMSimprints <-function(loci, p, cnColumn="CN_Estimate", precision=1) {
 ### Interpolate and visualize birth rate landscape ####
 interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, save=NULL, nrep = 1, usePCA=T, ipolmethod = "polyharmonic", markState=NULL){
   ## PCA
-  pcs <- FactoMineR::PCA(cnv, graph = T,scale.unit = T,ncp = ncol(cnv))
+  pcs <- FactoMineR::PCA(cnv, graph = F,scale.unit = T,ncp = ncol(cnv))
   pcs$x = pcs$ind$coord
   # print(factoextra::get_eigenvalue(pcs)[,"variance.percent"])
   barplot(sapply(1:ncol(pcs$x), function(x) sum(factoextra::get_eigenvalue(pcs)[1:x,"variance.percent"])), ylab="cummulative variance explained", names.arg = 1:ncol(pcs$x))
