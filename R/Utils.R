@@ -132,7 +132,7 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
       mtext(matlab::fileparts(save)$name)
       dev.off()
     }
-    rgl::rgl.surface(mat_$x,mat_$y,mat_$z,color="green",alpha=c(0.5)) 
+    # rgl::rgl.surface(mat_$x,mat_$y,mat_$z,color="green",alpha=c(0.5)) 
     
     te_ = try(cor.test(r[ij],r_pred))
     if(class(te_)=="try-error"){
