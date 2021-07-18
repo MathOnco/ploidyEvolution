@@ -8,10 +8,16 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   source("Utils.R")
   indir = "../data/"
   cellLines <- c("SNU-16","MKN-45", "NUGC-4","SNU-638", "KATOIII", "NCI-N87", "HGC-27", "SNU-668", "SNU-601")
-  UNITS = list(dNTP="mMol", o2="mmHg", po4="mmol_per_liter")
   F_SDURATION = paste0(indir,"S-phase_duration_Params.xlsx")
   F_CCDURATION = paste0(indir,"Duration_PerCellCyclePhase_PerClone.txt")
   F_PLOIDYPOLYE= paste0(indir,"Ploidy_PolyE_PerCellCyclePhase_PerClone.txt")
+  ########################
+  ### Model parameters ###
+  ########################
+  params = read.xlsx(F_SDURATION, sheetIndex = "Params",as.data.frame = T)
+  rownames(params)=params$Parameter
+  P = as.data.frame(t(params[,"Value", drop=F]))
+  UNITS = list(dNTP="mMol dNTP", o2=paste(params$Unit[params$Parameter=="K_M_RNR"],"O2"), po4="mmol_per_liter")
   if(cancer=="CL"){
     FLAG_SAMPLECOHORT = "Stomach Cell Lines"
     FLAG_SUBSTRATE = names(UNITS)[1]
@@ -22,8 +28,8 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     FLAG_SAMPLECOHORT = "Glioblastoma"
     FLAG_SUBSTRATE = names(UNITS)[2]
   }else{
-   print(paste("cancer must be set to either 'STAD' or 'GBM'")) 
-   return()
+    print(paste("cancer must be set to either 'STAD' or 'GBM'")) 
+    return()
   }
   
   ############################
@@ -39,13 +45,9 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   cellLineInfo = cellLineInfo[cellLineInfo$name!="SNU-601", ]
   
   
-  
   ########################
   ### Model parameters ###
   ########################
-  params = read.xlsx(F_SDURATION, sheetIndex = "Params",as.data.frame = T)
-  rownames(params)=params$Parameter
-  P = as.data.frame(t(params[,"Value", drop=F]))
   cc_params = read.xlsx(F_SDURATION, sheetIndex = "O2_PO4_dNTP_CellCycle",as.data.frame = T)
   rownames(cc_params) = cc_params$CellCycle
   ##nondividing cells consume oxygen at a rate of:
@@ -84,8 +86,8 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     doi = cc_params["S",]$dNTP_mMol; #dNTP_sPhase_mMol; 
     col = gg_color_hue(nrow(cellLineInfo));
     names(col) = rownames(cellLineInfo);
-    
-    x=(50:(5000*P$K_M_poly*18))/5000
+    # x_dNTP=(50:(5000*P$K_M_poly*18))/5000
+    x_dNTP=seq(5E-5,6.5E-3,by=1E-6)
   }else { ##if(FLAG_SAMPLECOHORT = "Glioblastoma")
     # P+R GBM
     PATIENT = "P06269"
@@ -101,17 +103,17 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     col = c("darkolivegreen3","yellow","darkred")
     names(col) = cpc$Sample
     cpc = cpc[sort(abs(cpc$ploidy-2), decreasing = T, index.return=T)$ix,]
-    doi = P$O2_brain; #O2_avail
+    doi = P$O2_brain_min
     
-    x=(30:(10000*P$K_M_poly*3))/5000
+    # x=(30:(10000*P$K_M_poly*3))/5000
+    x_o2 = seq(0.75,P$K_M_RNR*3.5,by=0.01)
   }
-  
   
   
   #############################################################################################
   #### Visualize dependency of DNA replication speed on substrate concentration and ploidy ####
   #############################################################################################
-  y = P$v_max_poly*x / (P$K_M_poly + x)
+  activeRNRPerCell=1
   out = list()
   logF = "x"
   # pdf(paste0("~/Downloads/",FLAG_SUBSTRATE,".pdf"), width = 4, height = 4)
@@ -119,37 +121,42 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     ploidy = cpc$ploidy[i]
     s_Hours = mean(cpc$S_Duration_hours[cpc$Sample == cpc$Sample[i]])
     humanGenome = ploidy*P$humanGenome 
-    numPolymerases = 1/(s_Hours*P$v_max_poly/humanGenome); ## human cells have on the order of 100,000 origins of replication. So depending on how many origins are active simultaneously, there are likely many thousands of polymerase molecules acting at once to replicate the DNA of a single eukaryotic cell.
-    dNTP = x*numPolymerases 
-    if(FLAG_SUBSTRATE=="dNTP"){
-      ## Replication time vs. dNTP levels
-      x_ = dNTP
-    } else if(FLAG_SUBSTRATE=="o2"){
-      ## Replication time vs. O2 levels
-      x_ = (cc_params["S",]$O2_mmHg - max(cc_params[c("M","G1"),]$O2_mmHg))* dNTP/800; ## conversion from cite{carreau_why_2011,leeds_dna_1985,akber_oxygen_2013}
-      # o2_d = o2_nd * 1.6*(dNTP/ntp_nd)/3.2
-    }else if(FLAG_SUBSTRATE=="po4"){
-      ## Replication time vs. PO4 levels
-      x_ = (cc_params["S",]$PO4_mMol_per_liter - max(cc_params[c("M","G1"),]$PO4_mMol_per_liter))* dNTP/800; ## conversion from XX
-    }
-    out[[cpc$Sample[i]]] = humanGenome/(numPolymerases* y)
+    numPolymerases = 1/(s_Hours*P$v_max_poly/(2000*P$humanGenome)); ## human cells have on the order of 100,000 origins of replication. So depending on how many origins are active simultaneously, there are likely many thousands of polymerase molecules acting at once to replicate the DNA of a single eukaryotic cell.
     
-    if(i ==1){
-      plot(x_, out[[cpc$Sample[i]]], xlab=paste0(FLAG_SUBSTRATE," (",UNITS[[FLAG_SUBSTRATE]],")"), ylab="hours to replicate genome",log=logF,col="white")
+    if(FLAG_SUBSTRATE=="o2"){
+      ## Replication time vs. O2 levels
+      x_ = x_o2
+      x_dNDP = activeRNRPerCell* P$v_max_RNR * x_o2 / (ploidy*P$K_M_RNR + x_o2)
+      y = numPolymerases*P$v_max_poly * x_dNDP / (ploidy*P$K_M_poly + x_dNDP)
+    }else{ 
+      y = numPolymerases*P$v_max_poly * x_dNTP / (ploidy*P$K_M_poly + x_dNTP)
+      if(FLAG_SUBSTRATE=="po4"){
+        ## Replication time vs. PO4 levels
+        dNTP = x_dNTP*numPolymerases 
+        x_ = (cc_params["S",]$PO4_mMol_per_liter - max(cc_params[c("M","G1"),]$PO4_mMol_per_liter))* dNTP/800; ## conversion from XX
+      }else  if(FLAG_SUBSTRATE=="dNTP"){
+        ## Replication time vs. dNTP levels
+        x_ = x_dNTP
+      } 
     }
+    out[[cpc$Sample[i]]] = humanGenome/y
+  } 
+  
+  
+  plot(x_, out[[cpc$Sample[1]]], ylim=quantile(do.call("c",out),c(0,1)),ylab="hours to replicate genome",log=logF,col="white",xlab=UNITS[[FLAG_SUBSTRATE]])
+  # plot(x_, out[[cpc$Sample[i]]], ylim=quantile(c(hours,hours2),c(0,1)),ylab="hours to replicate genome",log=logF,col="white")
+  for(i in 1:length(out)){
     lines(x_, out[[cpc$Sample[i]]], col=col[cpc$Sample[i]], lwd=5)
     points(x_, out[[cpc$Sample[i]]], cex=0.4, col=col[cpc$Sample[i]], pch=20)
     ## plot single data point
     idx = which.min(abs(x_-doi))
-    if(idx>1){
+    if(idx>1 & idx<length(x_)){
       print(humanGenome/(numPolymerases* y[idx]))
-      points(x_[idx], humanGenome/(numPolymerases* y[idx]), pch=3, cex=2)
+      points(x_[idx], out[[cpc$Sample[i]]][idx], pch=3, cex=2)
     }
-    
-  } 
-  legend("topright",paste("ploidy", round(cpc$ploidy,2),"(",cpc$Sample,")"), fill=col[cpc$Sample],bty="n")
+  }
+  legend("topright",paste("ploidy", round(cpc$ploidy,2),"(",cpc$Sample,")"), fill=col[cpc$Sample],bty="n",cex=0.7)
   mtext(doi)
-  # dev.off()
   
   
   
