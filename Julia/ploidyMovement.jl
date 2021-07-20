@@ -4,6 +4,7 @@ using DifferentialEquations
 using LinearAlgebra
 using DelimitedFiles
 using Parameters
+using CUDA
 
 # Load the file that contains the Polyharmonic interpolator function
 include("polyHarmonicInterp.jl")
@@ -164,8 +165,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
-	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = 1.0
+	u0 = cu(zeros(Int(maxChrom)*ones(Int,nChrom)...))
+	CUDA.@allowscalar u0[startingPopCN...] = 1.0
 
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
@@ -207,7 +208,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	soln = reshape(Array(sol),nComp,length(sol.t))
 
 	# Grab compartment -> CN array
-	cnArray = Array{Float64}(undef,nComp,nChrom)
+	cnArray = Array{Float32}(undef,nComp,nChrom)
 	for (i,focal) in enumerate(
 		Iterators.product((1:length(j) for j in chromArray)...))
 			cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
