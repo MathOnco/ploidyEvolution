@@ -12,7 +12,7 @@ include("polyHarmonicInterp.jl")
 
 """
 
-	plodyModel()
+	ploidyModel()
 
 	This function is used in DifferentialEquations and returns the RHS of the
 	differential equation needed to solve ploidy evolution of the discrete 
@@ -50,21 +50,20 @@ function ploidyModel(du,u,pars,t)
 
 		parentCNList = calculateParents(focalCN, 1,5,1)
 
-		inflow = 0.0
+		# Get flow rate from parentCN -> focalCN
+		flowRate_ = pmap(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
+		flowRate = cu(flowRate_)
 
-		# Inflow from the parents
-		for parentCN in parentCNList
+		# Get birth rate from parentCN 
+		birthRate_ = pmap(t -> max(PolyharmonicInterpolation.polyharmonicSpline(interp,t')[1],0.0), parentCNList) ;
+		birthRate = cu(birthRate_)
 
-			# Get birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+		# Get size of parental compartments
+		v_ = pmap(t -> u[t...], parentCNList);
+		v = cu(v_)
 
-			# Get flow rate from parentCN -> focalCN
-			flowRate = q(parentCN,focalCN,misRate,nChrom)
-
-			# Will need to have this be the index in the future
-			inflow += birthRate*flowRate*u[Int.(parentCN)...] # *(1 - 1/avg(CN))
-
-		end
+		# inflow from parentCN 
+		inflow = sum(birthRate.*flowRate.*v)
 
 		# Grab the focal cells birth rate
 		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
@@ -90,6 +89,7 @@ function ploidyModel(du,u,pars,t)
 	end
 
 end
+
 
 function calculateParents(offspring::Vector{T}, minChrom::Int,
 	maxChrom::Int,stepChrom::Int) where T<:Real
@@ -165,8 +165,10 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
-	u0 = cu(zeros(Int(maxChrom)*ones(Int,nChrom)...))
-	CUDA.@allowscalar u0[startingPopCN...] = 1.0
+	# u0 = cu(zeros(Int(maxChrom)*ones(Int,nChrom)...))
+	# CUDA.@allowscalar u0[startingPopCN...] = 1.0
+	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
+	u0[startingPopCN...] = 1.0
 
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
