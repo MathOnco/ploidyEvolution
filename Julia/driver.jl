@@ -151,6 +151,7 @@ function main()
 	X = readdlm(CNmatFilename, '\t')
 	Y = readdlm(birthFilename, '\t')
 
+	####### Fix this (maybe with a dataframe???) #######
 	header, cn = X[1,:],Float64.(X[2:end,3:end])
 
 	# Error if the elements in X or Y are not all subtypes of real
