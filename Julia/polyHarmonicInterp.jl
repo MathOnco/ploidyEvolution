@@ -13,14 +13,20 @@ struct PolyharmonicInterpolator
 	v::Vector{Float64}
 end
 
-PolyharmonicInterpolator(knots::AbstractArray,values::Vector{Float64},order::Int=2) = begin
+PolyharmonicInterpolator(knots::AbstractArray{T},values::Vector{T},
+order::Int=2) where T <: Real = begin
 
 	# Check to make sure knots is N x d and values is N x 1
 	if size(knots)[1] != length(values)
 		error("knots and values length must agree")
 	end
 
-	nPts,dim = size(knots)
+	if length(size(knots)) == 1
+		nPts = length(knots)
+		dim = 1
+	else
+		nPts,dim = size(knots)
+	end
 
 	# initialize w and v
 	w = Vector{Float64}(undef,nPts)
@@ -28,26 +34,6 @@ PolyharmonicInterpolator(knots::AbstractArray,values::Vector{Float64},order::Int
 
 	# Fill npts and dim using the dimension of knots
 	computeWeights(PolyharmonicInterpolator(knots,values,nPts,dim,order,w,v))
-
-end
-
-# If 1D interpolation
-PolyharmonicInterpolator(knots::T,values::T,order::Int=2) where T<:Vector{Float64} = begin
-
-	# Total number of points used to make interpolation
-	nPts = length(knots)
-
-	# Check to make sure knots is N x d and values is N x 1
-	if nPts != length(values)
-		error("knots and values length must agree")
-	end
-
-	# initialize w and v
-	w = Vector{Float64}(undef,nPts)
-	v = Vector{Float64}(undef,2)
-
-	# Fill npts and dim using the dimension of knots
-	computeWeights(PolyharmonicInterpolator(knots,values,nPts,1,order,w,v))
 
 end
 
