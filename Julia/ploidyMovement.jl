@@ -1,5 +1,6 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
+using Distributed
 using DifferentialEquations
 using LinearAlgebra
 using DelimitedFiles
@@ -59,7 +60,7 @@ function ploidyModel(du,u,pars,t)
 		birthRate = cu(birthRate_)
 
 		# Get size of parental compartments
-		v_ = pmap(t -> u[t...], parentCNList);
+		v_ = pmap(t -> u[Int.(t)...], parentCNList);
 		v = cu(v_)
 
 		# inflow from parentCN 
