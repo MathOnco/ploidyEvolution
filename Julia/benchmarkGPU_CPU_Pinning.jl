@@ -30,11 +30,11 @@ function test(ttype::String)
 		end
     end
 end
-t4 = @time test("gpu index")
-t3 = @time test("cpu")
-t2 = @time test("gpu copy")
-t1 = @time test("gpu pin")
-t0 = @time test("gpu")
+t4 = @btime test("gpu index")
+t3 = @btime test("cpu")
+t2 = @btime test("gpu copy")
+t1 = @btime test("gpu pin")
+t0 = @btime test("gpu")
 
 
 
