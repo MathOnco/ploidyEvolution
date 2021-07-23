@@ -2,20 +2,21 @@
 using BenchmarkTools
 using CUDA
 using StatsBase
+using Random
 
 
 function test(ttype::String)
-    B_ = ones(Float32, 134217728);
+    B_ = ones(Float32, 10342);
     B = cu(B_);
-    A = rand(Float32, 134217728);
+    A = rand(Float32, length(B_));
     A = Mem.pin(Array{eltype(A)}(undef, size(A)));
 
     Ap = pointer(A);
     Bp = pointer(B);
 
-    idx = sample!(Random.GLOBAL_RNG, 1:134217728, zeros(100))
+    idx = sample!(Random.GLOBAL_RNG, 1:length(B_), zeros(100))
     idx = Int.(idx)
-    idy = sample!(Random.GLOBAL_RNG, 1:134217728, zeros(100))
+    idy = sample!(Random.GLOBAL_RNG, 1:length(B_), zeros(100))
     idy = Int.(idy)
 
     for i in 1:20
@@ -27,7 +28,7 @@ function test(ttype::String)
             B[1:100] .= 2
             o = B.^8
         elseif ttype == "gpu copy"
-            A[idx] = A[idy]
+            #A[idx] = A[idy]
             B = cu(A)
             o = B.^8
         elseif ttype == "gpu pin"

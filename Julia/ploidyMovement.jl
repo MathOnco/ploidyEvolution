@@ -34,9 +34,13 @@ function ploidyModel(du,u,pars,t)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
 
+	compartments=Iterators.product((1:length(j) for j in chromArray)...)
+	focal_birthRate = zeros(length(compartments))
+	parent_inflow = zeros(length(compartments))
+	foci = zeros(length(compartments))
+
 	# Iterate over each compartment
-	for (i,focal) in enumerate(
-		Iterators.product((1:length(j) for j in chromArray)...))
+	for (i,focal) in enumerate(compartments)
 
 		#=
 		1) calculateParents(focal, minChrom, maxChrom, stepChrom)
@@ -46,44 +50,47 @@ function ploidyModel(du,u,pars,t)
 			a. inflow needs to calculate birth and flow rate
 			b. outflow needs to calculate birth, death and flow rate
 		=#
+		
+		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 
-		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
-
-		parentCNList = calculateParents(focalCN, 1,5,1)
+		parentCNList = calculateParents(focalCN, 1,5,1);
 
 		# Get flow rate from parentCN -> focalCN
 		flowRate_ = pmap(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
-		flowRate = cu(flowRate_)
+		flowRate = cu(flowRate_);
 
 		# Get birth rate from parentCN 
 		birthRate_ = pmap(t -> max(PolyharmonicInterpolation.polyharmonicSpline(interp,t')[1],0.0), parentCNList) ;
-		birthRate = cu(birthRate_)
+		birthRate = cu(birthRate_);
 
 		# Get size of parental compartments
 		v_ = pmap(t -> u[Int.(t)...], parentCNList);
 		v = cu(v_)
 
 		# inflow from parentCN 
-		inflow = sum(birthRate.*flowRate.*v)
+		parent_inflow[i] = sum(birthRate.*flowRate.*v)
 
-		# Grab the focal cells birth rate
-		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
-
-		# Add it to the inflow to the focal compartment
-		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
-
-		# Death of the focal compartment
-		outflow = deathRate*u[focal...]
-
-		# Information if debugging
-		if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
-			@show t,focalCN,inflow,outflow, u[focal...]
-		end
-
-		# Update the RHS
-		du[focal...] = inflow - outflow
-		
+		# Grab the focal cells birth rate and compartment size
+		focal_birthRate[i] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
+		foci[i] = u[focal...]
 	end
+
+	foci= cu(foci)
+
+	# Add parental inflow to the inflow to the focal compartment	
+	inflow = cu(parent_inflow) + cu(focal_birthRate).*foci * (1.0 - 2*misRate);
+
+	# Death of the focal compartment
+	outflow = deathRate.*foci;
+
+	# Information if debugging
+	# if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
+	# 	@show t,focalCN,inflow,outflow, u[focal...]
+	# end
+
+	# Update the RHS
+	du = inflow - outflow
+	
 
 	if debugging > 3
 		@show t,sum(u)
