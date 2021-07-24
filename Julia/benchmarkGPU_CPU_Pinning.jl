@@ -6,7 +6,7 @@ using Random
 
 
 function test(ttype::String)
-    B_ = ones(Float32, 10342);
+    B_ = ones(Float32, 1034200);
     B = cu(B_);
     A = rand(Float32, length(B_));
     A = Mem.pin(Array{eltype(A)}(undef, size(A)));
@@ -21,27 +21,27 @@ function test(ttype::String)
 
     for i in 1:20
         if ttype == "cpu"
-			o = B_.^8
+			o = B_.*B_ + B_ - B_
         elseif ttype == "gpu"
-            o = B.^8
+            o = B.*B + B - B
         elseif ttype == "gpu broadcast"
             B[1:100] .= 2
-            o = B.^8
+            o = B.*B + B - B
         elseif ttype == "gpu copy"
             #A[idx] = A[idy]
             B = cu(A)
-            o = B.^8
+            o = B.*B + B - B
         elseif ttype == "gpu pin"
             unsafe_copyto!(Bp, Ap, length(A) )
-            o = B.^8
+            o = B.*B + B - B
 		end
     end
 end
 
-t4 = @btime test("gpu broadcast")
-t3 = @btime test("cpu")
 t2 = @btime test("gpu copy")
-t1 = @btime test("gpu pin")
 t0 = @btime test("gpu")
+t3 = @btime test("cpu")
+t4 = @btime test("gpu broadcast")
+t1 = @btime test("gpu pin")
 
 
