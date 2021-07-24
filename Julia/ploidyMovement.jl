@@ -35,7 +35,7 @@ function ploidyModel(du,u,pars,t)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,focal_birthRate,compartments,debugging) = pars
 
-	parent_inflow = SharedArray(zeros(Int(chromArray[1].stop)*ones(Int,nChrom)...));
+	parent_inflow = SharedArray(zeros(Int(chromArray[1].len)*ones(Int,nChrom)...));
 
 	# Iterate over each compartment
 	@distributed for (i,focal) in collect(enumerate(compartments))
@@ -51,7 +51,7 @@ function ploidyModel(du,u,pars,t)
 		
 		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 
-		parentCNList = calculateParents(focalCN, chromArray[1].start, chromArray[1].stop, chromArray[1].step);
+		parentCNList = calculateParents(focalCN, chromArray[1].offset, chromArray[1].len, chromArray[1].step);
 
 		# Get flow rate from parentCN -> focalCN
 		flowRate = map(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
@@ -79,7 +79,7 @@ function ploidyModel(du,u,pars,t)
 	# Update the RHS
 	du = Array(inflow - outflow);
 
-	print("t=",t,": ",maximum(du))
+	print("\nt=",t,": ",maximum(du))
 end
 
 
@@ -157,7 +157,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	compartments=Iterators.product((1:length(j) for j in chromArray)...);
 
 	# Grab the focal cells birth rate and compartment size
-	focal_birthRate = zeros(Int(chromArray[1].stop)*ones(Int,nChrom)...);
+	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
 	for (i,focal) in enumerate(compartments)
 		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 		focal_birthRate[focal...] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
