@@ -1,15 +1,15 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
-using Distributed
-using DifferentialEquations
-using LinearAlgebra
-using DelimitedFiles
-using Parameters
+@everywhere using Distributed
+@everywhere using DifferentialEquations
+@everywhere using LinearAlgebra
+@everywhere using DelimitedFiles
+@everywhere using Parameters
 using CUDA
-using SharedArrays
+@everywhere using SharedArrays
 
 # Load the file that contains the Polyharmonic interpolator function
-include("polyHarmonicInterp.jl")
+@everywhere include("polyHarmonicInterp.jl")
 
 
 """
@@ -79,11 +79,11 @@ function ploidyModel(du,u,pars,t)
 	# Update the RHS
 	du = Array(inflow - outflow);
 
-	print("\nt=",t,": ",maximum(du))
+	#print("\nt=",t,": ",maximum(du))
 end
 
 
-function calculateParents(offspring::Vector{T}, minChrom::Int,
+@everywhere function calculateParents(offspring::Vector{T}, minChrom::Int,
 	maxChrom::Int,stepChrom::Int) where T<:Real
 
 
@@ -94,7 +94,7 @@ function calculateParents(offspring::Vector{T}, minChrom::Int,
 
 end
 
-function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) where T <: Real
+@everywhere function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) where T <: Real
 
 	# parentCN = collect(linspaces[k][parent[k]] for k in 1:nChrom)
 	# offspringCN = collect(linspaces[k][offspring[k]] for k in 1:nChrom)
