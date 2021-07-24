@@ -38,7 +38,7 @@ function ploidyModel(du,u,pars,t)
 	parent_inflow = SharedArray(zeros(Int(chromArray[1].len)*ones(Int,nChrom)...));
 
 	# Iterate over each compartment
-	@distributed for (i,focal) in collect(enumerate(compartments))
+	@sync @distributed for (i,focal) in collect(enumerate(compartments))
 
 		#=
 		1) calculateParents(focal, minChrom, maxChrom, stepChrom)
@@ -51,7 +51,7 @@ function ploidyModel(du,u,pars,t)
 		
 		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 
-		parentCNList = calculateParents(focalCN, chromArray[1].offset, chromArray[1].len, chromArray[1].step);
+		parentCNList = calculateParents(focalCN, chromArray[1].offset, chromArray[1].len, Int(chromArray[1].step));
 
 		# Get flow rate from parentCN -> focalCN
 		flowRate = map(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
