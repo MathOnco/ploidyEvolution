@@ -77,8 +77,9 @@ function ploidyModel(du,u,pars,t)
 	outflow = deathRate * foci;
 
 	# Update the RHS
-	du = inflow - outflow;
+	du = Array(inflow - outflow);
 
+	print("t=",t,": ",maximum(du))
 end
 
 

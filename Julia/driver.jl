@@ -32,7 +32,7 @@ end
 # Struct containing input data needed for simulation with default values
 @kwdef struct Input
 
-	debugging::Int = 0				# prints info from ploidyMovement
+	debugging::Int = 1				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
 	minChrom::Real = 1.0				# minimum chromosome allowed
 	maxChrom::Real = 5.0				# maximum chromosome allowed
@@ -140,12 +140,12 @@ function main()
 	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
 
 	# Printing stuff to terminal
-	if verbosity
+	#if verbosity
 		println("Input:")
 		for name in fieldnames(typeof(data)) 
 			println("  $name => $(getfield(data,name))")
 		end
-	end
+	#end
 
 	# Read the birth rate file to be used for the interpolation
 	X = readdlm(CNmatFilename, '\t')
