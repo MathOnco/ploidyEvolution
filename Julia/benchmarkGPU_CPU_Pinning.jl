@@ -5,43 +5,57 @@ using StatsBase
 using Random
 
 
-function test(ttype::String)
-    B_ = ones(Float32, 1034200);
+function test(ttype::String, n::Int64)
+    B_ = ones(Float32,n);
     B = cu(B_);
     A = rand(Float32, length(B_));
-    A = Mem.pin(Array{eltype(A)}(undef, size(A)));
-
-    Ap = pointer(A);
-    Bp = pointer(B);
-
-    idx = sample!(Random.GLOBAL_RNG, 1:length(B_), zeros(100))
-    idx = Int.(idx)
-    idy = sample!(Random.GLOBAL_RNG, 1:length(B_), zeros(100))
-    idy = Int.(idy)
 
     for i in 1:20
         if ttype == "cpu"
-			o = B_.*B_ + B_ - B_
+			o = B_.^3 + B_ - B_
         elseif ttype == "gpu"
-            o = B.*B + B - B
+            o = B.^3  + B - B
         elseif ttype == "gpu broadcast"
             B[1:100] .= 2
-            o = B.*B + B - B
+            o = B.^3  + B - B
         elseif ttype == "gpu copy"
-            #A[idx] = A[idy]
             B = cu(A)
-            o = B.*B + B - B
+            o = B.^3  + B - B
         elseif ttype == "gpu pin"
+            A = Mem.pin(Array{eltype(A)}(undef, size(A)));
+            Ap = pointer(A);
+            Bp = pointer(B);
             unsafe_copyto!(Bp, Ap, length(A) )
-            o = B.*B + B - B
+            o = B.^3  + B - B
 		end
     end
 end
 
-t2 = @btime test("gpu copy")
-t0 = @btime test("gpu")
-t3 = @btime test("cpu")
-t4 = @btime test("gpu broadcast")
-t1 = @btime test("gpu pin")
+
+for n in [10000, 1000000, 10000000]
+    print("\n n=",n)
+    print("\n gpu copy")
+    @btime test("gpu copy",$n)
+    print("\n gpu")
+    @btime test("gpu",$n)
+    print("\n cpu")
+    @btime test("cpu",$n)
+end
+
+
+#=
+N = [1000,10000,100000,1000000,10000000]
+gpu_copy = BenchmarkTools.Trial[]
+gpu = BenchmarkTools.Trial[]
+cpu = BenchmarkTools.Trial[]
+for n in reverse(N)
+    push!(gpu_copy, @benchmark test("gpu copy",$n))
+    push!(gpu, @benchmark test("gpu",$n))
+    push!(cpu, @benchmark test("cpu",$n))
+end
+=#
+
+# t4 = @benchmark test("gpu broadcast")
+# t1 = @benchmark test("gpu pin")
 
 
