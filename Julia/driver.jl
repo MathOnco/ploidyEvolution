@@ -1,4 +1,4 @@
-using TOML, DelimitedFiles, ArgParse, JSON
+using TOML, DelimitedFiles, ArgParse, JSON, Distributed
 
 import Base.@kwdef
 
@@ -35,7 +35,7 @@ end
 	debugging::Int = 1				# prints info from ploidyMovement
 	stepsize::Real = 1.0				# discretization of chromosome
 	minChrom::Real = 1.0				# minimum chromosome allowed
-	maxChrom::Real = 5.0				# maximum chromosome allowed
+	maxChrom::Real = 10.0				# maximum chromosome allowed
 	deathRate::Float64 = 0.1			# universal death rate
 	misRate::Float64 = 0.15				# universal missegregation rate
 	finalDay::Real = 30.0				# end of simulation
@@ -94,7 +94,7 @@ function initialize()
 	end
 
 	# Prints info if set to true
-	verbosity = parsed_args["verbosity"]
+	verbosity = true; #parsed_args["verbosity"]
 
 	# Grab file containing copy number variation
 	CNmatFilename = parsed_args["cnFile"]
@@ -117,11 +117,11 @@ function initialize()
 	end
 
 	# Avoid overwriting an old .csv file if using default
-	count = 1
-	while isfile(outputFile)
-		outputfile = "output_$count.csv"
-		count += 1
-	end
+	#count = 1
+	#while isfile(outputFile)
+	#	outputfile = "output_$count.csv"
+	#	count += 1
+	#end
 
 	# Check to see if input file is given
     if verbosity
@@ -140,12 +140,12 @@ function main()
 	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
 
 	# Printing stuff to terminal
-	#if verbosity
+	if verbosity
 		println("Input:")
 		for name in fieldnames(typeof(data)) 
 			println("  $name => $(getfield(data,name))")
 		end
-	#end
+	end
 
 	# Read the birth rate file to be used for the interpolation
 	X = readdlm(CNmatFilename, '\t')
@@ -162,6 +162,9 @@ function main()
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
+	if(nprocs()<10)
+		addprocs(10-nprocs())
+	end
 	results, time = runPloidyMovement(data,cn,Y,u0)
 
 	# create header for the solution output
