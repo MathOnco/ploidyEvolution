@@ -30,57 +30,75 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,migrationRate,Np,debugging) = pars
+
+	# @show maximum.(chromArray)
+
+	coordsList = [1:num_points for num_points in Np]
+	sum_dp_invsq = sum((Np .- 1).^2)
 
 	# Iterate over each compartment
-	for (i,focal) in enumerate(
-		Iterators.product((1:length(j) for j in chromArray)...))
+	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
 
-		#=
-		1) calculateParents(focal, minChrom, maxChrom, stepChrom)
-		2) updatePopulation (a struct?)
-			sum(inflow(focal,parent,u[parent]) for parent in parentList)
-			- outflow(focal,u[focal])
-			a. inflow needs to calculate birth and flow rate
-			b. outflow needs to calculate birth, death and flow rate
-		=#
+		# Points used to calculate spatial impact (assume periodic)
+		cardinal_point_info = get_cardinal_gridpoints([elem for elem in coord],Np)
 
-		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+		for focal in Iterators.product((1:length(chr) for chr in chromArray)...)
 
-		parentCNList = calculateParents(focalCN, 1,5,1)
+	#=
+	1) calculateParents(focal, minChrom, maxChrom, stepChrom)
+	2) updatePopulation (a struct?)
+		sum(inflow(focal,parent,u[parent]) for parent in parentList)
+		- outflow(focal,u[focal])
+		a. inflow needs to calculate birth and flow rate
+		b. outflow needs to calculate birth, death and flow rate
+	=#
 
-		inflow = 0.0
+			focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
 
-		# Inflow from the parents
-		for parentCN in parentCNList
+			parentCNList = calculateParents(focalCN, 1,2,1)		### FIXME
 
-			# Get birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+			inflow = 0.0
 
-			# Get flow rate from parentCN -> focalCN
-			flowRate = q(parentCN,focalCN,misRate,nChrom)
+			# Inflow from the parents
+			for parentCN in parentCNList
 
-			# Will need to have this be the index in the future
-			inflow += birthRate*flowRate*u[Int.(parentCN)...] # *(1 - 1/avg(CN))
+				# Get birth rate
+				birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
 
+				# Get flow rate from parentCN -> focalCN
+				flowRate = q(parentCN,focalCN,misRate,nChrom)
+
+				# Will need to have this be the index in the future
+				inflow += birthRate*flowRate*u[Int.(parentCN)...,coord...] # *(1 - 1/avg(CN))
+				# inflow += birthRate*flowRate*sum(u[Int.(parentCN)...,coords...] for coords in cardinal_points)
+			end
+
+			# Grab the focal cells birth rate
+			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+
+			# Add it to the inflow to the focal compartment
+			inflow += birthRate*(1.0 - 2*misRate)*u[focal...,coord...]
+
+			# Death of the focal compartment
+			outflow = deathRate*u[focal...,coord...]
+
+			# u_xx -> (u[i+1] + u[i-1] - 2u[i])/dx^2 
+			# migration inflow (from the cardinal points)
+			migration_inflow = migrationRate*sum(u[focal...,info[1]...]/info[2]^2 for info in 
+			cardinal_point_info)
+
+			# migration from the focal point
+			migration_inflow -= 2.0*sum_dp_invsq*migrationRate*u[focal...,coord...]
+
+			# Information if debugging
+			if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
+				@show t,focalCN,inflow,outflow, u[focal...]
+			end
+
+			# Update the RHS
+			du[focal...,coord...] = inflow - outflow + migration_inflow
 		end
-
-		# Grab the focal cells birth rate
-		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
-
-		# Add it to the inflow to the focal compartment
-		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
-
-		# Death of the focal compartment
-		outflow = deathRate*u[focal...]
-
-		# Information if debugging
-		if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
-			@show t,focalCN,inflow,outflow, u[focal...]
-		end
-
-		# Update the RHS
-		du[focal...] = inflow - outflow
 		
 	end
 
@@ -88,6 +106,19 @@ function ploidyModel(du,u,pars,t)
 		@show t,sum(u)
 	end
 
+end
+
+function get_cardinal_gridpoints(coordinate::Vector{Int},Np::Vector{Int})
+
+	@assert length(coordinate) == length(Np) "Dimensions must match"
+	dim = length(coordinate)
+
+	# Step size
+	dp = (Np .- 1).^(-1)
+
+	[ (tmp = copy(coordinate); tmp[idx] = mod(v-1,Np[idx])+1; (tmp,dp[idx])) 
+		for idx in 1:dim for v in coordinate[idx]-1:coordinate[idx]+1 
+			if v != coordinate[idx]]
 end
 
 function calculateParents(offspring::Vector{T}, minChrom::Int,
@@ -147,6 +178,9 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	maxPop,
 	compartmentMinimum) = params
 
+	Np = [21,21]
+	migrationRate = 0.05
+
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
 
@@ -160,12 +194,12 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
 
 	# Total number of states
-	nComp = prod(length(arr) for arr in chromArray)
+	nComp = prod(length(arr) for arr in chromArray)*prod(Np)
 
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
-	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = 1.0
+	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...,Np...)
+	u0[startingPopCN...,:,:] .= rand(Np...)						# CN is uniformly placed on the grid
 
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
@@ -195,7 +229,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,migrationRate,Np,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
@@ -203,28 +237,21 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		println("Simulation complete. Collecting results...")
 	end
 
-	# convert to array for output
-	soln = reshape(Array(sol),nComp,length(sol.t))
+	return sol
 
-	# Grab compartment -> CN array
-	cnArray = Array{Float64}(undef,nComp,nChrom)
-	for (i,focal) in enumerate(
-		Iterators.product((1:length(j) for j in chromArray)...))
-			cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
-	end
+	# # convert to array for output
+	# soln = reshape(Array(sol),nComp,length(sol.t))
 
-	# Concatnate the chrom indices with soln output
-	results = hcat(cnArray,soln)
+	# # Grab compartment -> CN array
+	# cnArray = Array{Float64}(undef,nComp,nChrom)
+	# for (i,focal) in enumerate(
+	# 	Iterators.product((1:length(j) for j in chromArray)...))
+	# 		cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+	# end
 
-	# # create header for the solution output
-	# header = permutedims(vcat(["chr$i" for i in 1 : nChrom],sol.t))
+	# # Concatnate the chrom indices with soln output
+	# results = hcat(cnArray,soln)
 
-	# # concatnate the header with the results array
-	# output = vcat(header,results)
-
-	# # save to file
-	# writedlm( outputFile,  output, ',')
-
-	return results, sol.t
+	# return results, sol.t
 
 end
