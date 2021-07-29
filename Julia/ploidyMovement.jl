@@ -1,15 +1,11 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
-@everywhere using Distributed
-@everywhere using DifferentialEquations
-@everywhere using LinearAlgebra
-@everywhere using DelimitedFiles
-@everywhere using Parameters
-using CUDA
+using Distributed, DifferentialEquations, DelimitedFiles, Parameters, CUDA
 @everywhere using SharedArrays
+@everywhere using LinearAlgebra
 
 # Load the file that contains the Polyharmonic interpolator function
-@everywhere include("polyHarmonicInterp.jl")
+include("polyHarmonicInterp.jl")
 
 
 """
@@ -67,17 +63,16 @@ function ploidyModel(du,u,pars,t)
 
 		# inflow from parentCN 
 		parent_inflow[focal...] = sum(birthRate.*flowRate.*v)
+
 	end
 	foci= cu(u);
 
 	# Add parental inflow to the inflow to the focal compartment	
-	inflow = cu(parent_inflow) +  cu(focal_birthRate).*(1.0 - 2*misRate).*foci;
+	inflow = cu(parent_inflow) .+  cu(focal_birthRate).*(1.0 - 2*misRate).*foci;
 
-	# Death of the focal compartment
 	outflow = deathRate * foci;
 
-	# Update the RHS
-	du = Array(inflow - outflow);
+	du .= Array(inflow .- outflow);
 
 	#print("\nt=",t,": ",maximum(du))
 end

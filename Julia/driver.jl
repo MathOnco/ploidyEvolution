@@ -1,4 +1,4 @@
-using TOML, DelimitedFiles, ArgParse, JSON, Distributed
+using TOML, DelimitedFiles, ArgParse, JSON, Distributed, BenchmarkTools
 
 import Base.@kwdef
 
@@ -162,9 +162,9 @@ function main()
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	if(nprocs()<10)
-		addprocs(10-nprocs())
-	end
+	#	if(nprocs()<10)
+	#		addprocs(10-nprocs())
+	#	end
 	results, time = runPloidyMovement(data,cn,Y,u0)
 
 	# create header for the solution output
@@ -183,4 +183,4 @@ function main()
 	
 end
 
-main()
+@time main()
