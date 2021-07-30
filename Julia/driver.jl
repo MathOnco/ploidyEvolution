@@ -119,7 +119,10 @@ function initialize()
 	# Avoid overwriting an old .csv file if using default
 	count = 1
 	while isfile(outputFile)
-		outputfile = "output_$count.csv"
+		if verbosity
+			println("outpileFile = $outputFile exists, changing to default names.")
+		end
+		outputFile = "output_$count.csv"
 		count += 1
 	end
 
@@ -180,4 +183,4 @@ function main()
 	
 end
 
-main()
+@time main()
