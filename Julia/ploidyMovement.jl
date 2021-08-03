@@ -32,18 +32,10 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,migrationRate,Np,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,debugging) = pars
 
-	##### FIXME ######
 	intChromArray = [Int(first(x)):Int(step(x)):Int(last(x)) for x in chromArray]
 	s, E = u.s, u.E
-	ϕ = 1.0
-	Ξ = 1.0
-	χ = 3.0
-	consumption_rate = 0.001
-	energy_diffusion_rate = 0.05
-
-	# @show maximum.(chromArray)
 
 	coordsList = [1:num_points for num_points in Np]
 	dp = (Np .- 1).^(-1)
@@ -107,7 +99,7 @@ function ploidyModel(du,u,pars,t)
 
 			# u_xx -> (u[i+1] + u[i-1] - 2u[i])/dx^2 
 			# random migration
-			diffusion = migrationRate*(sum((s_plus[i] + s_minus[i])/dp[i]^2 for i in 1:length(dp)) 
+			diffusion = Γ*(sum((s_plus[i] + s_minus[i])/dp[i]^2 for i in 1:length(dp)) 
 			- 2.0*sum_dp_invsq*stmp)
 
 			# chemotaxis
@@ -125,17 +117,14 @@ function ploidyModel(du,u,pars,t)
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
 		end
 
-		diffusion = energy_diffusion_rate*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) 
-			- 2.0*sum_dp_invsq*Etmp)
+		diffusion = Γₑ*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) - 2.0*sum_dp_invsq*Etmp)
 
-		consumption = consumption_rate*Etmp*sum(s[intChromArray...,coord...])
+		consumption = δ*Etmp*sum(s[intChromArray...,coord...])
 
 		# update the energy
 		du.E[coord...] = diffusion - consumption
 		
 	end
-
-
 
 	if debugging > 3
 		@show t,sum(s)
@@ -226,10 +215,17 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	replating,
 	startPop,
 	maxPop,
+	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
 	compartmentMinimum) = params
 
-	Np = [21,21]
-	migrationRate = 0.005
+	# (interp,nChrom,chromArray,misRate,deathRate,Γ,ϕ,Ξ,χ,δ,Np,debugging)
+	# ϕ = 1.0
+	# Ξ = 1.0
+	# χ = 3.0
+	# δ = 0.001
+	# Γₑ = 0.05
+
+
 	E0 = ones(Np...)
 	E0[1:10,:] .= 0.0
 
@@ -283,7 +279,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,migrationRate,Np,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 

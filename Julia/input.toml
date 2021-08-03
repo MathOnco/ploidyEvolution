@@ -1,4 +1,4 @@
-debugging = 3
+debugging = 4
 stepsize = 1.0
 minChrom = 1.0
 maxChrom = 2.0
@@ -9,3 +9,10 @@ replating = true
 maxPop = 1e6
 startPop = 1e3
 compartmentMinimum = false
+"Γ" = 0.05
+"Γₑ" = 0.05
+"ϕ" = 1.0
+"Ξ" = 1.0
+"χ" = 1.0
+"δ" = 0.02
+Np = [21,21]

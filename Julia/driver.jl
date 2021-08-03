@@ -33,11 +33,18 @@ end
 @kwdef struct Input
 
 	debugging::Int = 0				# prints info from ploidyMovement
-	stepsize::Real = 1.0				# discretization of chromosome
-	minChrom::Real = 1.0				# minimum chromosome allowed
-	maxChrom::Real = 5.0				# maximum chromosome allowed
-	deathRate::Float64 = 0.1			# universal death rate
+	stepsize::Number = 1.0				# discretization of chromosome
+	minChrom::Number = 1.0				# minimum chromosome allowed
+	maxChrom::Number = 5.0				# maximum chromosome allowed
+	deathRate::Number = 0.1			# universal death rate
 	misRate::Float64 = 0.15				# universal missegregation rate
+	Γ::Number = 0.05
+	Γₑ::Number = 0.05
+	ϕ::Number = 1.0
+	Ξ::Number = 1.0
+	χ::Number = 1.0
+	δ::Number = 0.02
+	Np::Vector{Int} = [21,21]
 	finalDay::Real = 30.0				# end of simulation
 	replating::Bool = false				# Whether we replate the cells
 	startPop::Real = 1e3		# Starting population size 
@@ -63,6 +70,13 @@ function Input(inputFile::String)
 	startPop=get(data,"startPop",1e3)
 	maxPop=get(data,"maxPop",1e6)
 	compartmentMinimum=get(data,"compartmentMinimum",false)
+	Γ = get(data,"Γ",0.05)
+	Γₑ = get(data,"Γₑ",0.05)
+	ϕ = get(data,"ϕ",1.0)
+	Ξ = get(data,"Ξ",1.0)
+	χ = get(data,"χ",2.0)
+	δ = get(data,"δ",0.005)
+	Np = get(data,"Np",[21,21])
 
 	Input(
 		debugging,
@@ -71,6 +85,13 @@ function Input(inputFile::String)
 		maxChrom,
 		deathRate,
 		misRate,
+		Γ,
+		Γₑ,
+		ϕ,
+		Ξ,
+		χ,
+		δ,
+		Np,
 		finalDay,
 		replating,
 		startPop,
