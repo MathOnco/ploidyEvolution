@@ -5,6 +5,7 @@ using DifferentialEquations,ComponentArrays
 using LinearAlgebra
 using DelimitedFiles
 using Parameters
+using Distributed
 
 
 # Load the file that contains the Polyharmonic interpolator function
@@ -34,6 +35,7 @@ function ploidyModel(du,u,pars,t)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,debugging) = pars
 
+
 	intChromArray = [Int(first(x)):Int(step(x)):Int(last(x)) for x in chromArray]
 	s, E = u.s, u.E
 
@@ -44,12 +46,14 @@ function ploidyModel(du,u,pars,t)
 	# Iterate over each compartment
 	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
 
-		# Points used to calculate spatial impact (assume periodic)
+
+		# Gets indicies used to calculate spatial impact (assume periodic)
 		cardinal_point_info = get_cardinal_gridpoints([elem for elem in coord],Np)
 
+		# Gets the points to be used for spatial grid resolution
 		E_cardinal = [E[info...] for info in cardinal_point_info]
 		E_minus,E_plus = E_cardinal[1:2:end],E_cardinal[2:2:end]
-		Etmp = E[coord...]
+		E_focal = E[coord...]
 
 		for focal in Iterators.product((1:length(chr) for chr in chromArray)...)
 
@@ -68,6 +72,8 @@ function ploidyModel(du,u,pars,t)
 
 			inflow = 0.0
 
+			# s_focal instead of stmp
+
 			# copy state to local variables for brevity
 			stmp = s[focal...,coord...]
 			s_cardinal = [s[focal...,info...] for info in cardinal_point_info]
@@ -84,7 +90,7 @@ function ploidyModel(du,u,pars,t)
 				flowRate = q(parentCN,focalCN,misRate,nChrom)
 
 				# Will need to have this be the index in the future
-				inflow += birthRate*energy_constrained_birth(Etmp,ϕ)*flowRate*s[Int.(parentCN)...,coord...]
+				inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*flowRate*s[Int.(parentCN)...,coord...]
 
 			end
 
@@ -92,7 +98,7 @@ function ploidyModel(du,u,pars,t)
 			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 
 			# Add it to the inflow to the focal compartment
-			inflow += birthRate*energy_constrained_birth(Etmp,ϕ)*(1.0 - 2*misRate)*stmp
+			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*stmp
 
 			# Death of the focal compartment
 			outflow = deathRate*stmp
@@ -103,8 +109,8 @@ function ploidyModel(du,u,pars,t)
 			- 2.0*sum_dp_invsq*stmp)
 
 			# chemotaxis
-			chemotaxis = χ*((sum((chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_plus[i],Ξ))/dp[i]^2 for i in 1 : length(dp))
-			- 2.0*sum_dp_invsq*chemotaxis_form(Etmp,Ξ))*stmp + 
+			chemotaxis = χ*((sum((chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
+			for i in 1 : length(dp))- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*stmp + 
 			sum( (s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
 			for i in 1 : length(dp)))/4.0
 
@@ -117,12 +123,15 @@ function ploidyModel(du,u,pars,t)
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
 		end
 
-		diffusion = Γₑ*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) - 2.0*sum_dp_invsq*Etmp)
+		diffusion = Γₑ*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) - 2.0*sum_dp_invsq*E_focal)
 
-		consumption = δ*Etmp*sum(s[intChromArray...,coord...])
+		consumption = δ*E_focal*sum(s[intChromArray...,coord...])
 
 		# update the energy
 		du.E[coord...] = diffusion - consumption
+
+		# dE/dn = k*(E_vessel - E) if E_vessel > E , 0 if E_vessel <= E
+		# dE/dn = k*(E_v/E - 1)
 		
 	end
 
@@ -241,8 +250,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# The allowable states
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
 
-	# Total number of states
-	nComp = prod(length(arr) for arr in chromArray)*prod(Np)
+	# Total number of copy number states
+	nComp = prod(length(arr) for arr in chromArray)
 
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
@@ -293,21 +302,21 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		println("Simulation complete. Collecting results...")
 	end
 
-	return sol
+	# return sol
 
 	# # convert to array for output
 	# soln = reshape(Array(sol),nComp,length(sol.t))
 
-	# # Grab compartment -> CN array
-	# cnArray = Array{Float64}(undef,nComp,nChrom)
-	# for (i,focal) in enumerate(
-	# 	Iterators.product((1:length(j) for j in chromArray)...))
-	# 		cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
-	# end
+	# Grab copy number state array -> CN array
+	cnArray = Array{Int}(undef,nComp,nChrom)
+	for (i,focal) in enumerate(
+		Iterators.product((1:length(j) for j in chromArray)...))
+			cnArray[i,:] = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+	end
 
 	# # Concatnate the chrom indices with soln output
 	# results = hcat(cnArray,soln)
 
-	# return results, sol.t
+	return sol, cnArray
 
 end

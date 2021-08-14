@@ -20,7 +20,7 @@ function parse_commandline()
 			default = "myY.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
-			default = "output_0.csv"
+			default = "output"
 		"--u0"
 			help = "Array that contains CN of initial condition"
 			default = "[1,1,1,1,1]"
@@ -137,12 +137,12 @@ function initialize()
 		error("$birthFilename file cannot be found")
 	end
 
-	# Avoid overwriting an old .csv file if using default
-	count = 1
-	while isfile(outputFile)
-		outputfile = "output_$count.csv"
-		count += 1
-	end
+	# # Avoid overwriting an old .csv file if using default
+	# count = 1
+	# while isfile(outputFile)
+	# 	outputFile = "output_$count.csv"
+	# 	count += 1
+	# end
 
 	# Check to see if input file is given
     if verbosity
@@ -183,22 +183,27 @@ function main()
 	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	results, time = runPloidyMovement(data,cn,Y,u0)
+	sol, cnArray = runPloidyMovement(data,cn,Y,u0)
 
-	# create header for the solution output
-	outputHeader = permutedims(
-		vcat(
-			["Chr$chr" for chr in header if typeof(chr) == Int],
-			time
-			)
-			)
+	# Write results to multiple files by time points
+	for (index,t) in enumerate(sol.t)
+		open(outputFile*"_states_time_"*replace(string(t),"." => "_")*".csv","w") do io
+			for (i,cnstate) in enumerate(eachrow(cnArray))
+				z = sol[index].s[cnstate...,:,:]
+				cnstate = "#"*join(string(cnArray[i,:]...),":")
+				writedlm(io,[cnstate])
+				writedlm(io,z,',')
+			end
+		end
+		open(outputFile*"_Energy_time_"*replace(string(t),"." => "_")*".csv","w") do io
+			writedlm(io,sol[index].E,',')
+		end
+	end
 
-	# concatnate the header with the results array
-	output = vcat(outputHeader,results)
-
-	# save to file
-	writedlm( outputFile,  output, ',')
+	# Save discretized domain
+	writedlm(outputFile*"_x.csv",range(0,1,length=data.Np[1]))
+	writedlm(outputFile*"_y.csv",range(0,1,length=data.Np[2]))
 	
 end
 
-# main()
+main()
