@@ -3,7 +3,7 @@ using Pkg;Pkg.activate(".");Pkg.instantiate();
 
 using DifferentialEquations,ComponentArrays
 using LinearAlgebra
-using DelimitedFiles
+using DelimitedFiles,CSV,DataFrames
 using Parameters
 using Distributed
 
@@ -33,7 +33,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging) = pars
 
 
 	intChromArray = [Int(first(x)):Int(step(x)):Int(last(x)) for x in chromArray]
@@ -46,6 +46,14 @@ function ploidyModel(du,u,pars,t)
 	# Iterate over each compartment
 	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
 
+		# Get whether we are interior (0), at boundary of vessel (1) or inside vessel (2)
+		domain_info = get(domain_Dict,coord,0)
+
+		if domain_info == 2 # Inside blood vessel we make no changes
+			du.s[intChromArray...,coord...] .= 0.0
+			du.E[coord...] = 0.0
+			continue
+		end
 
 		# Gets indicies used to calculate spatial impact (assume periodic)
 		cardinal_point_info = get_cardinal_gridpoints([elem for elem in coord],Np)
@@ -54,6 +62,17 @@ function ploidyModel(du,u,pars,t)
 		E_cardinal = [E[info...] for info in cardinal_point_info]
 		E_minus,E_plus = E_cardinal[1:2:end],E_cardinal[2:2:end]
 		E_focal = E[coord...]
+
+		if domain_info == 1	# boundary of vessel
+			normal_vector = boundary_Dict[coord] 	# Grab normal vector
+			for i = 1 : length(dp)
+				if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
+					E_plus[i] = 2*dp[i]*k*(E_focal - E_vessel) + E_minus[i]
+				elseif normal_vector[i] > 0 # The leftward point is in the vessel
+					E_minus[i] =  E_plus[i] - 2*dp[i]*k*(E_focal - E_vessel)
+				end
+			end
+		end
 
 		for focal in Iterators.product((1:length(chr) for chr in chromArray)...)
 
@@ -72,12 +91,23 @@ function ploidyModel(du,u,pars,t)
 
 			inflow = 0.0
 
-			# s_focal instead of stmp
+			# s_focal instead of s_focal
 
 			# copy state to local variables for brevity
-			stmp = s[focal...,coord...]
+			s_focal = s[focal...,coord...]
 			s_cardinal = [s[focal...,info...] for info in cardinal_point_info]
 			s_minus,s_plus = s_cardinal[1:2:end],s_cardinal[2:2:end]
+
+			if domain_info == 1	# boundary of vessel
+				normal_vector = boundary_Dict[coord] 	# Grab normal vector
+				for i = 1 : length(dp)
+					if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
+						s_plus[i] = s_minus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))
+					elseif normal_vector[i] > 0 # The leftward point is in the vessel
+						s_minus[i] = s_plus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))
+					end
+				end
+			end
 			
 
 			# Inflow from the parents
@@ -98,19 +128,19 @@ function ploidyModel(du,u,pars,t)
 			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 
 			# Add it to the inflow to the focal compartment
-			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*stmp
+			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*s_focal
 
 			# Death of the focal compartment
-			outflow = deathRate*stmp
+			outflow = deathRate*s_focal
 
 			# u_xx -> (u[i+1] + u[i-1] - 2u[i])/dx^2 
 			# random migration
 			diffusion = Γ*(sum((s_plus[i] + s_minus[i])/dp[i]^2 for i in 1:length(dp)) 
-			- 2.0*sum_dp_invsq*stmp)
+			- 2.0*sum_dp_invsq*s_focal)
 
 			# chemotaxis
 			chemotaxis = χ*((sum((chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
-			for i in 1 : length(dp))- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*stmp + 
+			for i in 1 : length(dp))- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*s_focal + 
 			sum( (s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
 			for i in 1 : length(dp)))/4.0
 
@@ -119,7 +149,7 @@ function ploidyModel(du,u,pars,t)
 				@show t,focalCN,inflow,outflow, s[focal...]
 			end
 
-			# Update the RHS
+			# Update the RHS dependent on where we are in the domain
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
 		end
 
@@ -130,10 +160,13 @@ function ploidyModel(du,u,pars,t)
 		# update the energy
 		du.E[coord...] = diffusion - consumption
 
+
 		# dE/dn = k*(E_vessel - E) if E_vessel > E , 0 if E_vessel <= E
 		# dE/dn = k*(E_v/E - 1)
 		
 	end
+
+	# @show minimum(E)
 
 	if debugging > 3
 		@show t,sum(s)
@@ -227,6 +260,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
 	compartmentMinimum) = params
 
+	k,E_vessel,saveat = 0.5,1.0,0.05
+
 	# (interp,nChrom,chromArray,misRate,deathRate,Γ,ϕ,Ξ,χ,δ,Np,debugging)
 	# ϕ = 1.0
 	# Ξ = 1.0
@@ -234,9 +269,82 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# δ = 0.001
 	# Γₑ = 0.05
 
+	#= Build domain matrix:
 
-	E0 = ones(Np...)
-	E0[1:10,:] .= 0.0
+	0 : In domain
+	1 : Boundary of blood vessel
+	2 : Interior of blood vessel
+
+	=#
+	df = CSV.read("13496_2 Slides and Data_xy_test.txt",DataFrame)
+	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
+	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
+	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
+	df[!,"Centroid Y µm"] .= (df[!,"Centroid Y µm"] .- minY)./(maxY .- minY)
+
+	x = range(0,1,length=Np[1])
+	y = range(0,1,length=Np[2])
+	dp = (Np .- 1).^(-1)
+
+	df[!,"Centroid X µm"] .= x[searchsortedfirst.(Ref(x),df[!,"Centroid X µm"])]
+	df[!,"Centroid Y µm"] .= y[searchsortedfirst.(Ref(y),df[!,"Centroid Y µm"])]
+	df = combine(groupby(df,["Centroid X µm","Centroid Y µm"]),last)
+
+	domain_Dict = Dict{Tuple{Int,Int},Int}() # 1 = boundary blood vessel, 2 = inside blood vessel
+
+	for i = 1 : Np[1]
+		xdist = (x[i] .- df[!,"Centroid X µm"]).^2
+		for j = 1 : Np[2]
+			ydist = (y[j] .- df[!,"Centroid Y µm"]).^2
+			if minimum(xdist .+ ydist) < sum(dp.^2)/4
+				domain_Dict[(i,j)]=1
+			end
+		end
+	end
+
+	# Fill dict with info about the normal vector
+	boundary_Dict = Dict{Tuple{Int,Int},Any}()
+
+	for k in keys(domain_Dict)
+		i,j = k[1],k[2]
+		i_plus = (i == Np[1]) ? 1 : i+1
+		i_minus = (i == 1) ? Np[1] : i-1
+		j_plus = (j == Np[2]) ? 1 : j+1
+		j_minus = (j == 1) ? Np[2] : j-1
+
+		# Vessel interior point
+		if issubset([(i,j_plus),(i,j_minus),(i_plus,j),(i_minus,j)],keys(domain_Dict))
+			domain_Dict[k] = 2
+		# Vessel boundary point
+		else
+			normal = [0;0]
+			normal[1] += (i,j_plus) in keys(domain_Dict) ? -1 : 0
+			normal[1] += (i,j_minus) in keys(domain_Dict) ? 1 : 0
+			normal[2] += (i_plus,j) in keys(domain_Dict) ? -1 : 0
+			normal[2] += (i_minus,j) in keys(domain_Dict) ? 1 : 0
+			normal/=norm(normal)
+			boundary_Dict[k] = normal
+		end
+	end
+
+	# # interior points (domain is assumed periodic)
+	# for j = 1 : Np[2]
+	# 	j_plus = (j == Np[2]) ? 1 : j+1
+	# 	j_minus = (j == 1) ? Np[2] : j-1
+	# 	for i = 1 : Np[1]
+	# 		i_plus = (i == Np[1]) ? 1 : i+1
+	# 		i_minus = (i == 1) ? Np[1] : i-1
+	# 		if domain[i,j] == 1 # Blood vessel point
+	# 			if domain[i,j_plus]>0 && domain[i_plus,j]>0 && domain[i_minus,j]>0 && domain[i,j_minus]>0
+	# 				domain[i,j] = 2 # Interior blood vessel
+	# 			end
+	# 		end
+	# 	end
+	# end
+
+	# Initialize energy to be zero outside the interior of the blood vessels
+	E0 = zeros(Np...)
+	[E0[k...]=E_vessel for (k,v) in domain_Dict if v==2]
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
@@ -244,8 +352,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# Number of chromosomes (inferred from interp)
 	nChrom = interp.dim
 
-	# minimum and maximum size of copy number
-	minX,maxX = minimum(X,dims=1),maximum(X,dims=1)
+	# # minimum and maximum size of copy number
+	# minX,maxX = minimum(X,dims=1),maximum(X,dims=1)
 
 	# The allowable states
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
@@ -256,7 +364,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	s0 = zeros(Int(maxChrom)*ones(Int,nChrom)...,Np...)
-	s0[startingPopCN...,:,:] .= rand(Np...)						# CN is uniformly placed on the grid
+	s0[startingPopCN...,:,:] .= rand(Np...)						# CN is randomly placed on the grid
+	[s0[startingPopCN...,k...] = 0 for k in keys(domain_Dict)]
 
 	u0 = ComponentArray(s=s0,E=E0)
 
@@ -288,9 +397,10 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,debugging)
+	isoutofdomain = (u,p,t)->any(x->x<0,u)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
+	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=callback,isoutofdomain=isoutofdomain)
 
 	#=
 
