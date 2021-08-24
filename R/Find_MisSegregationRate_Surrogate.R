@@ -83,19 +83,32 @@ for (can in cancerList){
 ###############################################################################
 ### Integrate TCGA & GEO data adjusting for Batch Effects using comBat-seq ####
 ###############################################################################
+### First let's combine all our gene expression data together into the combined data frame
 combined<-data.frame(ncol=1)
 for (name in names(allmat)){
-  combined=cbind(combined, allmat[[name]])
+  combined=cbind(combined, allmat[[name]][plyr::count(unlist(lapply(allmat,rownames)))$x,])
 }
-combined = cbind(combined, Z[rownames(allmat$HNSC),])
+combined = cbind(combined, Z[plyr::count(unlist(lapply(allmat,rownames)))$x,])
 combined <- combined[,-c(1)]
 combined =as.matrix(combined)
-batch <- c(rep(1, 20), rep(2, 20),rep(3, 20),rep(4, 20),rep(5, 20),rep(6, 20),rep(7, 20),rep(8, 20), rep(9, 20), rep(10, 39))
+### Here we need to assign batch numbers to each batch in our data
+batchMat<-sapply(allmat,ncol)
+batch<-list()
+for (i in 1:length(batchMat)){
+  batch[[i]]<-rep(i, sapply(allmat,ncol)[1])
+}
+batch[[1+length(batch)]]<-rep(10, ncol(Z))
+batch<-unlist(batch)
+### Now we apply the ComBat_seq function to adjust for batch effects
 adjusted <- ComBat_seq(combined, batch=batch, group=NULL)
 pq <- gsva(as.matrix(adjusted), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
 colnames(pq)<-batch
 
-### plot combined and adjusted gene expression data for comparison
+###################################
+### VISUALIZE GENE/PATHWAY DATA ###
+###################################
+
+### visualize combined gene expression data
 pLcombined<-list()
 colnames(combined)<-batch
 for (bat in unique(batch)){
@@ -105,6 +118,11 @@ for (bat in unique(batch)){
 boxplot(pLcombined, log="y")
 title("Combined")
 
+combined_noNA=combined[complete.cases(adjusted),]
+tsne(combined_noNA,labels = batch)
+title("Combined")
+
+### visualize adjusted gene expression data
 pLadjusted<-list()
 colnames(adjusted)<-batch
 for (bat in unique(batch)){
@@ -114,14 +132,17 @@ for (bat in unique(batch)){
 boxplot(pLadjusted, log="y")
 title("Adjusted")
 
+adjusted_noNA=adjusted[complete.cases(adjusted),]
+tsne(adjusted_noNA,labels = batch)
+title("Adjusted")
 
-### add together pq objects for plotting in one boxplot
+### visualize pathway data
 plotList<-list()
 for (bat in unique(batch)){
   plotList[[bat]]<-as.numeric(pq[,bat])
 }
 boxplot(plotList)
-
+tsne(pq,labels = batch)
 
 
 ## Fit linear model
