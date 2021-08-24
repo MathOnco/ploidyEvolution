@@ -94,13 +94,35 @@ batch <- c(rep(1, 20), rep(2, 20),rep(3, 20),rep(4, 20),rep(5, 20),rep(6, 20),re
 adjusted <- ComBat_seq(combined, batch=batch, group=NULL)
 pq <- gsva(as.matrix(adjusted), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
 colnames(pq)<-batch
+
+### plot combined and adjusted gene expression data for comparison
+pLcombined<-list()
+colnames(combined)<-batch
+for (bat in unique(batch)){
+  pLcombined[[bat]]<-as.numeric(combined[,bat])
+  pLcombined[[bat]]<-pLcombined[[bat]] + 1 ### noise for log scale in boxplot
+}
+boxplot(pLcombined, log="y")
+title("Combined")
+
+pLadjusted<-list()
+colnames(adjusted)<-batch
+for (bat in unique(batch)){
+  pLadjusted[[bat]]<-as.numeric(combined[,bat])
+  pLadjusted[[bat]]<-pLadjusted[[bat]] + 1 ### noise for log scale in boxplot
+}
+boxplot(pLadjusted, log="y")
+title("Adjusted")
+
+
 ### add together pq objects for plotting in one boxplot
 plotList<-list()
 for (bat in unique(batch)){
   plotList[[bat]]<-as.numeric(pq[,bat])
-  plotList[[bat]]<-plotList[[bat]]+1
 }
 boxplot(plotList)
+
+
 
 ## Fit linear model
 poi="Interferon Signaling"
