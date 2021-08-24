@@ -67,12 +67,16 @@ function ploidyModel(du,u,pars,t)
 			normal_vector = boundary_Dict[coord] 	# Grab normal vector
 			for i = 1 : length(dp)
 				if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
-					E_plus[i] = 2*dp[i]*k*(E_focal - E_vessel) + E_minus[i]
+					E_plus[i] = E_minus[i] - 2.0*dp[i]*k*(E_focal - E_vessel)
 				elseif normal_vector[i] > 0 # The leftward point is in the vessel
-					E_minus[i] =  E_plus[i] - 2*dp[i]*k*(E_focal - E_vessel)
+					E_minus[i] =  E_plus[i] - 2.0*dp[i]*k*(E_focal - E_vessel)
 				end
 			end
 		end
+
+		# if any((E_focal,E_plus...,E_minus...).<0)
+		# 	@show E_focal,E_plus,E_minus
+		# end
 
 		for focal in Iterators.product((1:length(chr) for chr in chromArray)...)
 
@@ -397,11 +401,12 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	isoutofdomain = (u,p,t)->any(x->x<0,u)
+	# isoutofdomain = (u,p,t)->any(x->x<0,u)
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=callback,isoutofdomain=isoutofdomain)
+	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=callback)#,isoutofdomain=isoutofdomain)
 
+	# Maybe lsoda() instead of VCABM() ????
 	#=
 
 	t = range(tspan..., length=1000) [u.s for u in sol(t)]
