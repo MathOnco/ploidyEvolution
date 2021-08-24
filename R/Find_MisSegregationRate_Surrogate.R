@@ -108,7 +108,7 @@ title("Combined")
 pLadjusted<-list()
 colnames(adjusted)<-batch
 for (bat in unique(batch)){
-  pLadjusted[[bat]]<-as.numeric(combined[,bat])
+  pLadjusted[[bat]]<-as.numeric(adjusted[,bat])
   pLadjusted[[bat]]<-pLadjusted[[bat]] + 1 ### noise for log scale in boxplot
 }
 boxplot(pLadjusted, log="y")
