@@ -1,4 +1,4 @@
-setwd("~/Repositories/ploidyEvolution/R")
+setwd("~/Projects/PMO/HighPloidy_DoubleEdgedSword/code/MathModel/GrowOrGo_PloidyEnergyRobustness/R")
 library("TCGAbiolinks")
 library("TCGAutils")
 library("curatedTCGAData")
@@ -11,7 +11,7 @@ library(Biobase)
 library(GSVA)
 library(GEOquery)
 library(sva)
-
+library("M3C")
 
 ## Read phenotypic info from Sam Bakhoum
 MN=read.xlsx("../data/Micronuclei SingleCell and BulkRNAseq GSE98183.xlsx",sheetName = "Micronucleus_FromSamBakhoum",stringsAsFactors=F)
@@ -43,17 +43,17 @@ Z=Z[,-1]
 Z = Z[,colnames(Z) %in% A$title]
 colnames(Z) = rownames(A)[match(colnames(Z),A$title)]
 
-##Pathway quantification
-gs=getAllPathways(include_genes=T, loadPresaved = T);     
-gs=gs[sapply(gs, length)>=5]
-pqT <- gsva(as.matrix(Z), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
-
-## Compare RNA-seq to micro-nuclei
-MN = MN[colnames(pqT),]
-r=sapply(rownames(pqT), function(x) cor(pqT[x,rownames(MN)], MN$Lagging.Chromosome,use = "pairwise.complete.obs"))
-head(r[sort(abs(r),index.return=T,decreasing = T)$ix])
-r[grep("feron",names(r))]
-r[grep("IFN",names(r))]
+# ##Pathway quantification
+# gs=getAllPathways(include_genes=T, loadPresaved = T);     
+# gs=gs[sapply(gs, length)>=5]
+# pqT <- gsva(as.matrix(Z), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
+# 
+# ## Compare RNA-seq to micro-nuclei
+# MN = MN[colnames(pqT),]
+# r=sapply(rownames(pqT), function(x) cor(pqT[x,rownames(MN)], MN$Lagging.Chromosome,use = "pairwise.complete.obs"))
+# head(r[sort(abs(r),index.return=T,decreasing = T)$ix])
+# r[grep("feron",names(r))]
+# r[grep("IFN",names(r))]
 
 
 ###################
@@ -83,22 +83,23 @@ for (can in cancerList){
 ###############################################################################
 ### Integrate TCGA & GEO data adjusting for Batch Effects using comBat-seq ####
 ###############################################################################
-### First let's combine all our gene expression data together into the combined data frame
-combined<-data.frame(ncol=1)
-for (name in names(allmat)){
-  combined=cbind(combined, allmat[[name]][plyr::count(unlist(lapply(allmat,rownames)))$x,])
-}
-combined = cbind(combined, Z[plyr::count(unlist(lapply(allmat,rownames)))$x,])
-combined <- combined[,-c(1)]
+allmat$GEO = Z
+## Genes expressed in all datasets
+fr=plyr::count(unlist(lapply(allmat,rownames)))
+fr=fr[fr$freq==length(allmat),]
+### Combine all our gene expression data together into the combined data frame
+combined = sapply(allmat, function(x) x[fr$x,])
+combined = do.call(cbind,combined)
 combined =as.matrix(combined)
 ### Here we need to assign batch numbers to each batch in our data
 batchMat<-sapply(allmat,ncol)
 batch<-list()
 for (i in 1:length(batchMat)){
-  batch[[i]]<-rep(i, sapply(allmat,ncol)[1])
+  batch[[i]]<-rep(i, batchMat[i])
 }
-batch[[1+length(batch)]]<-rep(10, ncol(Z))
 batch<-unlist(batch)
+## Collapse all TCGA batches into one
+batch[batch!=max(batch)]=1
 ### Now we apply the ComBat_seq function to adjust for batch effects
 adjusted <- ComBat_seq(combined, batch=batch, group=NULL)
 pq <- gsva(as.matrix(adjusted), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
