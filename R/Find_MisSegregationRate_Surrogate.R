@@ -1,5 +1,5 @@
-setwd("~/Projects/PMO/HighPloidy_DoubleEdgedSword/code/MathModel/GrowOrGo_PloidyEnergyRobustness/R")
-library(TCGAbiolinks)
+setwd("~/Repositories/ploidyEvolution/R")
+library("TCGAbiolinks")
 library("TCGAutils")
 library("curatedTCGAData")
 library("xlsx"); 
@@ -10,6 +10,7 @@ devtools::source_url("https://github.com/noemiandor/Utils/blob/master/DatabaseIn
 library(Biobase)
 library(GSVA)
 library(GEOquery)
+library(sva)
 
 
 ## Read phenotypic info from Sam Bakhoum
@@ -36,20 +37,20 @@ AA=loadGEOdataset(geo_id, loadRaw=T, header = T,sep = ",")
 names(AA$data) = sapply(names(AA$data), function(x) fileparts(x)$name)
 
 ## Parse IDs from GEO
-X = AA$data$GSE98183_fpkm.geneSymbols
-rownames(X)=X[,1]
-X=X[,-1]
-X = X[,colnames(X) %in% A$title]
-colnames(X) = rownames(A)[match(colnames(X),A$title)]
+Z = AA$data$GSE98183_fpkm.geneSymbols
+rownames(Z)=Z[,1]
+Z=Z[,-1]
+Z = Z[,colnames(Z) %in% A$title]
+colnames(Z) = rownames(A)[match(colnames(Z),A$title)]
 
 ##Pathway quantification
 gs=getAllPathways(include_genes=T, loadPresaved = T);     
 gs=gs[sapply(gs, length)>=5]
-pq <- gsva(as.matrix(X), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
+pqT <- gsva(as.matrix(Z), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
 
 ## Compare RNA-seq to micro-nuclei
-MN = MN[colnames(pq),]
-r=sapply(rownames(pq), function(x) cor(pq[x,rownames(MN)], MN$Lagging.Chromosome,use = "pairwise.complete.obs"))
+MN = MN[colnames(pqT),]
+r=sapply(rownames(pqT), function(x) cor(pqT[x,rownames(MN)], MN$Lagging.Chromosome,use = "pairwise.complete.obs"))
 head(r[sort(abs(r),index.return=T,decreasing = T)$ix])
 r[grep("feron",names(r))]
 r[grep("IFN",names(r))]
@@ -62,24 +63,91 @@ allmat = list()
 paths = list()
 for (can in cancerList){
   print(paste0("working on ",can))
-  X <- curatedTCGAData(diseaseCode = can, assays = "RNASeq2*", dry.run = FALSE)
+  X <- curatedTCGAData(diseaseCode = can, assays = "RNASeq2*", dry.run = FALSE, version = "2.0.1")
   # sampleTables(X)
-  tmp = splitAssays(X, c("01"))
-  Y = tmp[[grep(paste0("01_",can,"_RNASeq2"),
-                names(tmp))]]@assays$data@listData[[1]]
-  Y = Y[,1:min(100,ncol(Y))]
+  # tmp = splitAssays(X, sampleTables(X))
+  # Y = tmp[[grep(paste0("01_",can,"_RNASeq2"),
+  #               names(tmp))]]@assays$data@listData[[1]]
+  # tmp=as.matrix(assays(X)[["HNSC_RNASeq2GeneNorm-20160128"]])
+  tmp=as.matrix(assays(X)[[2]])
+  sampleType=sapply(colnames(tmp), function(x) strsplit(x, "-")[[1]][4])
+  tmp=tmp[,grep("01",sampleType)]
+  Y = tmp[,1:min(20,ncol(tmp))]
   allmat[[can]] = Y
 }
 
+# tmp=as.matrix(assays(X)[["HNSC_RNASeq2GeneNorm-20160128"]])
+# sampleType=sapply(colnames(tmp), function(x) strsplit(x, "-")[[1]][4])
+# tmp=tmp[,grep("01",sampleType)]
 
-#########################################
-### @TODO: integrate TCGA & GEO data ####
-## Follow MetaIntegrator package manual: https://cran.r-project.org/web/packages/MetaIntegrator/vignettes/MetaIntegrator.html
-## Use GSVA on integrated dataset
+###############################################################################
+### Integrate TCGA & GEO data adjusting for Batch Effects using comBat-seq ####
+###############################################################################
+### First let's combine all our gene expression data together into the combined data frame
+combined<-data.frame(ncol=1)
+for (name in names(allmat)){
+  combined=cbind(combined, allmat[[name]][plyr::count(unlist(lapply(allmat,rownames)))$x,])
+}
+combined = cbind(combined, Z[plyr::count(unlist(lapply(allmat,rownames)))$x,])
+combined <- combined[,-c(1)]
+combined =as.matrix(combined)
+### Here we need to assign batch numbers to each batch in our data
+batchMat<-sapply(allmat,ncol)
+batch<-list()
+for (i in 1:length(batchMat)){
+  batch[[i]]<-rep(i, sapply(allmat,ncol)[1])
+}
+batch[[1+length(batch)]]<-rep(10, ncol(Z))
+batch<-unlist(batch)
+### Now we apply the ComBat_seq function to adjust for batch effects
+adjusted <- ComBat_seq(combined, batch=batch, group=NULL)
+pq <- gsva(as.matrix(adjusted), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
+colnames(pq)<-batch
+
+###################################
+### VISUALIZE GENE/PATHWAY DATA ###
+###################################
+
+### visualize combined gene expression data
+pLcombined<-list()
+colnames(combined)<-batch
+for (bat in unique(batch)){
+  pLcombined[[bat]]<-as.numeric(combined[,bat])
+  pLcombined[[bat]]<-pLcombined[[bat]] + 1 ### noise for log scale in boxplot
+}
+boxplot(pLcombined, log="y")
+title("Combined")
+
+combined_noNA=combined[complete.cases(adjusted),]
+tsne(combined_noNA,labels = batch)
+title("Combined")
+
+### visualize adjusted gene expression data
+pLadjusted<-list()
+colnames(adjusted)<-batch
+for (bat in unique(batch)){
+  pLadjusted[[bat]]<-as.numeric(adjusted[,bat])
+  pLadjusted[[bat]]<-pLadjusted[[bat]] + 1 ### noise for log scale in boxplot
+}
+boxplot(pLadjusted, log="y")
+title("Adjusted")
+
+adjusted_noNA=adjusted[complete.cases(adjusted),]
+tsne(adjusted_noNA,labels = batch)
+title("Adjusted")
+
+### visualize pathway data
+plotList<-list()
+for (bat in unique(batch)){
+  plotList[[bat]]<-as.numeric(pq[,bat])
+}
+boxplot(plotList)
+tsne(pq,labels = batch)
+
 
 ## Fit linear model
 poi="Interferon Signaling"
-inp=cbind(MN[,c("Lagging.Chromosome","metastasis")],t(pq[poi,rownames(MN),drop=F]))
+inp=cbind(MN[,c("Lagging.Chromosome","metastasis")],t(pqT[poi,rownames(MN),drop=F]))
 m = lm(inp$Lagging.Chromosome ~inp$`Interferon Signaling`)
 summary(m)
 ## Visualize
