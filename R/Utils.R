@@ -9,6 +9,18 @@
 # calcMSimprints <-function(loci, p, cnColumn="CN_Estimate") { return(sum(loci$seglength * round(abs(loci[,cnColumn]-round(p))), na.rm = T)/sum(loci$seglength, na.rm=T) ) }
 calcCNV_abundance <-function(loci, p,cnColumn="CN_Estimate") { return(cnvAbundance(cbs = loci, ii = which(abs(loci[,cnColumn]-round(p))>0.2))) }
 
+
+augmentData<-function(cnv_in, r, thr=ncol(cnv_in)/2){
+  allstates=expand.grid(rep(list(1:5),ncol(cnv_in)))
+  d=flexclust::dist2(allstates, cnv_in)
+  ii=which(apply(d,1,min)>thr)
+  r=c(rep(0, length(ii)), r)
+  cnv=rbind(as.matrix(allstates[ii,]), cnv_in)
+  colnames(cnv)=colnames(cnv_in)
+  names(r)[1:length(ii)] <- rownames(cnv)[1:length(ii)] <- paste0("Unobserved_",1:length(ii))
+  return(list(cnv=cnv, r=r))
+}
+
 ########################################################
 ### Calculate % genome affected by mis-segregations ####
 ########################################################
@@ -40,10 +52,10 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
   # print(factoextra::get_eigenvalue(pcs)[,"variance.percent"])
   barplot(sapply(1:ncol(pcs$x), function(x) sum(factoextra::get_eigenvalue(pcs)[1:x,"variance.percent"])), ylab="cummulative variance explained", names.arg = 1:ncol(pcs$x))
   pct_explained = sweep(pcs$var$contrib, 2, FUN="*", factoextra::get_eigenvalue(pcs)[,"variance.percent"]/100)
-  pct_explained = apply(pct_explained[,1:3], 1, sum); 
+  pct_explained = apply(pct_explained[,1:min(3,ncol(cnv))], 1, sum); 
   pct_explained = pct_explained[names(sort(pct_explained, decreasing = T))]
   par(mai=c(0.95,2.75,0.25,0.25))
-  barplot(t(pcs$var$contrib[names(pct_explained),1:3]), las=2, beside = F, horiz = T, xlab="% variance explained");
+  barplot(t(pcs$var$contrib[names(pct_explained),1:min(3,ncol(cnv))]), las=2, beside = F, horiz = T, xlab="% variance explained");
   legend("topright", c("PC1", "PC2","PC3"), fill = gray.colors(3) )
   ## Scatter plot
   scatterplot3d::scatterplot3d(pcs$x[names(r),1], pcs$x[names(r),2], r, pch=20)

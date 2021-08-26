@@ -116,6 +116,19 @@ function initialize()
 		error("$birthFilename file cannot be found")
 	end
 
+<<<<<<< HEAD
+=======
+	# Avoid overwriting an old .csv file if using default
+	count = 1
+	while isfile(outputFile)
+		if verbosity
+			println("outpileFile = $outputFile exists, changing to default names.")
+		end
+		outputFile = "output_$count.csv"
+		count += 1
+	end
+
+>>>>>>> a93a09da88bfe7b732a1f273b7217d00b608fa69
 	# Check to see if input file is given
     if verbosity
 		println("parsed_args:")
