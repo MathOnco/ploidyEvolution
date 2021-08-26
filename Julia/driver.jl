@@ -127,6 +127,38 @@ function initialize()
 	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
 end
 
+function extract_XY(X_filename::String, Y_filename::String)
+
+	# Read the birth rate file to be used for the interpolation
+	X_df = CSV.read(X_filename,DataFrame)
+	Y_df = CSV.read(Y_filename, DataFrame)
+
+	# We make all strings upper case to ensure consistency
+	[X_df[!,name] = uppercase.(x) for (name,x) in zip(names(X_df),eachcol(X_df)) 
+					if eltype(x) === String]
+	[Y_df[!,name] = uppercase.(y) for (name,y) in zip(names(Y_df),eachcol(Y_df)) 
+					if eltype(y) === String]
+
+	# Join the data frames by cell line name
+	XY_df = outerjoin(X_df, Y_df,on = intersect(names(X_df), names(Y_df)))
+
+	# Error if the number of elements in X_df or Y_df do not match
+	@assert nrow(X_df) == nrow(Y_df) == nrow(XY_df) "Cell line names likely did not match."
+
+	# Once we are sure the sizes are the same, we remove missings
+	dropmissing!(XY_df)
+
+	# Get copy number and birth rates
+	X,Y = Matrix(XY_df[!,r"chr"]),Matrix(XY_df[!,r"birth"])
+
+	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
+	Y = dropdims(Y,dims=2)
+
+	return X,Y
+
+end
+	
+
 function main()
 
 	# Grab input parameters and whether to print info to terminal
@@ -140,31 +172,8 @@ function main()
 		end
 	end
 
-	# Read the birth rate file to be used for the interpolation
-	copy_number_df = CSV.read(CNmatFilename,DataFrame)
-	birth_rate_df = CSV.read(birthFilename, DataFrame)
-
-	# We make all strings upper case to ensure consistency
-	[copy_number_df[!,name] = uppercase.(x) for (name,x) in zip(names(copy_number_df),eachcol(copy_number_df)) 
-					if eltype(x) === String]
-	[birth_rate_df[!,name] = uppercase.(y) for (name,y) in zip(names(birth_rate_df),eachcol(birth_rate_df)) 
-					if eltype(y) === String]
-
-	# Join the data frames by cell line name
-	birth_rate_datapoints = outerjoin(copy_number_df, birth_rate_df, 
-								on = intersect(names(copy_number_df), names(birth_rate_df)))
-
-	# Error if the number of elements in copy_number_df or birth_rate_df do not match
-	@assert nrow(copy_number_df) == nrow(birth_rate_df) == nrow(birth_rate_datapoints) "Cell line names likely did not match."
-
-	# Once we are sure the sizes are the same, we remove missings
-	dropmissing!(birth_rate_datapoints)
-
-	# Get copy number and birth rates
-	copy_number,birth_rate = Matrix(birth_rate_datapoints[!,r"chr"]),Matrix(birth_rate_datapoints[!,r"birth"])
-
-	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
-	birth_rate = dropdims(birth_rate,dims=2)
+	# Extract copy number (X) and birth rate (Y) to be used in the interpolation in ploidyMovement.jl
+	copy_number,birth_rate = extract_XY(CNmatFilename,birthFilename)
 
 	# Run ploidy movement
 	results, time = runPloidyMovement(data,copy_number,birth_rate,u0)
@@ -185,4 +194,4 @@ function main()
 	
 end
 
-main()
+# main()
