@@ -160,7 +160,8 @@ function main()
 	# We make all strings upper case to ensure consistency
 	[copy_number_df[!,name] = uppercase.(x) for (name,x) in zip(names(copy_number_df),eachcol(copy_number_df)) 
 					if eltype(x) === String]
-	[birth_rate_df[!,name] = uppercase.(y) for (name,y) in zip(names(birth_rate_df),eachcol(birth_rate_df)) if eltype(y) === String]
+	[birth_rate_df[!,name] = uppercase.(y) for (name,y) in zip(names(birth_rate_df),eachcol(birth_rate_df)) 
+					if eltype(y) === String]
 
 	# Join the data frames by cell line name
 	birth_rate_datapoints = outerjoin(copy_number_df, birth_rate_df, 
