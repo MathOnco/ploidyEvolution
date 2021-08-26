@@ -1,4 +1,4 @@
-setwd("~/Projects/PMO/HighPloidy_DoubleEdgedSword/code/MathModel/GrowOrGo_PloidyEnergyRobustness/R")
+setwd("~/Repositories/ploidyEvolution/R")
 library("TCGAbiolinks")
 library("TCGAutils")
 library("curatedTCGAData")
@@ -37,7 +37,7 @@ AA=loadGEOdataset(geo_id, loadRaw=T, header = T,sep = ",")
 names(AA$data) = sapply(names(AA$data), function(x) fileparts(x)$name)
 
 ## Parse IDs from GEO
-Z = AA$data$GSE98183_fpkm.geneSymbols
+Z = AA$data$GSE98183_counts.geneSymbols
 rownames(Z)=Z[,1]
 Z=Z[,-1]
 Z = Z[,colnames(Z) %in% A$title]
@@ -69,7 +69,7 @@ for (can in cancerList){
   # Y = tmp[[grep(paste0("01_",can,"_RNASeq2"),
   #               names(tmp))]]@assays$data@listData[[1]]
   # tmp=as.matrix(assays(X)[["HNSC_RNASeq2GeneNorm-20160128"]])
-  tmp=as.matrix(assays(X)[[2]])
+  tmp=as.matrix(assays(X)[[1]])
   sampleType=sapply(colnames(tmp), function(x) strsplit(x, "-")[[1]][4])
   tmp=tmp[,grep("01",sampleType)]
   Y = tmp[,1:min(20,ncol(tmp))]
@@ -100,8 +100,10 @@ for (i in 1:length(batchMat)){
 batch<-unlist(batch)
 ## Collapse all TCGA batches into one
 batch[batch!=max(batch)]=1
+### Define your groups - we will do it by cancer type, so nine groups on ten batches
+group<-c(rep(1, 20),rep(2,20), rep(3,20),rep(4,20),rep(5,20),rep(6,20),rep(7,20),rep(8, 20),rep(9, 20),rep(1,39))
 ### Now we apply the ComBat_seq function to adjust for batch effects
-adjusted <- ComBat_seq(combined, batch=batch, group=NULL)
+adjusted <- ComBat_seq(combined, batch=batch, group=group)
 pq <- gsva(as.matrix(adjusted), gs, kcdf="Poisson", mx.diff=T, verbose=FALSE, parallel.sz=2, min.sz=10)
 colnames(pq)<-batch
 
@@ -118,10 +120,11 @@ for (bat in unique(batch)){
 }
 boxplot(pLcombined, log="y")
 title("Combined")
-
-combined_noNA=combined[complete.cases(adjusted),]
-tsne(combined_noNA,labels = batch)
-title("Combined")
+### dimensionality reduction
+combined_noNA=combined[complete.cases(combined),]
+colnames(combined_noNA)<-group
+tsne(combined_noNA,labels = colnames(combined_noNA), perplex = 70)
+umap(combined_noNA, labels = colnames(combined_noNA))
 
 ### visualize adjusted gene expression data
 pLadjusted<-list()
@@ -132,10 +135,11 @@ for (bat in unique(batch)){
 }
 boxplot(pLadjusted, log="y")
 title("Adjusted")
-
+### dimensionality reduction
 adjusted_noNA=adjusted[complete.cases(adjusted),]
-tsne(adjusted_noNA,labels = batch)
-title("Adjusted")
+colnames(adjusted_noNA)<-group
+tsne(adjusted_noNA,labels = colnames(adjusted_noNA), perplex = 5)
+umap(adjusted_noNA, labels = colnames(adjusted_noNA))
 
 ### visualize pathway data
 plotList<-list()
