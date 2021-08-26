@@ -1,4 +1,4 @@
-using TOML, DelimitedFiles, ArgParse, JSON
+using TOML, CSV, DataFrames, ArgParse, JSON
 
 import Base.@kwdef
 
@@ -14,10 +14,10 @@ function parse_commandline()
             action = :store_true
 		"--cnFile", "-c"
 			help = "Contains numeric array of copy numbers and header of which chromosomes"
-			default = "myX.txt"
+			default = "birthLandscapeBrainCancer.txt"
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
-			default = "myY.txt"
+			default = "GrowthRate brain cancer CLs.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output_0.csv"
@@ -116,13 +116,6 @@ function initialize()
 		error("$birthFilename file cannot be found")
 	end
 
-	# Avoid overwriting an old .csv file if using default
-	count = 1
-	while isfile(outputFile)
-		outputfile = "output_$count.csv"
-		count += 1
-	end
-
 	# Check to see if input file is given
     if verbosity
 		println("parsed_args:")
@@ -148,22 +141,32 @@ function main()
 	end
 
 	# Read the birth rate file to be used for the interpolation
-	X = readdlm(CNmatFilename, '\t')
-	Y = readdlm(birthFilename, '\t')
+	copy_number_df = CSV.read(CNmatFilename,DataFrame)
+	birth_rate_df = CSV.read(birthFilename, DataFrame)
 
-	####### Fix this (maybe with a dataframe???) #######
-	header, cn = X[1,:],Float64.(X[2:end,3:end])
+	# We make all strings upper case to ensure consistency
+	[copy_number_df[!,name] = uppercase.(x) for (name,x) in zip(names(copy_number_df),eachcol(copy_number_df)) 
+					if eltype(x) === String]
+	[birth_rate_df[!,name] = uppercase.(y) for (name,y) in zip(names(birth_rate_df),eachcol(birth_rate_df)) if eltype(y) === String]
 
-	# Error if the elements in X or Y are not all subtypes of real
-	if any((eltype(cn),eltype(Y)) .>: Real)
-		error("cn and Y must contain only numeric values")
-	end
+	# Join the data frames by cell line name
+	birth_rate_datapoints = outerjoin(copy_number_df, birth_rate_df, 
+								on = intersect(names(copy_number_df), names(birth_rate_df)))
 
-	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
-	Y = dropdims(Y,dims=2)
+	# Error if the number of elements in copy_number_df or birth_rate_df do not match
+	@assert nrow(copy_number_df) == nrow(birth_rate_df) == nrow(birth_rate_datapoints) "Cell line names likely did not match."
+
+	# Once we are sure the sizes are the same, we remove missings
+	dropmissing!(birth_rate_datapoints)
+
+	# Get copy number and birth rates
+	copy_number,birth_rate = Matrix(birth_rate_datapoints[!,r"chr"]),Matrix(birth_rate_datapoints[!,r"birth"])
+
+	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
+	birth_rate = dropdims(birth_rate,dims=2)
 
 	# Run ploidy movement
-	results, time = runPloidyMovement(data,cn,Y,u0)
+	results, time = runPloidyMovement(data,copy_number,birth_rate,u0)
 
 	# create header for the solution output
 	outputHeader = permutedims(
