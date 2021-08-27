@@ -17,7 +17,7 @@ function parse_commandline()
 			default = "birthLandscapeBrainCancer.txt"
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
-			default = "GrowthRate brain cancer CLs.txt"
+			default = "GrowthRate_brain_cancer_CLs.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output_0.csv"
@@ -194,4 +194,4 @@ function main()
 	
 end
 
-# main()
+@time main()
