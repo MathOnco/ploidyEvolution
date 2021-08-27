@@ -1,4 +1,4 @@
-using TOML, DelimitedFiles, ArgParse, JSON
+using TOML, DelimitedFiles,CSV,DataFrames, ArgParse, JSON
 
 import Base.@kwdef
 
@@ -168,7 +168,12 @@ function extract_XY(X_filename::String, Y_filename::String)
 					if eltype(y) === String]
 
 	# Join the data frames by cell line name
-	XY_df = outerjoin(X_df, Y_df,on = intersect(names(X_df), names(Y_df)))
+	local XY_df
+	try
+		XY_df = outerjoin(X_df, Y_df,on = intersect(names(X_df), names(Y_df)))
+	catch
+		@error("No column names overlap, please check the two input files.")
+	end
 
 	# Error if the number of elements in X_df or Y_df do not match
 	@assert nrow(X_df) == nrow(Y_df) == nrow(XY_df) "Cell line names likely did not match."
