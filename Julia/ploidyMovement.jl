@@ -277,7 +277,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	2 : Interior of blood vessel
 
 	=#
-	df = CSV.read("13496_2 Slides and Data_xy_test.txt",DataFrame)
+	df = CSV.read("13496_2_Slides_and_Data_xy_test.txt",DataFrame)
 	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
 	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
 	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
