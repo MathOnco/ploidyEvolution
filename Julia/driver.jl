@@ -14,7 +14,7 @@ function parse_commandline()
             action = :store_true
 		"--cnFile", "-c"
 			help = "Contains numeric array of copy numbers and header of which chromosomes"
-			default = "myX.txt"
+			default = "birthLandscapeBrainCancer.txt"
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
 			default = "myY.txt"
