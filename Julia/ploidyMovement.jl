@@ -27,10 +27,11 @@ include("polyHarmonicInterp.jl")
 
 
 """
+
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates) = pars
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -55,7 +56,7 @@ function ploidyModel(du,u,pars,t)
 		for parentCN in parentCNList
 
 			# Get birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+			birthRate = birthRates[Int.(parentCN)...]# max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
 
 			# Get flow rate from parentCN -> focalCN
 			flowRate = q(parentCN,focalCN,misRate,nChrom)
@@ -66,7 +67,7 @@ function ploidyModel(du,u,pars,t)
 		end
 
 		# Grab the focal cells birth rate
-		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+		birthRate = birthRates[focal...]#max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 
 		# Add it to the inflow to the focal compartment
 		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
@@ -166,7 +167,16 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 	u0[startingPopCN...] = 1.0
+  
+  ## precompute birth rates
+	birthRates = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 
+	for (i,focal) in enumerate(
+		Iterators.product((1:length(j) for j in chromArray)...))
+		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+		birthRates[focal...] = birthRate
+	end
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
 	if replating
@@ -195,7 +205,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
