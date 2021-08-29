@@ -33,7 +33,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging) = pars
+	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging, birthRates) = pars
 
 	# FIX ME:: Assume that all chroms have same lower, upper and step size
 	minChrom,stepsize,maxChrom = Int.([chromArray[1] |> f for f in (first,step,length)])
@@ -111,7 +111,7 @@ function ploidyModel(du,u,pars,t)
 			for parentCN in parentCNList
 
 				# Get max birth rate
-				birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+				birthRate = birthRates[Int.(parentCN)...]# max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
 
 				# Get flow rate from parentCN -> focalCN
 				flowRate = q(parentCN,focalCN,misRate,nChrom)
@@ -122,7 +122,7 @@ function ploidyModel(du,u,pars,t)
 			end
 
 			# Grab the focal cells (max?) birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+			birthRate = birthRates[focal...]# max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 
 			# Add it to the inflow to the focal compartment
 			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*s_focal
@@ -370,6 +370,15 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	u0 = ComponentArray(s=s0,E=E0)
 
+	birthRates = zeros(Int(maxChrom)*ones(Int,nChrom)...)
+
+	for (i,focal) in enumerate(
+		Iterators.product((1:length(j) for j in chromArray)...))
+		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+		birthRates[focal...] = birthRate
+	end
+
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
 	if replating
@@ -399,7 +408,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	# run simulation
 	# isoutofdomain = (u,p,t)->any(x->x<0,u)
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging)
+	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging, birthRates)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=callback)#,isoutofdomain=isoutofdomain)
 
