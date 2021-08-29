@@ -1,4 +1,4 @@
-using TOML, DelimitedFiles, ArgParse, JSON
+using TOML, DelimitedFiles, ArgParse, JSON, Profile
 
 import Base.@kwdef
 # Used to search through command line for particular arguments
@@ -23,6 +23,9 @@ function parse_commandline()
 		"--u0"
 			help = "Array that contains CN of initial condition"
 			default = "[1,1,1,1,1]"
+		"--profile", "-p"
+			help = "Run code profiler?"
+			action = :store_true
     end
 	
     return parse_args(s)
@@ -128,6 +131,9 @@ function initialize()
 	# Grab initial condition (it is a string so we parse and convert)
 	u0 = Int.(JSON.parse(parsed_args["u0"]))
 
+	## do we wanna profile the code?
+	runProfiling = parsed_args["profile"]
+
 	# Error checking
 	if !isfile(CNmatFilename)
 		error("$CNmatFilename file cannot be found")
@@ -151,13 +157,13 @@ function initialize()
 		end
 	end
 
-	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
+	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity, runProfiling
 end
 
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
+	data, CNmatFilename, birthFilename, u0, outputFile, verbosity, runProfiling = initialize()
 
 	# Printing stuff to terminal
 	if verbosity
@@ -181,8 +187,22 @@ function main()
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	Y = dropdims(Y,dims=2)
 
-	# Run ploidy movement
+	# Run ploidy movement	
+	if runProfiling
+		## technically supposed to run fn once to avoid including
+		## compilation time in the profiling call... perhaps doesnt matter for
+		## such long lasting function as this though...
+		println("executing initial fn call...")
+	end
 	sol, cnArray = runPloidyMovement(data,cn,Y,u0)
+	if runProfiling
+		println("executing profiler fn call...")
+		@profile runPloidyMovement(data,cn,Y,u0)
+		open("profile.txt", "w") do s
+			Profile.print(IOContext(s, :displaysize => (24, 500)))
+		end
+		
+	end
 
 	# Write results to multiple files by time points
 	for (index,t) in enumerate(sol.t)
