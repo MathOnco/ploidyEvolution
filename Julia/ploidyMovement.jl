@@ -167,8 +167,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 	u0[startingPopCN...] = 1.0
-  
-  ## precompute birth rates
+
 	birthRates = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 
 	for (i,focal) in enumerate(
