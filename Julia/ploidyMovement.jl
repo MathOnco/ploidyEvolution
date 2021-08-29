@@ -35,10 +35,7 @@ function ploidyModel(du,u,pars,t)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging, birthRates) = pars
 
-	# FIX ME:: Assume that all chroms have same lower, upper and step size
-	minChrom,stepsize,maxChrom = Int.([chromArray[1] |> f for f in (first,step,length)])
 
-	# Convert chrom array to integer
 	intChromArray = [Int(first(x)):Int(step(x)):Int(last(x)) for x in chromArray]
 	s, E = u.s, u.E
 
@@ -46,7 +43,7 @@ function ploidyModel(du,u,pars,t)
 	dp = (Np .- 1).^(-1)
 	sum_dp_invsq = sum(dp.^(-2))
 
-	# Iterate over each coordinate
+	# Iterate over each compartment
 	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
 
 		# Get whether we are interior (0), at boundary of vessel (1) or inside vessel (2)
@@ -77,24 +74,34 @@ function ploidyModel(du,u,pars,t)
 			end
 		end
 
-		# Iterate over each compartment
+		# if any((E_focal,E_plus...,E_minus...).<0)
+		# 	@show E_focal,E_plus,E_minus
+		# end
+
 		for focal in Iterators.product((1:length(chr) for chr in chromArray)...)
 
-			# focal cells copy number state
+	#=
+	1) calculateParents(focal, minChrom, maxChrom, stepChrom)
+	2) updatePopulation (a struct?)
+		sum(inflow(focal,parent,u[parent]) for parent in parentList)
+		- outflow(focal,u[focal])
+		a. inflow needs to calculate birth and flow rate
+		b. outflow needs to calculate birth, death and flow rate
+	=#
+
 			focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
 
-			# All possible chromosome states
-			parentCNList = calculateParents(focalCN,minChrom,maxChrom,stepsize)
+			parentCNList = calculateParents(focalCN, 1,2,1)		##### FIXME #####
 
-			# Initialize inflow to 0
 			inflow = 0.0
+
+			# s_focal instead of s_focal
 
 			# copy state to local variables for brevity
 			s_focal = s[focal...,coord...]
 			s_cardinal = [s[focal...,info...] for info in cardinal_point_info]
 			s_minus,s_plus = s_cardinal[1:2:end],s_cardinal[2:2:end]
 
-			# Checking the boundary
 			if domain_info == 1	# boundary of vessel
 				normal_vector = boundary_Dict[coord] 	# Grab normal vector
 				for i = 1 : length(dp)
@@ -110,7 +117,7 @@ function ploidyModel(du,u,pars,t)
 			# Inflow from the parents
 			for parentCN in parentCNList
 
-				# Get max birth rate
+				# Get (max?) birth rate
 				birthRate = birthRates[Int.(parentCN)...]# max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
 
 				# Get flow rate from parentCN -> focalCN
@@ -136,16 +143,10 @@ function ploidyModel(du,u,pars,t)
 			- 2.0*sum_dp_invsq*s_focal)
 
 			# chemotaxis
-			chemotaxis = χ*(
-				(
-				sum(
-					(chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
-					for i in 1 : length(dp)
-				)
-				- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*s_focal + 
-				sum(
-					(s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
-					for i in 1 : length(dp)))/4.0
+			chemotaxis = χ*((sum((chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
+			for i in 1 : length(dp))- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*s_focal + 
+			sum( (s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
+			for i in 1 : length(dp)))/4.0
 
 			# Information if debugging
 			if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
@@ -156,14 +157,16 @@ function ploidyModel(du,u,pars,t)
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
 		end
 
-		# Diffusion of energy molecule through the tissue
 		diffusion = Γₑ*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) - 2.0*sum_dp_invsq*E_focal)
 
-		# Consumption by the cells at the grid point designated by coord.
 		consumption = δ*E_focal*sum(s[intChromArray...,coord...])
 
-		# update the energy compartment
+		# update the energy
 		du.E[coord...] = diffusion - consumption
+
+
+		# dE/dn = k*(E_vessel - E) if E_vessel > E , 0 if E_vessel <= E
+		# dE/dn = k*(E_v/E - 1)
 		
 	end
 
@@ -277,7 +280,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	2 : Interior of blood vessel
 
 	=#
-	df = CSV.read("13496_2_Slides_and_Data_xy_test.txt",DataFrame)
+	df = CSV.read("13496_2 Slides and Data_xy_test.txt",DataFrame)
 	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
 	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
 	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
@@ -369,7 +372,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	[s0[startingPopCN...,k...] = 0 for k in keys(domain_Dict)]
 
 	u0 = ComponentArray(s=s0,E=E0)
-
 	birthRates = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 
 	for (i,focal) in enumerate(
@@ -378,7 +380,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
 		birthRates[focal...] = birthRate
 	end
-
 	# If we are replating, we do so when the population is million-fold in size
 	callback = nothing
 	if replating

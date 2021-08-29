@@ -1,7 +1,6 @@
-using TOML, DelimitedFiles,CSV,DataFrames, ArgParse, JSON
+using TOML, DelimitedFiles, ArgParse, JSON
 
 import Base.@kwdef
-
 # Used to search through command line for particular arguments
 function parse_commandline()
     s = ArgParseSettings()
@@ -17,7 +16,7 @@ function parse_commandline()
 			default = "birthLandscapeBrainCancer.txt"
 		"--birthRateFile", "-b"
 			help = "Contains numeric vector of birth rates"
-			default = "GrowthRate_brain_cancer_CLs.txt"
+			default = "myY.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output"
@@ -155,42 +154,6 @@ function initialize()
 	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
 end
 
-function extract_XY(X_filename::String, Y_filename::String)
-
-	# Read the birth rate file to be used for the interpolation
-	X_df = CSV.read(X_filename,DataFrame)
-	Y_df = CSV.read(Y_filename, DataFrame)
-
-	# We make all strings upper case to ensure consistency
-	[X_df[!,name] = uppercase.(x) for (name,x) in zip(names(X_df),eachcol(X_df)) 
-					if eltype(x) === String]
-	[Y_df[!,name] = uppercase.(y) for (name,y) in zip(names(Y_df),eachcol(Y_df)) 
-					if eltype(y) === String]
-
-	# Join the data frames by cell line name
-	local XY_df
-	try
-		XY_df = outerjoin(X_df, Y_df,on = intersect(names(X_df), names(Y_df)))
-	catch
-		@error("No column names overlap, please check the two input files.")
-	end
-
-	# Error if the number of elements in X_df or Y_df do not match
-	@assert nrow(X_df) == nrow(Y_df) == nrow(XY_df) "Cell line names likely did not match."
-
-	# Once we are sure the sizes are the same, we remove missings
-	dropmissing!(XY_df)
-
-	# Get copy number and birth rates
-	X,Y = Matrix(XY_df[!,r"chr"]),Matrix(XY_df[!,r"birth"])
-
-	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
-	Y = dropdims(Y,dims=2)
-
-	return X,Y
-
-end
-	
 function main()
 
 	# Grab input parameters and whether to print info to terminal
@@ -204,11 +167,22 @@ function main()
 		end
 	end
 
-	# Extract copy number (X) and birth rate (Y) to be used in the interpolation in ploidyMovement.jl
-	copy_number,birth_rate = extract_XY(CNmatFilename,birthFilename)
+	# Read the birth rate file to be used for the interpolation
+	X = readdlm(CNmatFilename, '\t')
+	Y = readdlm(birthFilename, '\t')
+
+	header, cn = X[1,:],Float64.(X[2:end,3:end])
+
+	# Error if the elements in X or Y are not all subtypes of real
+	if any((eltype(cn),eltype(Y)) .>: Real)
+		error("cn and Y must contain only numeric values")
+	end
+
+	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
+	Y = dropdims(Y,dims=2)
 
 	# Run ploidy movement
-	sol, cnArray = runPloidyMovement(data,copy_number,birth_rate,u0)
+	sol, cnArray = runPloidyMovement(data,cn,Y,u0)
 
 	# Write results to multiple files by time points
 	for (index,t) in enumerate(sol.t)
