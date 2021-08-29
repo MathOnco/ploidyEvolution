@@ -35,7 +35,7 @@ end
 	debugging::Int = 0				# prints info from ploidyMovement
 	stepsize::Number = 1.0				# discretization of chromosome
 	minChrom::Number = 1.0				# minimum chromosome allowed
-	maxChrom::Number = 5.0				# maximum chromosome allowed
+	maxChrom::Number = 2.0				# maximum chromosome allowed
 	deathRate::Number = 0.1			# universal death rate
 	misRate::Float64 = 0.15				# universal missegregation rate
 	Γ::Number = 0.05
@@ -45,7 +45,7 @@ end
 	χ::Number = 1.0
 	δ::Number = 0.02
 	Np::Vector{Int} = [21,21]
-	finalDay::Real = 30.0				# end of simulation
+	finalDay::Real = 3.0				# end of simulation
 	replating::Bool = false				# Whether we replate the cells
 	startPop::Real = 1e3		# Starting population size 
 	maxPop::Real = 1e6				# Max population before replating
