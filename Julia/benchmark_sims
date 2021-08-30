@@ -1,0 +1,17 @@
+echo "maxChrom, time, simtype" > simtimes.txt
+for j in 1 2 3 4 5 
+do
+for i in 5 10 15
+do
+   	START=$(date +%s)
+	julia --project=. -L ploidyMovement_gpu.jl driver_gpu.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt -o CN_sweep_gpu_$i_$j.csv
+	END=$(date +%s)
+	echo "$i, $((END-START)), gpu" >> simtimes.txt
+
+	START=$(date +%s)
+        julia --project=. -L ploidyMovement_main.jl driver_main.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt -o CN_sweep_main_$i_$j.csv
+        END=$(date +%s)
+        echo "$i, $((END-START)), main" >> simtimes.txt
+
+done
+done
