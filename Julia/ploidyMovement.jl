@@ -328,21 +328,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		end
 	end
 
-	# # interior points (domain is assumed periodic)
-	# for j = 1 : Np[2]
-	# 	j_plus = (j == Np[2]) ? 1 : j+1
-	# 	j_minus = (j == 1) ? Np[2] : j-1
-	# 	for i = 1 : Np[1]
-	# 		i_plus = (i == Np[1]) ? 1 : i+1
-	# 		i_minus = (i == 1) ? Np[1] : i-1
-	# 		if domain[i,j] == 1 # Blood vessel point
-	# 			if domain[i,j_plus]>0 && domain[i_plus,j]>0 && domain[i_minus,j]>0 && domain[i,j_minus]>0
-	# 				domain[i,j] = 2 # Interior blood vessel
-	# 			end
-	# 		end
-	# 	end
-	# end
-
 	# Initialize energy to be zero outside the interior of the blood vessels
 	E0 = zeros(Np...)
 	[E0[k...]=E_vessel for (k,v) in domain_Dict if v==2]
@@ -352,9 +337,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	# Number of chromosomes (inferred from interp)
 	nChrom = interp.dim
-
-	# # minimum and maximum size of copy number
-	# minX,maxX = minimum(X,dims=1),maximum(X,dims=1)
 
 	# The allowable states
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
