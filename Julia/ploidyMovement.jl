@@ -263,14 +263,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	progress_check) = params
 
 	k,E_vessel,saveat = 0.5,1.0,0.05
-
-	# (interp,nChrom,chromArray,misRate,deathRate,Γ,ϕ,Ξ,χ,δ,Np,debugging)
-	# ϕ = 1.0
-	# Ξ = 1.0
-	# χ = 3.0
-	# δ = 0.001
-	# Γₑ = 0.05
-
 	#= Build domain matrix:
 
 	0 : In domain
