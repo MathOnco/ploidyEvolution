@@ -30,7 +30,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	@unpack (interp,nChrom,chromArray,misRate,deathRate,progress_checker,debugging) = pars
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -145,7 +145,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	replating,
 	startPop,
 	maxPop,
-	compartmentMinimum) = params
+	compartmentMinimum,
+	progress_check) = params
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
@@ -168,7 +169,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	u0[startingPopCN...] = 1.0
 
 	# If we are replating, we do so when the population is million-fold in size
-	callback = nothing
+	cb1 = nothing
 	if replating
 		# Replate if above maxPop
 		condition = (u,t,integrator) -> sum(u) - maxPop	
@@ -182,22 +183,37 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		end
 
 		# Create callback
-		callback = ContinuousCallback(condition,affect!,nothing)
+		cb1 = ContinuousCallback(condition,affect!,nothing)
 
 	end
 
-	# If we artificially set populations below threshold to 0
-	# if compartmentMinimum
-	# 	condition = (u,t,integrator)
+	##### This is printed to terminal to tell you what time point you're at #####
+	cb2 = nothing
+	progress_checker = [0.0]
+	if progress_check
+		print_time_condition = (u,t,integrator) -> t > integrator.p.progress_checker[1]
+		print_time!(integrator) = begin
+			println("At time t = $(integrator.p.progress_checker[1])")
+			integrator.p.progress_checker[1] += 1.0
+		end
+		cb2 = DiscreteCallback(print_time_condition,print_time!,save_positions=(false,false))
+	end
+	cbset = CallbackSet(cb1,cb2)
 
 	if debugging > 0
 		println("Beginning simulation...")
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
+	odePars = (interp=interp,
+				nChrom=nChrom,
+				chromArray=chromArray,
+				misRate=misRate,
+				deathRate=deathRate,
+				progress_checker=progress_checker,
+				debugging=debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
+	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)
 
 	if debugging > 0
 		println("Simulation complete. Collecting results...")

@@ -43,6 +43,7 @@ end
 	startPop::Real = 1e3		# Starting population size 
 	maxPop::Real = 1e6				# Max population before replating
 	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
+	progress_check::Bool = false
 
 end
 
@@ -63,6 +64,7 @@ function Input(inputFile::String)
 	startPop=get(data,"startPop",1e3)
 	maxPop=get(data,"maxPop",1e6)
 	compartmentMinimum=get(data,"compartmentMinimum",false)
+	progress_check=get(data,"progress_check",false)
 
 	Input(
 		debugging,
@@ -75,7 +77,8 @@ function Input(inputFile::String)
 		replating,
 		startPop,
 		maxPop,
-		compartmentMinimum
+		compartmentMinimum,
+		progress_check
 		)
 
 end
@@ -148,13 +151,9 @@ function extract_XY(X_filename::String, Y_filename::String)
 	# Once we are sure the sizes are the same, we remove missings
 	dropmissing!(XY_df)
 
-	# Get copy number and birth rates
-	X,Y = Matrix(XY_df[!,r"chr"]),Matrix(XY_df[!,r"birth"])
+	return XY_df
 
-	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
-	Y = dropdims(Y,dims=2)
-
-	return X,Y
+	# return X,Y
 
 end
 	
@@ -173,18 +172,32 @@ function main()
 	end
 
 	# Extract copy number (X) and birth rate (Y) to be used in the interpolation in ploidyMovement.jl
-	copy_number,birth_rate = extract_XY(CNmatFilename,birthFilename)
+	CN_birthrate_df = extract_XY(CNmatFilename,birthFilename)
+
+	# Get copy number and birth rates
+	local copy_number,birth_rate,chromosome_header
+	try
+		copy_number,birth_rate = Matrix(CN_birthrate_df[!,r"chr"]),Matrix(CN_birthrate_df[!,r"birth"])
+		chromosome_header = names(CN_birthrate_df[!,r"chr"])
+	catch
+		@error("chromosome X should be the column names")
+	end
+
+	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
+	birth_rate = dropdims(birth_rate,dims=2)
 
 	# Run ploidy movement
 	results, time = runPloidyMovement(data,copy_number,birth_rate,u0)
 
+	outputHeader = permutedims(vcat(chromosome_header,time))
+
 	# create header for the solution output
-	outputHeader = permutedims(
-		vcat(
-			["Chr$chr" for chr in header if typeof(chr) == Int],
-			time
-			)
-			)
+	# outputHeader = permutedims(
+	# 	vcat(
+	# 		["Chr$chr" for chr in header if typeof(chr) == Int],
+	# 		time
+	# 		)
+	# 		)
 
 	# concatnate the header with the results array
 	output = vcat(outputHeader,results)
