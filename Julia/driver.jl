@@ -182,7 +182,12 @@ function extract_XY(X_filename::String, Y_filename::String)
 	dropmissing!(XY_df)
 
 	# Get copy number and birth rates
-	X,Y = Matrix(XY_df[!,r"chr"]),Matrix(XY_df[!,r"birth"])
+	local X,Y
+	try
+		X,Y = Matrix(XY_df[!,r"chr"]),Matrix(XY_df[!,r"birth"])
+	catch
+		@error("<chromosome #> should be the column names")
+	end
 
 	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
 	Y = dropdims(Y,dims=2)
