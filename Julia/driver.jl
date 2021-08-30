@@ -1,5 +1,4 @@
 using TOML, DelimitedFiles, ArgParse, JSON
-
 import Base.@kwdef
 
 # Used to search through command line for particular arguments
