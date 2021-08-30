@@ -50,6 +50,7 @@ end
 	startPop::Real = 1e3		# Starting population size 
 	maxPop::Real = 1e6				# Max population before replating
 	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
+	progress_check::Bool =false
 
 end
 
@@ -77,6 +78,7 @@ function Input(inputFile::String)
 	χ = get(data,"χ",2.0)
 	δ = get(data,"δ",0.005)
 	Np = get(data,"Np",[21,21])
+	progress_check = get(data,"progress_check",false)
 
 	Input(
 		debugging,
@@ -96,7 +98,8 @@ function Input(inputFile::String)
 		replating,
 		startPop,
 		maxPop,
-		compartmentMinimum
+		compartmentMinimum,
+		progress_check
 		)
 
 end

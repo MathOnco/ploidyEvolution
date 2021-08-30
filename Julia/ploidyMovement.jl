@@ -259,7 +259,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startPop,
 	maxPop,
 	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
-	compartmentMinimum) = params
+	compartmentMinimum,
+	progress_check) = params
 
 	k,E_vessel,saveat = 0.5,1.0,0.05
 
@@ -353,7 +354,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	u0 = ComponentArray(s=s0,E=E0)
 
 	# If we are replating, we do so when the population is million-fold in size
-	callback = nothing
+	cb1 = nothing
 	if replating
 		# Replate if above maxPop
 		condition = (u,t,integrator) -> sum(u) - maxPop	
@@ -367,9 +368,17 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		end
 
 		# Create callback
-		callback = ContinuousCallback(condition,affect!,nothing)
+		cb1 = ContinuousCallback(condition,affect!,nothing)
 
 	end
+
+	##### This is printed to terminal to tell you what time point you're at #####
+	cb2 = nothing
+	if progress_check
+		print_time(integrator) = println("t = $(floor(integrator.t))")#$(floor(integrator.t))")
+		cb2 = PeriodicCallback(print_time, 0.1,save_positions=(false,false))
+	end
+	cbset = CallbackSet(cb1,cb2)
 
 	# If we artificially set populations below threshold to 0
 	# if compartmentMinimum
@@ -383,7 +392,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# isoutofdomain = (u,p,t)->any(x->x<0,u)
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,domain_Dict,boundary_Dict,debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=callback)#,isoutofdomain=isoutofdomain)
+	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
 
 	# Maybe lsoda() instead of VCABM() ????
 	#=
