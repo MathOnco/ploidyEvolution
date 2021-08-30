@@ -30,7 +30,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	@unpack (interp,nChrom,chromArray,misRate,deathRate,progress_checker,debugging) = pars
+	@unpack (interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -189,14 +189,9 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	##### This is printed to terminal to tell you what time point you're at #####
 	cb2 = nothing
-	progress_checker = [0.0]
 	if progress_check
-		print_time_condition = (u,t,integrator) -> t > integrator.p.progress_checker[1]
-		print_time!(integrator) = begin
-			println("At time t = $(integrator.p.progress_checker[1])")
-			integrator.p.progress_checker[1] += 1.0
-		end
-		cb2 = DiscreteCallback(print_time_condition,print_time!,save_positions=(false,false))
+		print_time(integrator) = println("t = $(floor(integrator.t))")
+		cb2 = PeriodicCallback(print_time, 1.0,save_positions=(false,false))
 	end
 	cbset = CallbackSet(cb1,cb2)
 
@@ -210,7 +205,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 				chromArray=chromArray,
 				misRate=misRate,
 				deathRate=deathRate,
-				progress_checker=progress_checker,
 				debugging=debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)

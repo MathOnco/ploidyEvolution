@@ -9,4 +9,4 @@ replating = true
 maxPop = 1e6
 startPop = 1e3
 compartmentMinimum = false
-progress_check = false
+progress_check = true
