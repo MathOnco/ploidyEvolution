@@ -51,6 +51,7 @@ end
 	maxPop::Real = 1e6				# Max population before replating
 	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
 	progress_check::Bool =false
+	interpolation_order::Int = 2
 
 end
 
@@ -80,6 +81,7 @@ function Input(inputFile::String)
 	δ = get(data,"δ",0.005)
 	Np = get(data,"Np",[21,21])
 	progress_check = get(data,"progress_check",false)
+	interpolation_order = get(data,"interpolation_order",2)
 
 	Input(
 		debugging,
@@ -100,7 +102,8 @@ function Input(inputFile::String)
 		startPop,
 		maxPop,
 		compartmentMinimum,
-		progress_check
+		progress_check,
+		interpolation_order
 		)
 
 end

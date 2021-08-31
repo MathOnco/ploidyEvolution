@@ -260,7 +260,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	maxPop,
 	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
 	compartmentMinimum,
-	progress_check) = params
+	progress_check,
+	interpolation_order) = params
 
 	k,E_vessel,saveat = 0.5,1.0,0.05
 	#= Build domain matrix:
@@ -326,7 +327,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	[E0[k...]=E_vessel for (k,v) in domain_Dict if v==2]
 
 	# Polyharmonic interpolator
-	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
+	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y,interpolation_order)
 
 	# Number of chromosomes (inferred from interp)
 	nChrom = interp.dim

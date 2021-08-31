@@ -9,3 +9,4 @@ maxPop = 1e6
 startPop = 1e3
 compartmentMinimum = false
 progress_check = true
+interpolation_order = 2

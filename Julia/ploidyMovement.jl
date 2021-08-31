@@ -146,16 +146,14 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startPop,
 	maxPop,
 	compartmentMinimum,
-	progress_check) = params
+	progress_check,
+	interpolation_order) = params
 
 	# Polyharmonic interpolator
-	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
+	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y,interpolation_order)
 
 	# Number of chromosomes (inferred from interp)
 	nChrom = interp.dim
-
-	# minimum and maximum size of copy number
-	minX,maxX = minimum(X,dims=1),maximum(X,dims=1)
 
 	# The allowable states
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]

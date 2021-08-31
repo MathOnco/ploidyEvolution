@@ -16,3 +16,4 @@ compartmentMinimum = false
 "δ" = 0.05
 Np = [21,21]
 progress_check = true
+interpolation_order = 2
