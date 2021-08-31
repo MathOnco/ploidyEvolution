@@ -1,9 +1,11 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
-using DifferentialEquations, BenchmarkTools
+using DifferentialEquations, BenchmarkTools, Distributed
 using LinearAlgebra
 using DelimitedFiles
 using Parameters
+
+@everywhere using SharedArrays
 
 # Load the file that contains the Polyharmonic interpolator function
 include("polyHarmonicInterp.jl")
@@ -28,76 +30,16 @@ include("polyHarmonicInterp.jl")
 
 """
 
-function ploidyModel(du,u,pars,t)
-
-	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates) = pars
-
-	# Iterate over each compartment
-	for (i,focal) in enumerate(
-		Iterators.product((1:length(j) for j in chromArray)...))
-
-		#=
-		1) calculateParents(focal, minChrom, maxChrom, stepChrom)
-		2) updatePopulation (a struct?)
-			sum(inflow(focal,parent,u[parent]) for parent in parentList)
-			- outflow(focal,u[focal])
-			a. inflow needs to calculate birth and flow rate
-			b. outflow needs to calculate birth, death and flow rate
-		=#
-
-		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
-
-		parentCNList = calculateParents(focalCN, 1,5,1)
-
-		inflow = 0.0
-
-		# Inflow from the parents
-		for parentCN in parentCNList
-
-			# Get birth rate
-			birthRate = birthRates[Int.(parentCN)...]# max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
-
-			# Get flow rate from parentCN -> focalCN
-			flowRate = q(parentCN,focalCN,misRate,nChrom)
-
-			# Will need to have this be the index in the future
-			inflow += birthRate*flowRate*u[Int.(parentCN)...] # *(1 - 1/avg(CN))
-
-		end
-
-		# Grab the focal cells birth rate
-		birthRate = birthRates[focal...]#max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
-
-		# Add it to the inflow to the focal compartment
-		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
-
-		# Death of the focal compartment
-		outflow = deathRate*u[focal...]
-
-		# Information if debugging
-		if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
-			@show t,focalCN,inflow,outflow, u[focal...]
-		end
-
-		# Update the RHS
-		du[focal...] = inflow - outflow
-		
-	end
-
-	if debugging > 3
-		@show t,sum(u)
-	end
-
-end
 
 function ploidyModel_para(du,u,pars,t)
 
+	#du= SharedArray(du)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates) = pars
 
 	# Iterate over each compartment
-    Threads.@threads for i in CartesianIndices(u)
+    #@sync @distributed 
+	for i in CartesianIndices(u)
         inflow=0.0
         outflow=0.0
 
@@ -113,8 +55,6 @@ function ploidyModel_para(du,u,pars,t)
 		focalCN =  collect(i[k] for k in 1:nChrom) 
 
 		parentCNList = calculateParents(focalCN, 1,5,1)
-
-		inflow = 0.0
 
 		# Inflow from the parents
 		for parentCN in parentCNList
@@ -261,14 +201,6 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	# run simulation
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates)
-	@time ploidyModel_para(du,u0,odePars,0)
-	@time ploidyModel_para(du,u0,odePars,0)
-	@time ploidyModel_para(du,u0,odePars,0)
-	@time ploidyModel_para(du,u0,odePars,0)
-	@time ploidyModel(du,u0,odePars,0)
-	@time ploidyModel(du,u0,odePars,0)
-	@time ploidyModel(du,u0,odePars,0)
-	@time ploidyModel(du,u0,odePars,0)
 
 	prob = ODEProblem(ploidyModel_para,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback,save_everystep=false)
