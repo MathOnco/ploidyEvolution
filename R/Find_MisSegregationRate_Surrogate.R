@@ -193,14 +193,15 @@ r[grep("feron",names(r))]
 r[grep("IFN",names(r))]
 
 ## Fit linear model
-poi="Interferon gamma signaling"
+poi="Interferon Signaling"
 inp=cbind(MN[,c("Lagging.Chromosome","metastasis")],t(pq[poi,rownames(MN),drop=F]))
-m = lm(inp$Lagging.Chromosome ~inp$`Interferon gamma signaling`)
+inp$Lagging.Chromosome = log(inp$Lagging.Chromosome)
+m = lm(inp$Lagging.Chromosome ~inp$`Interferon Signaling`)
 summary(m)
 ## Visualize
-plot(inp$`Interferon gamma signaling`,inp$Lagging.Chromosome,col=2+inp$metastasis,pch=20,cex=1.5)
+plot(inp$`Interferon Signaling`,inp$Lagging.Chromosome,col=2+inp$metastasis,pch=20,cex=1.5)
 o<-predict(m, inp, interval="confidence")
-lines(inp$`Interferon gamma signaling`,o[,"fit"])
+lines(inp$`Interferon Signaling`,o[,"fit"])
 legend("bottomleft",paste("metastasis",unique(inp$metastasis)),fill=unique(c(2+inp$metastasis)),bty="n")
 
 ## Use model to predict MS rate in TCGA cancers
@@ -210,4 +211,4 @@ rownames(inp) = colnames(pq)
 colnames(inp) = poi
 inp[,poi]=pq[poi,] 
 o<-predict(m, inp, interval="confidence")
-boxplot(o[,"fit"]~sapply(strsplit(rownames(o),".",fixed = T),"[[",1))
+boxplot(exp(o[,"fit"]~sapply(strsplit(rownames(o),".",fixed = T),"[[",1)))
