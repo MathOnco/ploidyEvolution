@@ -340,7 +340,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	s0 = zeros(Int(maxChrom)*ones(Int,nChrom)...,Np...)
-	s0[startingPopCN...,:,:] .= rand(Np...)						# CN is randomly placed on the grid
+	s0[startingPopCN...,:,:] .= rand(Np...)*startPop 	# CN is randomly placed on the grid
 	[s0[startingPopCN...,k...] = 0 for k in keys(domain_Dict)]
 
 	u0 = ComponentArray(s=s0,E=E0)

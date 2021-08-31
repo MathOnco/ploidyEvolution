@@ -1,4 +1,4 @@
-Cell line	ploidy  chromosome 5	chromosome 9	chromosome 13	chromosome 14	chromosome 20
+Cell line	ploidy	chromosome 5	chromosome 9	chromosome 13	chromosome 14	chromosome 20
 T98G_CENTRAL_NERVOUS_SYSTEM	3	3.5	3.5	4.3	3.6	3.8
 LN18_CENTRAL_NERVOUS_SYSTEM	3	2.6	3.4	4	3.4	4.2
 U118MG_CENTRAL_NERVOUS_SYSTEM	2	1.5	1.9	2.7	2.1	2.6
