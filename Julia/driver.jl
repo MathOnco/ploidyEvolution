@@ -140,7 +140,7 @@ function main()
 
 	# Grab input parameters and whether to print info to terminal
 	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
-
+	println("initialized")
 	# Printing stuff to terminal
 	if verbosity
 		println("Input:")
@@ -162,7 +162,7 @@ function main()
 
 	# readdlm gives a 2D array, we turn it into a vector (1d array) here.
 	Y = dropdims(Y,dims=2)
-
+	println("entering runPloidyMovement")
 	# Run ploidy movement
 	results, time = runPloidyMovement(data,cn,Y,u0)
 
@@ -181,5 +181,5 @@ function main()
 	writedlm( outputFile,  output, ',')
 	
 end
-
+println("init_driver")
 @time main()

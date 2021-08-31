@@ -1,16 +1,14 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
 using DifferentialEquations, BenchmarkTools, Distributed
-@everywhere using LinearAlgebra
+
 using DelimitedFiles
 using Parameters
-
-@everywhere using SharedArrays
 
 # Load the file that contains the Polyharmonic interpolator function
 include("polyHarmonicInterp.jl")
 
-
+println("init ploidyMovement")
 """
 
 	plodyModel()
@@ -85,38 +83,7 @@ function ploidyModel_para(du,u,pars,t)
 
 end
 
-@everywhere function calculateParents(offspring::Vector{T}, minChrom::Int,
-	maxChrom::Int,stepChrom::Int) where T<:Real
 
-
-	[ (x = copy(offspring); x[idx] = v; x)
-		for idx in 1 : length(offspring)
-			for v in max(offspring[idx]-1,minChrom):stepChrom:min(offspring[idx]+1,maxChrom) 
-				if v != offspring[idx] ]
-
-end
-
-@everywhere function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) where T <: Real
-
-	# parentCN = collect(linspaces[k][parent[k]] for k in 1:nChrom)
-	# offspringCN = collect(linspaces[k][offspring[k]] for k in 1:nChrom)
-
-	parentCN = parent
-	offspringCN = offspring
-
-	CNdist = norm(parentCN .- offspringCN,1)
-
-	# No mutation occurred
-	if (CNdist == 0.0)
-		val = 1.0 - misRate
-	else
-		# FIXME: Should be a function dependent on parent ploidy
-		val = misRate/nChrom
-	end
-
-	return val
-
-end
 
 #############################################
 #											#
@@ -130,7 +97,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startingPopCN::AbstractArray)
 
 	#addprocs(4)
-	println(nprocs())
+	#println("currently running processes: "+nprocs())
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
@@ -201,10 +168,13 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		println("Beginning simulation...")
 	end
 
+	include("dist_functions.jl")
+	addprocs(4)
+
 	# run simulation
 	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates)
-
 	prob = ODEProblem(ploidyModel_para,u0,tspan,odePars)
+	println("starting ODE solver")
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback,save_everystep=false)
 
 	if debugging > 0
