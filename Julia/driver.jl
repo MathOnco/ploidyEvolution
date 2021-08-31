@@ -55,7 +55,8 @@ function Input(inputFile::String)
 	# Get the parameters for the struct.
 	debugging=get(data,"debugging",0)
 	stepsize=get(data,"stepsize",1.0)
-	minChrom=get(data,"minChrom",1.0)
+	# minChrom=get(data,"minChrom",1.0)
+	minChrom=1.0
 	maxChrom=get(data,"maxChrom",5.0)
 	deathRate=get(data,"deathRate",0.1)
 	misRate=get(data,"misRate",0.15)

@@ -1,6 +1,5 @@
 debugging = 3
 stepsize = 1.0
-minChrom = 1.0
 maxChrom = 2.0
 deathRate = 0.0
 misRate = 0.01
