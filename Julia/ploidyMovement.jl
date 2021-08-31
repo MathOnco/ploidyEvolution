@@ -364,7 +364,8 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 
 	end
 
-	##### This is printed to terminal to tell you what time point you're at #####
+	##### This is printed to terminal to tell you what time point you're at ######
+	##### Add the smallest nonzero compartment size (and index) to the progress check
 	cb2 = nothing
 	if progress_check
 		print_time(integrator) = println("t = $(floor(integrator.t))")#$(floor(integrator.t))")
