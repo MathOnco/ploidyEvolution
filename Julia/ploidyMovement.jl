@@ -1,7 +1,7 @@
 using Pkg;Pkg.activate(".");Pkg.instantiate();
 
 using DifferentialEquations, BenchmarkTools, Distributed
-using LinearAlgebra
+@everywhere using LinearAlgebra
 using DelimitedFiles
 using Parameters
 
@@ -33,13 +33,12 @@ include("polyHarmonicInterp.jl")
 
 function ploidyModel_para(du,u,pars,t)
 
-	#du= SharedArray(du)
+	du= SharedArray(du)
 	# Grab the parameters
 	(interp,nChrom,chromArray,misRate,deathRate,debugging,birthRates) = pars
 
 	# Iterate over each compartment
-    #@sync @distributed 
-	for i in CartesianIndices(u)
+    @sync @distributed for i in CartesianIndices(u)
         inflow=0.0
         outflow=0.0
 
@@ -86,7 +85,7 @@ function ploidyModel_para(du,u,pars,t)
 
 end
 
-function calculateParents(offspring::Vector{T}, minChrom::Int,
+@everywhere function calculateParents(offspring::Vector{T}, minChrom::Int,
 	maxChrom::Int,stepChrom::Int) where T<:Real
 
 
@@ -97,7 +96,7 @@ function calculateParents(offspring::Vector{T}, minChrom::Int,
 
 end
 
-function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) where T <: Real
+@everywhere function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) where T <: Real
 
 	# parentCN = collect(linspaces[k][parent[k]] for k in 1:nChrom)
 	# offspringCN = collect(linspaces[k][offspring[k]] for k in 1:nChrom)
@@ -129,6 +128,9 @@ end
 
 function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	startingPopCN::AbstractArray)
+
+	#addprocs(4)
+	println(nprocs())
 
 	# Grab the parameters from the struct
 	@unpack (debugging,
