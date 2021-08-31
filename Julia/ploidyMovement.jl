@@ -368,7 +368,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	cb2 = nothing
 	if progress_check
 		print_time(integrator) = println("t = $(floor(integrator.t))")#$(floor(integrator.t))")
-		cb2 = PeriodicCallback(print_time, 0.1,save_positions=(false,false))
+		cb2 = PeriodicCallback(print_time, 1.0,save_positions=(false,false))
 	end
 	cbset = CallbackSet(cb1,cb2)
 
