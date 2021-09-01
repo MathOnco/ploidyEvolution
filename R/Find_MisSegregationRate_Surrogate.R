@@ -8,6 +8,7 @@ library(Biobase)
 library(GSVA)
 library(GEOquery)
 library(sva)
+library(wesanderson)
 library("M3C")
 source("Utils.R")
 devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
@@ -177,14 +178,14 @@ r[grep("IFN",names(r))]
 
 ## Fit linear model
 poi="Interferon Signaling"
-inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis")],t(pq[poi,rownames(MN),drop=F]))
+inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis")],t(pq[poi,rownames(MN),drop=F]), "cell.line"=MN$cell.line)
 inp = inp[sort(inp[,poi],index.return=T)$ix,]
 inp$Lagging.Chromosome = log(inp$Lagging.Chromosome)
 m = lm(inp$Lagging.Chromosome ~inp[[poi]])
 summary(m)
 ## Visualize
 ## Set up colors
-dd <- unique(MN$cell.line)
+dd <- unique(inp$cell.line)
 dd.col <- wes_palette(n=length(dd), "Darjeeling2", type = "discrete")
 names(dd.col)  <- dd
 pdf("~/Downloads/MS_predictions_9Cancers_TPM_.pdf")
