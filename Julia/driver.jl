@@ -1,6 +1,7 @@
-using TOML, DelimitedFiles, ArgParse, JSON
+println("initdriver1")
+using TOML, DelimitedFiles, ArgParse, JSON, Distributed
 import Base.@kwdef
-
+println("initdriver2")
 # Used to search through command line for particular arguments
 function parse_commandline()
     s = ArgParseSettings()
