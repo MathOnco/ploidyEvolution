@@ -156,6 +156,44 @@ interpolateBirthRateLandscape <- function(cnv, r, split_train_test=1, ndim = 4, 
 }
 
 
+
+###########################################################
+## Load TCGA CNV data and calc. mis-segregation imprints ##
+###########################################################
+getCNVsFromTCGA <- function(can){
+  library(TCGAbiolinks)
+  query.gbm.nocnv <- GDCquery(
+    project = paste0("TCGA-",can),
+    data.category = "Copy number variation",
+    legacy = TRUE,
+    file.type = "nocnv_hg19.seg",
+    sample.type = c("Primary Tumor")
+  )
+  # to reduce time we will select only 20 samples
+  query.gbm.nocnv$results[[1]] <- query.gbm.nocnv$results[[1]]
+  
+  GDCdownload(query.gbm.nocnv, files.per.chunk = 100)
+  
+  gbm.nocnv <- GDCprepare(query.gbm.nocnv, save = TRUE, save.filename = "GBMnocnvhg19.rda")
+  gbm.nocnv = gbm.nocnv[as.numeric(as.matrix(gbm.nocnv[,"Chromosome"])) %in% 1:22,]
+  gbm.nocnv$Segment_Mean = 2*exp(gbm.nocnv$Segment_Mean)
+  
+  fr=plyr::count(gbm.nocnv$Sample)
+  allcnv=matrix(NA,nrow(fr),22)
+  rownames(allcnv) = fr$x
+  colnames(allcnv)=1:22
+  for(x in fr$x){
+    loci=as.data.frame(gbm.nocnv[gbm.nocnv$Sample==x,-1])
+    colnames(loci) = c("chr","startpos","endpos","Num_Probes","CN_Estimate")
+    loci$chr = as.numeric(loci$chr)
+    loci$seglength=1+loci$endpos-loci$startpos
+    o = calcMSimprints(loci, p=2, precision = 1)
+    allcnv[x,names(o$landscape)] = o$landscape
+  }
+  return(allcnv)
+}
+
+
 ############################################
 #### Estimate S-phase duration per clone ###
 ############################################
