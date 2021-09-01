@@ -178,7 +178,7 @@ r[grep("IFN",names(r))]
 
 ## Fit linear model
 poi="Interferon Signaling"
-inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis")],t(pq[poi,rownames(MN),drop=F]), "cell.line"=MN$cell.line)
+inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis")],t(pq[poi,rownames(MN),drop=F]), "cell.line"=MN[rownames(inp),]$cell.line)
 inp = inp[sort(inp[,poi],index.return=T)$ix,]
 inp$Lagging.Chromosome = log(inp$Lagging.Chromosome)
 m = lm(inp$Lagging.Chromosome ~inp[[poi]])
