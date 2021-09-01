@@ -37,7 +37,7 @@ function ploidyModel(du,u,pars,t)
 		net_flow = 0.0
 			
 		focalCN =  collect(i[k] for k in 1:nChrom) ;
-		parentCNList = calculateParents(focalCN, minChrom, maxChrom, stepChrom);
+		parentCNList = calculateParents(focalCN, (Int).minChrom, (Int).maxChrom, (Int).stepChrom);
 
 		# Get flow rate from parentCN -> focalCN
 		flowRate = map(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
