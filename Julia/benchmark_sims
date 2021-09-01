@@ -1,4 +1,4 @@
-echo "input, time, simtype, run" > simtimes.txt
+echo "input, time, simtype, processes, run" > simtimes.txt
 for j in 1 2 3
 do
 for i in v1
@@ -6,17 +6,23 @@ do
    	START=$(date +%s)
 	julia -p 4 --project=. -L ploidyMovement.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
 	END=$(date +%s)
-	echo "$i, $((END-START)), gpu, $j" >> simtimes.txt
+	echo "$i, $((END-START)), gpu, 4, $j" >> simtimes.txt
 
    	START=$(date +%s)
 	julia -p 4 --project=. -L ploidyMovement_no-gpu.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
 	END=$(date +%s)
-	echo "$i, $((END-START)), no_gpu, $j" >> simtimes.txt
+	echo "$i, $((END-START)), no_gpu, 4, $j" >> simtimes.txt
 
 	START=$(date +%s)
 	julia --project=. -L ploidyMovement_nothing.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
 	END=$(date +%s)
-	echo "$i, $((END-START)), nothing, $j" >> simtimes.txt
+	echo "$i, $((END-START)), nothing, 1, $j" >> simtimes.txt
+
+		START=$(date +%s)
+	julia --project=. -L ploidyMovement_minalloc.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
+	END=$(date +%s)
+	echo "$i, $((END-START)), minalloc, 1, $j" >> simtimes.txt
 
 done
 done
+ 
