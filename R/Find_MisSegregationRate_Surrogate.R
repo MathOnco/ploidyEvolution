@@ -178,7 +178,7 @@ r[grep("IFN",names(r))]
 
 ## Fit linear model
 poi="Interferon Signaling"
-inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis")],t(pq[poi,rownames(MN),drop=F]), "cell.line"=MN[rownames(inp),]$cell.line)
+inp=cbind(MN[,c("Lagging.Chromosome","Micronuclei","metastasis","cell.line")],t(pq[poi,rownames(MN),drop=F]))
 inp = inp[sort(inp[,poi],index.return=T)$ix,]
 inp$Lagging.Chromosome = log(inp$Lagging.Chromosome)
 m = lm(inp$Lagging.Chromosome ~inp[[poi]])
@@ -188,8 +188,8 @@ summary(m)
 dd <- unique(inp$cell.line)
 dd.col <- wes_palette(n=length(dd), "Darjeeling2", type = "discrete")
 names(dd.col)  <- dd
-pdf("~/Downloads/MS_predictions_9Cancers_TPM_.pdf")
-plot(inp[[poi]],exp(inp$Lagging.Chromosome),col=dd.col,xlab=poi,pch=ifelse(inp$metastasis>0, 8,20),cex=2,main=paste("R^2 =",summary(m)$adj.r.squared))
+pdf("~/Downloads/MS_predictions_9Cancers_TPM2.pdf")
+plot(inp[[poi]],exp(inp$Lagging.Chromosome),col=dd.col[inp$cell.line],xlab=poi,pch=ifelse(inp$metastasis>0, 8,20),cex=2,main=paste("R^2 =",summary(m)$adj.r.squared))
 o<-predict(m, inp, interval="confidence")
 lines(inp[[poi]],exp(o[,"fit"]))
 # legend("topright",paste("metastasis",unique(inp$metastasis)),fill=unique(c(3+inp$metastasis)),bty="n",cex=1.5)
