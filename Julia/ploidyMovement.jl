@@ -30,7 +30,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	@unpack (interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
 
 	# Iterate over each compartment
 	for (i,focal) in enumerate(
@@ -145,16 +145,15 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	replating,
 	startPop,
 	maxPop,
-	compartmentMinimum) = params
+	compartmentMinimum,
+	progress_check,
+	interpolation_order) = params
 
 	# Polyharmonic interpolator
-	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y)
+	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y,interpolation_order)
 
 	# Number of chromosomes (inferred from interp)
 	nChrom = interp.dim
-
-	# minimum and maximum size of copy number
-	minX,maxX = minimum(X,dims=1),maximum(X,dims=1)
 
 	# The allowable states
 	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
@@ -168,7 +167,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	u0[startingPopCN...] = 1.0
 
 	# If we are replating, we do so when the population is million-fold in size
-	callback = nothing
+	cb1 = nothing
 	if replating
 		# Replate if above maxPop
 		condition = (u,t,integrator) -> sum(u) - maxPop	
@@ -182,22 +181,31 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 		end
 
 		# Create callback
-		callback = ContinuousCallback(condition,affect!,nothing)
+		cb1 = ContinuousCallback(condition,affect!,nothing)
 
 	end
 
-	# If we artificially set populations below threshold to 0
-	# if compartmentMinimum
-	# 	condition = (u,t,integrator)
+	##### This is printed to terminal to tell you what time point you're at #####
+	cb2 = nothing
+	if progress_check
+		print_time(integrator) = println("t = $(floor(integrator.t))")
+		cb2 = PeriodicCallback(print_time, 1.0,save_positions=(false,false))
+	end
+	cbset = CallbackSet(cb1,cb2)
 
 	if debugging > 0
 		println("Beginning simulation...")
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,debugging)
+	odePars = (interp=interp,
+				nChrom=nChrom,
+				chromArray=chromArray,
+				misRate=misRate,
+				deathRate=deathRate,
+				debugging=debugging)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
+	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)
 
 	if debugging > 0
 		println("Simulation complete. Collecting results...")

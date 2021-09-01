@@ -1,11 +1,12 @@
 debugging = 3
 stepsize = 1.0
-minChrom = 1.0
 maxChrom = 5.0
 deathRate = 0.1
 misRate = 0.15
-finalDay = 10.0
+finalDay = 5.0
 replating = true
 maxPop = 1e6
 startPop = 1e3
 compartmentMinimum = false
+progress_check = true
+interpolation_order = 2
