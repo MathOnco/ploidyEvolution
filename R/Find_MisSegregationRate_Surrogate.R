@@ -91,25 +91,25 @@ for (can in cancerList) {
     Y = cbind(Y, met)
     groups[[can]] = c(groups[[can]], rep("met", ncol(met)))
   }
-  allmat[[can]] = Y
+  allrna[[can]] = Y
 }
 
 
 ###############################################################################
 ### Integrate TCGA & GEO data adjusting for Batch Effects using comBat-seq ####
 ###############################################################################
-allmat$GEO = Z
+allrna$GEO = Z
 groups$GEO = rep("BRCA",ncol(Z))
 groups$GEO[grep("met",samples[colnames(Z)])] = "met"
 ## Genes expressed in all datasets
-fr=plyr::count(unlist(lapply(allmat,rownames)))
-fr=fr[fr$freq==length(allmat),]
+fr=plyr::count(unlist(lapply(allrna,rownames)))
+fr=fr[fr$freq==length(allrna),]
 ### Combine all our gene expression data together into the combined data frame
-combined = sapply(allmat, function(x) x[fr$x,])
+combined = sapply(allrna, function(x) x[fr$x,])
 combined = do.call(cbind,combined)
 combined =as.matrix(combined)
 ### Here we need to assign batch numbers to each batch in our data
-batchMat<-sapply(allmat,ncol)
+batchMat<-sapply(allrna,ncol)
 batch<-list()
 for (i in 1:length(batchMat)){
   batch[[i]]<-rep(i, batchMat[i])
@@ -122,7 +122,7 @@ geneLengths<-as.data.frame(geneInfo$endpos-geneInfo$startpos, row.names = geneIn
 colnames(geneLengths)<-"Length"
 ## Transform counts to TPM
 combined = combined[rownames(combined) %in% rownames(geneLengths),]
-combined = 100*sweep(combined, MARGIN=1, geneLengths[rownames(combined), "length"],FUN = "/")
+combined = 100*sweep(combined, MARGIN=1, geneLengths[rownames(combined), "Length"],FUN = "/")
 
 ### Now we apply the ComBat_seq function to adjust for batch effects
 adjusted <- ComBat_seq(combined, batch=batch!=max(batch), group=unlist(groups))
@@ -183,11 +183,17 @@ inp$Lagging.Chromosome = log(inp$Lagging.Chromosome)
 m = lm(inp$Lagging.Chromosome ~inp[[poi]])
 summary(m)
 ## Visualize
-pdf("~/Downloads/MS_predictions_9Cancers_TPM.pdf")
-plot(inp[[poi]],exp(inp$Lagging.Chromosome),col=3+inp$metastasis,xlab=poi,pch=20,cex=2,main=paste("R^2 =",summary(m)$adj.r.squared))
+## Set up colors
+dd <- unique(MN$cell.line)
+dd.col <- wes_palette(n=length(dd), "Darjeeling2", type = "discrete")
+names(dd.col)  <- dd
+pdf("~/Downloads/MS_predictions_9Cancers_TPM_.pdf")
+plot(inp[[poi]],exp(inp$Lagging.Chromosome),col=dd.col,xlab=poi,pch=ifelse(inp$metastasis>0, 8,20),cex=2,main=paste("R^2 =",summary(m)$adj.r.squared))
 o<-predict(m, inp, interval="confidence")
 lines(inp[[poi]],exp(o[,"fit"]))
-legend("topright",paste("metastasis",unique(inp$metastasis)),fill=unique(c(3+inp$metastasis)),bty="n",cex=1.5)
+# legend("topright",paste("metastasis",unique(inp$metastasis)),fill=unique(c(3+inp$metastasis)),bty="n",cex=1.5)
+legend("topright",names(dd.col),fill=dd.col,bty="n",cex=1.5)
+
 
 ## Use model to predict MS rate in TCGA cancers
 pq = all_pq#[,grep("GEO.",colnames(all_pq), invert = T)]
