@@ -29,7 +29,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(minChrom,maxChrom,stepChrom,nChrom,misRate,deathRate,focal_birthRate) = pars
+	(chromArray,nChrom,misRate,deathRate,focal_birthRate) = pars
 
 	
 	# Iterate over each compartment
@@ -37,7 +37,7 @@ function ploidyModel(du,u,pars,t)
 		net_flow = 0.0
 			
 		focalCN =  collect(i[k] for k in 1:nChrom) ;
-		parentCNList = calculateParents(focalCN, (Int).minChrom, (Int).maxChrom, (Int).stepChrom);
+		parentCNList = calculateParents(focalCN, chromArray[1].offset, chromArray[1].len, Int(chromArray[1].step));
 
 		# Get flow rate from parentCN -> focalCN
 		flowRate = map(t -> q(t,focalCN,misRate,nChrom), parentCNList) ;
@@ -175,7 +175,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (minChrom,maxChrom,stepsize,nChrom,misRate,deathRate,focal_birthRate)
+	odePars = (chromArray,nChrom,misRate,deathRate,focal_birthRate)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
