@@ -15,12 +15,12 @@ START=$(date +%s)
 for p in 2 4 8
 do
    	START=$(date +%s)
-	julia -p 4 --project=. -L ploidyMovement.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
+	julia -p $p --project=. -L ploidyMovement.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
 	END=$(date +%s)
 	echo "$i, $((END-START)), gpu, $p, $j" >> simtimes.txt
 
    	START=$(date +%s)
-	julia -p 4 --project=. -L ploidyMovement_no-gpu.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
+	julia -p $p --project=. -L ploidyMovement_no-gpu.jl driver.jl -i input_$i.toml -c birthLandscapeBrainCancer.txt 
 	END=$(date +%s)
 	echo "$i, $((END-START)), no_gpu, $p, $j" >> simtimes.txt
 
