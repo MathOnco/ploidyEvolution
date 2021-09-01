@@ -29,7 +29,7 @@ include("polyHarmonicInterp.jl")
 function ploidyModel(du,u,pars,t)
 
 	# Grab the parameters
-	(minChrom,maxChrom,stepChrom,nChrom,chromArray,misRate,deathRate,focal_birthRate,compartments,debugging) = pars
+	(minChrom,maxChrom,stepChrom,nChrom,misRate,deathRate,focal_birthRate) = pars
 
 	
 	# Iterate over each compartment
@@ -175,7 +175,7 @@ function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp,nChrom,chromArray,misRate,deathRate,focal_birthRate, compartments, debugging)
+	odePars = (minChrom,maxChrom,stepChrom,nChrom,misRate,deathRate,focal_birthRate)
 	prob = ODEProblem(ploidyModel,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=callback)
 
