@@ -1,0 +1,11 @@
+debugging = 3
+stepsize = 1.0
+minChrom = 1.0
+maxChrom = 5.0
+deathRate = 0.1
+misRate = 0.15
+finalDay = 30.0
+replating = false
+maxPop = 1e6
+startPop = 1e3
+compartmentMinimum = false
