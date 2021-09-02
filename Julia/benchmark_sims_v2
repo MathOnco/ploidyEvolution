@@ -7,7 +7,7 @@ do
 	julia --project=. -L ploidyMovement_minalloc.jl driver.jl -i input_$i.toml -c $j -b Yy.txt -v
 	END=$(date +%s)
 	echo "$i, $j, $((END-START)), minalloc, 1" >> simtimes_2.txt
-do
+
    	START=$(date +%s)
 	julia -p 8 --project=. -L ploidyMovement.jl driver.jl -i input_$i.toml -c $j -b Yy.txt -v 
 	END=$(date +%s)
