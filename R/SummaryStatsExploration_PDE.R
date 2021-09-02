@@ -1,6 +1,8 @@
-setwd("~/Downloads/ploidyEvolution/Julia")
-name="cn_5_seq2.csv"
-coi="#1:1:1:1:1"
+library(matlab)
+setwd("~/Downloads/sim/")
+name="cn_3_seq3"
+excludeInitialComp = F
+coi="#2:2:2"
 f=list.files(".",pattern=name)
 xy=c(grep("x.csv",f,value = T),grep("y.csv",f,value = T))
 xy=sapply(xy,function(x) read.table(x)$V1)
@@ -24,36 +26,60 @@ for(csv in f){
   idx = lapply(2:length(idx), function(i) (idx[i-1]+1):(idx[i]-1) )
   cells_per_cptm = lapply(idx,function(i) apply(a[i,],2,as.numeric))
   names(cells_per_cptm) = cptm
-  image(cells_per_cptm$`#1:1:1:1:1`)
+  image(cells_per_cptm[[coi]])
   sapply(cells_per_cptm,dim)
+  if(excludeInitialComp){
+    cells_per_cptm=cells_per_cptm[names(cells_per_cptm) != coi ]
+  }
   All[[time]]=cells_per_cptm
 }
+
+## population growth rates
+total = sapply(names(All$time_0_0), function(x) sapply(All, function(y) sum(sum(y[[x]],na.rm=T))))
+par(mfrow=c(3,3)); 
+tmp=sapply(colnames(total),function(x) plot(total[,x],xlab="time",ylab=x))
+
 
 ##Choose what (e.g. which compartment(s) or sum-stats) to visualize 
 pop = list()
 for(t in names(All)){
   ## guarantee consistent compartment order
   All[[t]] = All[[t]][names(All[[1]])]
-  dom = ones(max(xy$Var1),max(xy$Var2))
-  dom = list(total=dom, max=dom)
-  dom[[coi]] = dom$total
+  dom = NA*ones(max(xy$Var1),max(xy$Var2))
+  dom = list(total=dom, max=dom,mean=dom, nonZeroMin=dom, nPop=dom)
+  if(!excludeInitialComp){
+    dom[[coi]] = dom$total
+  }
   for(k in 1:nrow(xy)){
     i = xy[k,1]
     j = xy[k,2]
     focal= sapply(All[[t]], function(x) as.numeric(x[i,j]))
-    dom$max[i,j] = which.max(focal) 
-    dom[[coi]][i,j] = focal[coi]/sum(focal)
-    dom$total[i,j] = sum(focal)
+    print(focal)
+    if(!excludeInitialComp){
+      dom[[coi]][i,j] = focal[coi]
+    }
+    dom$total[i,j] = sum(focal,na.rm=T)
+    dom$mean[i,j] = mean(focal,na.rm=T)
+    dom$nPop[i,j] = sum(focal>0,na.rm=T)
+    if(any(focal>0)){
+      dom$nonZeroMin[i,j] = which.min(focal[focal>0])
+      dom$max[i,j] = which.max(focal) 
+    }
   }
   pop[[t]] = dom
 }
 
-##Visualize
+mstest=any(sapply(pop, function(x) sum(!is.na(x$max) && x$max!=x$nonZeroMin)))
+print(paste("Mis-segregations observed:",mstest))
+
+##Visualize 
 pdf("~/Downloads/ploidyModel_PDEeval.pdf",width = 10,height = 8)
 for(what in names(dom)){
-  par(mfrow=c(2,3))
-  sapply(pop, function(x) image(x[[what]],main=what))
-  sapply(Energy, function(x) image(as.matrix(x),main="Energy"))
+  par(mfrow=c(1,1))
+  minmax=sapply(pop,function(x) quantile(as.numeric(x[[what]]), c(0,1),na.rm = T));
+  plot(minmax[2,],log="y",ylab=what)
+  minmax=quantile(minmax,c(0,1),na.rm=T)
+  tmp=sapply(names(pop), function(x) image(pop[[x]][[what]],main=paste(what,x),col=rainbow(100)));#zlim=minmax,
 }
+tmp=sapply(Energy, function(x) image(as.matrix(x),main="Energy"))
 dev.off()
-
