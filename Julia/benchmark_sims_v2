@@ -1,0 +1,26 @@
+echo "maxChrom, nchrom, time, simtype, processes" > simtimes_2.txt
+for i in 5 7 10 
+do
+for j in 5chr.txt 7chr.txt 10chr.txt
+do
+	START=$(date +%s)
+	julia --project=. -L ploidyMovement_minalloc.jl driver.jl -i input_$i.toml -c $j -b Yy.txt -v
+	END=$(date +%s)
+	echo "$i, $j, $((END-START)), minalloc, 1" >> simtimes_2.txt
+for p in 2 4 8
+do
+   	START=$(date +%s)
+	julia -p 8 --project=. -L ploidyMovement.jl driver.jl -i input_$i.toml -c $j -b Yy.txt -v 
+	END=$(date +%s)
+	echo "$i, $j, $((END-START)), gpu, 8" >> simtimes_2.txt
+
+   	START=$(date +%s)
+	julia -p 8 --project=. -L ploidyMovement_no-gpu.jl driver.jl -i input_$i.toml -c $j -b Yy.txt -v 
+	END=$(date +%s)
+	echo "$i, $j, $((END-START)), no_gpu, 8" >> simtimes_2.txt
+
+	
+
+done
+done
+ 
