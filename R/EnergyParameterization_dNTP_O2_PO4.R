@@ -106,7 +106,7 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     doi = P$O2_brain_min
     
     # x=(30:(10000*P$K_M_poly*3))/5000
-    x_o2 = seq(0.75,P$K_M_RNR*3.5,by=0.01)
+    x_o2 = seq(P$K_M_RNR/10,P$K_M_RNR*10.5,by=P$K_M_RNR/15)
   }
   
   
@@ -116,6 +116,7 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   activeRNRPerCell=1
   out = list()
   logF = "x"
+  halfMax=list()
   # pdf(paste0("~/Downloads/",FLAG_SUBSTRATE,".pdf"), width = 4, height = 4)
   for(i in 1:nrow(cpc)){
     ploidy = cpc$ploidy[i]
@@ -149,7 +150,8 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     lines(x_, out[[cpc$Sample[i]]], col=col[cpc$Sample[i]], lwd=5)
     points(x_, out[[cpc$Sample[i]]], cex=0.4, col=col[cpc$Sample[i]], pch=20)
     ## plot single data point
-    idx = which.min(abs(x_-doi))
+    idx = which.min(abs(out[[cpc$Sample[i]]]-2*min(out[[cpc$Sample[i]]])))
+    halfMax[[cpc$Sample[i]]] = x_[idx]
     if(idx>1 & idx<length(x_)){
       print(humanGenome/(numPolymerases* y[idx]))
       points(x_[idx], out[[cpc$Sample[i]]][idx], pch=3, cex=2)
@@ -168,5 +170,5 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   # plot(o2_mmhg, z, xlab="O2 mmHg", ylab="risk of death",log="x",pch=20,col=col[as.character(ploidy)])
   # plot(o2_mmhg, 1-z, xlab="O2 mmHg", ylab="chance of complete mitosis",log="x",pch=20,col=col[as.character(ploidy)])
   
-  
+  return(halfMax)
 }
