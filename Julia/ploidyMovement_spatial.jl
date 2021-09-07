@@ -149,7 +149,7 @@ function ploidyModel(du,u,pars,t)
 
 			# Information if debugging
 			if debugging > 5 && (inflow != 0.0 || outflow != 0.0)
-				@show t,focalCN,inflow,outflow, s[focal...]
+				@show t,focalCN,inflow,outflow, s_focal
 			end
 
 			# Update the RHS dependent on where we are in the domain
