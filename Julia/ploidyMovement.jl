@@ -33,14 +33,10 @@ include("polyHarmonicInterp.jl")
 function ploidy_wellmixed_model(du,u,pars,t)
 
 	# Grab the parameters
-	@unpack (interp,nChrom,chromArray,misRate,deathRate,debugging) = pars
+	@unpack (focal_birthRate,nChrom,minChrom,maxChrom,stepChrom,misRate,deathRate) = pars
 
-	# FIX ME:: Assume that all chroms have same lower, upper and step size
-	minChrom,stepsize,maxChrom = Int.([chromArray[1] |> f for f in (first,step,length)])
-
-	# Iterate over each compartment
-	for (i,focal) in enumerate(
-		Iterators.product((1:length(j) for j in chromArray)...))
+	# Iterate over each compartment 
+	for i in CartesianIndices(u)
 
 		#=
 		1) calculateParents(focal, minChrom, maxChrom, stepChrom)
@@ -51,17 +47,17 @@ function ploidy_wellmixed_model(du,u,pars,t)
 			b. outflow needs to calculate birth, death and flow rate
 		=#
 
-		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom)
+		focalCN =  collect(i[k] for k in 1:nChrom);
 
-		parentCNList = calculateParents(focalCN, minChrom,maxChrom,stepsize)
+		parentCNList = calculateParents(focalCN, minChrom,maxChrom,stepChrom)
 
 		inflow = 0.0
 
 		# Inflow from the parents
 		for parentCN in parentCNList
 
-			# Get birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+			# Get birth rate from precomputed
+			birthRate = focal_birthRate[Int.(parentCN)...]
 
 			# Get flow rate from parentCN -> focalCN
 			flowRate = q(parentCN,focalCN,misRate,nChrom)
@@ -72,16 +68,16 @@ function ploidy_wellmixed_model(du,u,pars,t)
 		end
 
 		# Grab the focal cells birth rate
-		birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
+		birthRate = focal_birthRate[i]
 
 		# Add it to the inflow to the focal compartment
-		inflow += birthRate*(1.0 - 2*misRate)*u[focal...]
+		inflow += birthRate*(1.0 - 2*misRate)*u[i]
 
 		# Death of the focal compartment
-		outflow = deathRate*u[focal...]
+		outflow = deathRate*u[i]
 
 		# Update the RHS
-		du[focal...] = inflow - outflow
+		du[i] = inflow - outflow
 		
 	end
 
@@ -90,7 +86,7 @@ end
 function ploidy_spatial_model(du,u,pars,t)
 
 	# Grab the parameters
-	@unpack (interp,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,
+	@unpack (focal_birthRate,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,
 	domain_Dict,boundary_Dict,debugging) = pars
 
 	# FIX ME:: Assume that all chroms have same lower, upper and step size
@@ -169,7 +165,7 @@ function ploidy_spatial_model(du,u,pars,t)
 			for parentCN in parentCNList
 
 				# Get max birth rate
-				birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,parentCN')[1],0.0)
+				birthRate = focal_birthRate[Int.(parentCN)...]
 
 				# Get flow rate from parentCN -> focalCN
 				flowRate = q(parentCN,focalCN,misRate,nChrom)
@@ -180,8 +176,7 @@ function ploidy_spatial_model(du,u,pars,t)
 			end
 
 			# Grab the focal cells (max?) birth rate
-			birthRate = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0)
-
+			birthRate = focal_birthRate[Int.(focalCN)...]
 			# Add it to the inflow to the focal compartment
 			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*s_focal
 
@@ -318,6 +313,13 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
 	u0[startingPopCN...] = 1.0
 
+	##compute birth rates associated with each copy number state
+	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
+	for (i,focal) in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
+		focal_birthRate[focal...] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
+	end
+
 	# If we are replating, we do so when the population is million-fold in size
 	cb1 = nothing
 	if replating
@@ -350,12 +352,13 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	end
 
 	# run simulation
-	odePars = (interp=interp,
+	odePars = (focal_birthRate=focal_birthRate,
 				nChrom=nChrom,
-				chromArray=chromArray,
+				minChrom = chromArray[1].offset, 
+				maxChrom = chromArray[1].len, 
+				stepChrom=Int(chromArray[1].step),
 				misRate=misRate,
-				deathRate=deathRate,
-				debugging=debugging)
+				deathRate=deathRate)
 	prob = ODEProblem(ploidy_wellmixed_model,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)
 
@@ -515,9 +518,16 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 		println("Beginning simulation...")
 	end
 
+	##compute birth rates associated with each copy number state
+	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
+	for (i,focal) in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
+		focal_birthRate[focal...] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
+	end
+
 	# run simulation
 	# isoutofdomain = (u,p,t)->any(x->x<0,u)
-	odePars = (interp=interp,
+	odePars = (focal_birthRate=focal_birthRate,
 				nChrom=nChrom,
 				chromArray=chromArray,
 				misRate=misRate,
