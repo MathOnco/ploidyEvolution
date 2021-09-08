@@ -362,7 +362,6 @@ function main()
 	# Run ploidy movement
 	# results, time = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
 	
-
 	if spatial
 
 		sol, cnArray = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
