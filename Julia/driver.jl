@@ -33,44 +33,45 @@ end
 # Struct containing input data needed for simulation with default values
 struct WellMixedInput
 
-	debugging::Int				# prints info from ploidyMovement
-	stepsize::Real				# discretization of chromosome
-	minChrom::Real				# minimum chromosome allowed
-	maxChrom::Real				# maximum chromosome allowed
-	deathRate::Float64			# universal death rate
-	misRate::Float64 			# universal missegregation rate
-	finalDay::Real				# end of simulation
-	replating::Bool				# Whether we replate the cells
-	startPop::Real				# Starting population size 
-	maxPop::Real				# Max population before replating
-	compartmentMinimum::Bool	# Sets sizes < 1 to 0 if true
-	progress_check::Bool		# Prints the current time of the simulation
-	interpolation_order::Int	# Allows the user to set the order of polyharmonic spline
+	debugging::Int					# prints info from ploidyMovement
+	stepsize::Real					# discretization of chromosome
+	minChrom::Real					# minimum chromosome allowed
+	maxChrom::Real					# maximum chromosome allowed
+	deathRate::Float64				# universal death rate
+	misRate::Float64 				# universal missegregation rate
+	finalDay::Real					# end of simulation
+	replating::Bool					# Whether we replate the cells
+	startPop::Real					# Starting population size 
+	maxPop::Real					# Max population before replating
+	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
+	progress_check::Bool			# Prints the current time of the simulation
+	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
 end
 
 struct SpatialInput
 
-	debugging::Int				# prints info from ploidyMovement
-	stepsize::Number			# discretization of chromosome
+	debugging::Int					# prints info from ploidyMovement
+	stepsize::Number				# discretization of chromosome
 	minChrom::Number
-	maxChrom::Number			# maximum chromosome allowed
-	deathRate::Number			# universal death rate
-	misRate::Float64			# universal missegregation rate
-	Γ::Number					# Random cell motion
-	Γₑ::Number					# Nutrient diffusion
-	ϕ::Number					# Nutrient level needed for half-maximal growth rate
-	Ξ::Number					# Energy needed for half maximal directional motion
-	χ::Number					# Directed motion magnitude
-	δ::Number					# Energy consumption
-	Np::Vector{Int}				# Grid size
-	finalDay::Real				# end of simulation
-	replating::Bool				# Whether we replate the cells
-	startPop::Real				# Starting population size 
-	maxPop::Real				# Max population before replating
-	compartmentMinimum::Bool	# Sets sizes < 1 to 0 if true
-	progress_check::Bool		# Prints the current time of the simulation
-	interpolation_order::Int	# Allows the user to set the order of polyharmonic spline
+	maxChrom::Number				# maximum chromosome allowed
+	deathRate::Number				# universal death rate
+	misRate::Float64				# universal missegregation rate
+	Γ::Number						# Random cell motion
+	Γₑ::Number						# Nutrient diffusion
+	ϕ::Number						# Nutrient level needed for half-maximal growth rate
+	Ξ::Number						# Energy needed for half maximal directional motion
+	χ::Number						# Directed motion magnitude
+	δ::Number						# Energy consumption
+	Np::Vector{Int}					# Grid size
+	finalDay::Real					# end of simulation
+	replating::Bool					# Whether we replate the cells
+	startPop::Real					# Starting population size 
+	maxPop::Real					# Max population before replating
+	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
+	max_cell_cycle_duration::Number	# Length of cell cycle (assumed to be in hours)
+	progress_check::Bool			# Prints the current time of the simulation
+	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
 end
 
@@ -171,6 +172,7 @@ function SpatialInput()
 	Np = [21,21]
 	progress_check=false
 	interpolation_order=2
+	max_cell_cycle_duration = 100.0
 
 	SpatialInput(
 		debugging,
@@ -191,6 +193,7 @@ function SpatialInput()
 		startPop,
 		maxPop,
 		compartmentMinimum,
+		max_cell_cycle_duration,
 		progress_check,
 		interpolation_order
 		)
@@ -223,6 +226,7 @@ function SpatialInput(inputFile::String)
 	Np = get(data,"Np",[21,21])
 	progress_check = get(data,"progress_check",false)
 	interpolation_order = get(data,"interpolation_order",2)
+	max_cell_cycle_duration = get(data,"max_cell_cycle_duration",100.0)
 
 	SpatialInput(
 		debugging,
@@ -243,6 +247,7 @@ function SpatialInput(inputFile::String)
 		startPop,
 		maxPop,
 		compartmentMinimum,
+		max_cell_cycle_duration,
 		progress_check,
 		interpolation_order
 		)

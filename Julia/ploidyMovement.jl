@@ -87,7 +87,7 @@ function ploidy_spatial_model(du,u,pars,t)
 
 	# Grab the parameters
 	@unpack (focal_birthRate,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,
-	domain_Dict,boundary_Dict,debugging) = pars
+	domain_Dict,boundary_Dict,max_cell_cycle_duration,debugging) = pars
 
 	# FIX ME:: Assume that all chroms have same lower, upper and step size
 	minChrom,stepsize,maxChrom = Int.([chromArray[1] |> f for f in (first,step,length)])
@@ -153,9 +153,11 @@ function ploidy_spatial_model(du,u,pars,t)
 				normal_vector = boundary_Dict[coord] 	# Grab normal vector
 				for i = 1 : length(dp)
 					if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
-						s_plus[i] = s_minus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))
+						s_plus[i] = s_minus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
+						chemotaxis_form(E_minus[i],Ξ))
 					elseif normal_vector[i] > 0 # The leftward point is in the vessel
-						s_minus[i] = s_plus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))
+						s_minus[i] = s_plus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
+						chemotaxis_form(E_minus[i],Ξ))
 					end
 				end
 			end
@@ -167,18 +169,26 @@ function ploidy_spatial_model(du,u,pars,t)
 				# Get max birth rate
 				birthRate = focal_birthRate[Int.(parentCN)...]
 
-				# Get flow rate from parentCN -> focalCN
-				flowRate = q(parentCN,focalCN,misRate,nChrom)
-
-				# Will need to have this be the index in the future
-				inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*flowRate*s[Int.(parentCN)...,coord...]
+				# If birth rate is below a threshold determined by amount spent in G1 (default is 100 hours)
+				# then we assume that birth does not occur...
+				energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+				if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+					# Get flow rate from parentCN -> focalCN
+					flowRate = q(parentCN,focalCN,misRate,nChrom)
+					inflow += energy_modified_birth_rate*flowRate*s[Int.(parentCN)...,coord...]
+				end
 
 			end
 
+
 			# Grab the focal cells (max?) birth rate
 			birthRate = focal_birthRate[Int.(focalCN)...]
-			# Add it to the inflow to the focal compartment
-			inflow += birthRate*energy_constrained_birth(E_focal,ϕ)*(1.0 - 2*misRate)*s_focal
+			energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+
+			if energy_modified_birth_rate > max_cell_cycle_duration
+				# Add it to the inflow to the focal compartment
+				inflow += energy_modified_birth_rate*(1.0 - 2*misRate)*s_focal
+			end
 
 			# Death of the focal compartment
 			outflow = deathRate*s_focal
@@ -303,7 +313,7 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	nChrom = interp.dim
 
 	# The allowable states
-	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
+	chromArray = [minChrom:stepsize:maxChrom for _ in 1:nChrom]
 
 	# Total number of states
 	nComp = prod(length(arr) for arr in chromArray)
@@ -315,7 +325,7 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 
 	##compute birth rates associated with each copy number state
 	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
-	for (i,focal) in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+	for focal in Iterators.product((1:length(j) for j in chromArray)...)
 		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 		focal_birthRate[focal...] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
 	end
@@ -358,7 +368,8 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 				maxChrom = chromArray[1].len, 
 				stepChrom=Int(chromArray[1].step),
 				misRate=misRate,
-				deathRate=deathRate)
+				deathRate=deathRate,
+				)
 	prob = ODEProblem(ploidy_wellmixed_model,u0,tspan,odePars)
 	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)
 
@@ -397,7 +408,11 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
 	compartmentMinimum,
 	progress_check,
+	max_cell_cycle_duration,
 	interpolation_order) = params
+
+	# convert max cell cycle to days (the time scale used)
+	max_cell_cycle_duration/= 24.0
 
 	k,E_vessel,saveat = 0.5,1.0,0.05
 	#= Build domain matrix:
@@ -535,6 +550,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 				Γ=Γ,Γₑ=Γₑ,ϕ=ϕ,Ξ=Ξ,χ=χ,δ=δ,Np=Np,k=k,E_vessel=E_vessel,
 				domain_Dict=domain_Dict,
 				boundary_Dict=boundary_Dict,
+				max_cell_cycle_duration=max_cell_cycle_duration,
 				debugging=debugging)
 	prob = ODEProblem(ploidy_spatial_model,u0,tspan,odePars)
 	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
