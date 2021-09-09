@@ -69,7 +69,7 @@ struct SpatialInput
 	startPop::Real					# Starting population size 
 	maxPop::Real					# Max population before replating
 	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
-	max_cell_cycle_duration::Number	# Length of cell cycle (assumed to be in hours for now)
+	max_cell_cycle_duration::Number	# Length of cell cycle (assumed to be in hours)
 	progress_check::Bool			# Prints the current time of the simulation
 	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
