@@ -16,5 +16,5 @@ compartmentMinimum = false
 "δ" = 0.0005
 Np = [21,21]
 progress_check = true
-max_cell_cycle_duration = 200000
+max_cell_cycle_duration = 100
 interpolation_order = 2
