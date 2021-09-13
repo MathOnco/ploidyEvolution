@@ -117,7 +117,7 @@ function ploidy_spatial_model(du,u,pars,t)
 
 		# Gets the points to be used for spatial grid resolution
 		E_cardinal = [E[info...] for info in cardinal_point_info]
-		E_minus,E_plus = E_cardinal[1:2:end],E_cardinal[2:2:end]
+		E_minus,E_plus = E_cardinal[end:-2:1],E_cardinal[end:-2:2]
 		E_focal = E[coord...]
 
 		if domain_info == 1	# boundary of vessel
@@ -146,7 +146,7 @@ function ploidy_spatial_model(du,u,pars,t)
 			# copy state to local variables for brevity
 			s_focal = s[focal...,coord...]
 			s_cardinal = [s[focal...,info...] for info in cardinal_point_info]
-			s_minus,s_plus = s_cardinal[1:2:end],s_cardinal[2:2:end]
+			s_minus,s_plus = s_cardinal[end:-2:1],s_cardinal[end:-2:2]
 
 			# Checking the boundary
 			if domain_info == 1	# boundary of vessel
@@ -156,38 +156,50 @@ function ploidy_spatial_model(du,u,pars,t)
 						s_plus[i] = s_minus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
 						chemotaxis_form(E_minus[i],Ξ))
 					elseif normal_vector[i] > 0 # The leftward point is in the vessel
-						s_minus[i] = s_plus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
+						s_minus[i] = s_plus[i] - χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
 						chemotaxis_form(E_minus[i],Ξ))
 					end
 				end
 			end
 			
+			if E_focal > 0
+				# Inflow from the parents
+				for parentCN in parentCNList
 
-			# Inflow from the parents
-			for parentCN in parentCNList
+					s_parent = s[Int.(parentCN)...,coord...]
 
-				# Get max birth rate
-				birthRate = focal_birthRate[Int.(parentCN)...]
+					# Get max birth rate
+					birthRate = focal_birthRate[Int.(parentCN)...]
 
-				# If birth rate is below a threshold determined by amount spent in G1 (default is 100 hours)
-				# then we assume that birth does not occur...
-				energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
-				if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
-					# Get flow rate from parentCN -> focalCN
-					flowRate = q(parentCN,focalCN,misRate,nChrom)
-					inflow += energy_modified_birth_rate*flowRate*s[Int.(parentCN)...,coord...]
+					if s_parent == 0.0 || birthRate == 0.0
+						continue
+					end
+
+					# If birth rate is below a threshold determined by amount spent in G1 (default is 100 hours)
+					# then we assume that birth does not occur...
+					energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+					if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+						# Get flow rate from parentCN -> focalCN
+						flowRate = q(parentCN,focalCN,misRate,nChrom)
+						inflow += energy_modified_birth_rate*flowRate*s_parent
+					else
+						# println("At energy level $(E_focal), birth rate of $(parentCN) is too low...")
+					end
+
 				end
 
-			end
 
+				# Grab the focal cells (max?) birth rate
+				birthRate = focal_birthRate[Int.(focalCN)...]
+				energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
 
-			# Grab the focal cells (max?) birth rate
-			birthRate = focal_birthRate[Int.(focalCN)...]
-			energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+				if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+					# Add it to the inflow to the focal compartment
+					inflow += energy_modified_birth_rate*(1.0 - 2.0*misRate)*s_focal
+				else
+					# println("At energy level $(E_focal), birth rate of $(focalCN) is too low...")
+				end
 
-			if energy_modified_birth_rate > max_cell_cycle_duration
-				# Add it to the inflow to the focal compartment
-				inflow += energy_modified_birth_rate*(1.0 - 2*misRate)*s_focal
 			end
 
 			# Death of the focal compartment
@@ -414,7 +426,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	# convert max cell cycle to days (the time scale used)
 	max_cell_cycle_duration/= 24.0
 
-	k,E_vessel,saveat = 0.5,1.0,0.05
+	k,E_vessel,saveat = 0.5,1.0,0.1
 	#= Build domain matrix:
 
 	0 : In domain
@@ -451,6 +463,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	# Fill dict with info about the normal vector
 	boundary_Dict = Dict{Tuple{Int,Int},Any}()
 
+	# But first we find whether the point is interior
 	for k in keys(domain_Dict)
 		i,j = k[1],k[2]
 		i_plus = (i == Np[1]) ? 1 : i+1
@@ -461,17 +474,38 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 		# Vessel interior point
 		if issubset([(i,j_plus),(i,j_minus),(i_plus,j),(i_minus,j)],keys(domain_Dict))
 			domain_Dict[k] = 2
-		# Vessel boundary point
-		else
-			normal = [0;0]
-			normal[1] += (i,j_plus) in keys(domain_Dict) ? -1 : 0
-			normal[1] += (i,j_minus) in keys(domain_Dict) ? 1 : 0
-			normal[2] += (i_plus,j) in keys(domain_Dict) ? -1 : 0
-			normal[2] += (i_minus,j) in keys(domain_Dict) ? 1 : 0
-			normal/=norm(normal)
-			boundary_Dict[k] = normal
 		end
 	end
+
+	# If no cardinal direction has an interior point we will delete it from the dict
+	for (k,v) in domain_Dict
+
+		# We are at an interior point
+		if v == 1
+			i,j = k[1],k[2]
+			i_plus = (i == Np[1]) ? 1 : i+1
+			i_minus = (i == 1) ? Np[1] : i-1
+			j_plus = (j == Np[2]) ? 1 : j+1
+			j_minus = (j == 1) ? Np[2] : j-1
+
+			cardinal_directions = [(i,j_plus),(i,j_minus),(i_plus,j),(i_minus,j)]
+
+			if any(z->z==2,get(domain_Dict,k,0) for k in cardinal_directions)
+				# Vessel boundary point
+				normal = [0;0]
+				normal[1] += (i,j_plus) in keys(domain_Dict) ? -1 : 0
+				normal[1] += (i,j_minus) in keys(domain_Dict) ? 1 : 0
+				normal[2] += (i_plus,j) in keys(domain_Dict) ? -1 : 0
+				normal[2] += (i_minus,j) in keys(domain_Dict) ? 1 : 0
+				# normal/=norm(normal)
+				boundary_Dict[k] = normal
+			else
+				delete!(domain_Dict,k)
+			end
+		end
+	end
+
+
 
 	# Initialize energy to be zero outside the interior of the blood vessels
 	E0 = zeros(Np...)
@@ -535,9 +569,10 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 
 	##compute birth rates associated with each copy number state
 	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
-	for (i,focal) in enumerate(Iterators.product((1:length(j) for j in chromArray)...))
+	for focal in Iterators.product((1:length(j) for j in chromArray)...)
 		focalCN = collect(chromArray[k][focal[k]] for k in 1:nChrom);
 		focal_birthRate[focal...] = max(PolyharmonicInterpolation.polyharmonicSpline(interp,focalCN')[1],0.0);
+		println("CN = $focalCN, birth rate = $(focal_birthRate[focal...])")
 	end
 
 	# run simulation
