@@ -5,6 +5,7 @@ library("TCGAutils")
 library("curatedTCGAData")
 library(RMySQL)
 library(cloneid)
+devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
 
 ###########################################
 #### Cell lines: bulk expression & CNVs ###
@@ -15,6 +16,29 @@ ex=read.table("/mnt/ix1/Resources/data/Databases/CCLE/CCLE.rpkm.2016-06-17f.gct"
 appCL=read.table("/mnt/ix1/Resources/data/Databases/Cmap_LINCS/L1000/Cell_app_export.txt",sep="\t",check.names = F, stringsAsFactors = F, header = T, quote = "", comment.char = "")
 appCL = appCL[appCL$`CCLE name` %in% cellpass$CCLE_ID,]
 appCL$ploidy = cellpass$ploidy[match(appCL$`CCLE name`,cellpass$CCLE_ID)]
+
+## Format copy numbers:
+cn$CN_Estimate=1*2^cn$Segment_Mean
+cn$seglength = 1 + cn$End - cn$Start
+colnames(cn)[2:4]=c("chr","startpos","endpos")
+cn$CCLE_name=as.character(cn$CCLE_name)
+cn=cn[cn$chr %in% 1:22,]; 
+cn$chr=as.numeric(cn$chr)
+
+## Add ploidy information to copy numbers:
+cn$ploidy = NA
+for(x in intersect(appCL$`CCLE name`,cn$CCLE_name)){
+  ii = which(cn$CCLE_name==x)
+  cn$ploidy[ii] = appCL$ploidy[appCL$`CCLE name`==x]
+  cn$CN_Estimate[ii] = round(cn$ploidy[ii]) * cn$CN_Estimate[ii]
+  cn$ploidy[ii] = round(cn$ploidy[ii])
+}
+cn=lapply(unique(cn$CCLE_name), function(x) cn[cn$CCLE_name==x,])
+names(cn)= sapply(cn, function(x) x[1,1])
+## Test calculation of mis-segregation imprints:
+test  = calcMSimprints(cn$T98G_CENTRAL_NERVOUS_SYSTEM, p = 0, cnColumn = "CN_Estimate", precision = 1)
+
+
 
 
 
