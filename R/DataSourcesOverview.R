@@ -35,9 +35,10 @@ for(x in intersect(appCL$`CCLE name`,cn$CCLE_name)){
 }
 cn=lapply(unique(cn$CCLE_name), function(x) cn[cn$CCLE_name==x,])
 names(cn)= sapply(cn, function(x) x[1,1])
+
 ## Test calculation of mis-segregation imprints:
 test  = calcMSimprints(cn$T98G_CENTRAL_NERVOUS_SYSTEM, p = 0, cnColumn = "CN_Estimate", precision = 1)
-
+print(test$landscape[c("7","10","9")])
 
 
 
@@ -50,6 +51,9 @@ cellLine = "SNU-16"
 clones_d = getSubProfiles(cellLine, whichP = "GenomePerspective")
 ## scRNA-seq derived clone profiles
 clones_r = getSubProfiles(cellLine, whichP = "TranscriptomePerspective")
+
+
+
 
 
 ##############################
@@ -75,6 +79,10 @@ TCGA = list()
 for(can in intersect(cancers,c("GBM","STAD"))){
   TCGA[[can]]  <- curatedTCGAData(diseaseCode = can, assays = c("CNASeq", "RNASeq2*", "mRNAArray"), dry.run = FALSE)
 }
+
+
+
+
 
 
 ############################################
