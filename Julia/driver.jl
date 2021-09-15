@@ -1,7 +1,5 @@
 using TOML, CSV, DataFrames, ArgParse, JSON
 
-import Base.@kwdef
-
 # Used to search through command line for particular arguments
 function parse_commandline()
     s = ArgParseSettings()
@@ -12,6 +10,9 @@ function parse_commandline()
         "--verbosity", "-v"
             help = "Prints information to command line for debugging"
             action = :store_true
+		"--spatial", "-s"
+			help = "Use the spatial ploidy model"
+			action = :store_true
 		"--cnFile", "-c"
 			help = "Contains numeric array of copy numbers and header of which chromosomes"
 			default = "birthLandscapeBrainCancer.txt"
@@ -20,7 +21,7 @@ function parse_commandline()
 			default = "GrowthRate_brain_cancer_CLs.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
-			default = "output_0.csv"
+			default = "output"
 		"--u0"
 			help = "Array that contains CN of initial condition"
 			default = "[1,1,1,1,1]"
@@ -30,47 +31,68 @@ function parse_commandline()
 end
 
 # Struct containing input data needed for simulation with default values
-@kwdef struct Input
+struct WellMixedInput
 
-	debugging::Int = 0				# prints info from ploidyMovement
-	stepsize::Real = 1.0				# discretization of chromosome
-	minChrom::Real = 1.0				# minimum chromosome allowed
-	maxChrom::Real = 5.0				# maximum chromosome allowed
-	deathRate::Float64 = 0.1			# universal death rate
-	misRate::Float64 = 0.15				# universal missegregation rate
-	finalDay::Real = 30.0				# end of simulation
-	replating::Bool = false				# Whether we replate the cells
-	startPop::Real = 1e3		# Starting population size 
-	maxPop::Real = 1e6				# Max population before replating
-	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
-	progress_check::Bool = false
-	interpolation_order::Int = 2
+	debugging::Int					# prints info from ploidyMovement
+	stepsize::Real					# discretization of chromosome
+	minChrom::Real					# minimum chromosome allowed
+	maxChrom::Real					# maximum chromosome allowed
+	deathRate::Float64				# universal death rate
+	misRate::Float64 				# universal missegregation rate
+	finalDay::Real					# end of simulation
+	replating::Bool					# Whether we replate the cells
+	startPop::Real					# Starting population size 
+	maxPop::Real					# Max population before replating
+	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
+	progress_check::Bool			# Prints the current time of the simulation
+	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
 end
 
-function Input(inputFile::String)
+struct SpatialInput
 
-	# Dictionary that contains info from the toml (INPUT) file
-	data = TOML.tryparsefile(inputFile)
+	debugging::Int					# prints info from ploidyMovement
+	stepsize::Number				# discretization of chromosome
+	minChrom::Number
+	maxChrom::Number				# maximum chromosome allowed
+	deathRate::Number				# universal death rate
+	misRate::Float64				# universal missegregation rate
+	Γ::Number						# Random cell motion
+	Γₑ::Number						# Nutrient diffusion
+	ϕ::Number						# Nutrient level needed for half-maximal growth rate
+	Ξ::Number						# Energy needed for half maximal directional motion
+	χ::Number						# Directed motion magnitude
+	δ::Number						# Energy consumption
+	Np::Vector{Int}					# Grid size
+	finalDay::Real					# end of simulation
+	replating::Bool					# Whether we replate the cells
+	startPop::Real					# Starting population size 
+	maxPop::Real					# Max population before replating
+	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
+	max_cell_cycle_duration::Number	# Length of cell cycle (assumed to be in hours)
+	progress_check::Bool			# Prints the current time of the simulation
+	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
+
+end
+
+function WellMixedInput()
 
 	# Get the parameters for the struct.
-	debugging=get(data,"debugging",0)
-	stepsize=get(data,"stepsize",1.0)
-	# minChrom=get(data,"minChrom",1.0)
+	debugging= 0
+	stepsize= 1.0 
 	minChrom=1.0
-	maxChrom=get(data,"maxChrom",5.0)
-	deathRate=get(data,"deathRate",0.1)
-	misRate=get(data,"misRate",0.15)
-	finalDay=get(data,"finalDay",30.0)
-	replating=get(data,"replating",false)
-	startPop=get(data,"startPop",1e3)
-	maxPop=get(data,"maxPop",1e6)
-	compartmentMinimum=get(data,"compartmentMinimum",false)
-	progress_check=get(data,"progress_check",false)
-	interpolation_order = get(data,"interpolation_order",2)
-	
+	maxChrom=5.0
+	deathRate=0.1
+	misRate=0.15
+	finalDay=30.0
+	replating=false
+	startPop=1e3
+	maxPop=1e6
+	compartmentMinimum=false
+	progress_check=false
+	interpolation_order=2
 
-	Input(
+	WellMixedInput(
 		debugging,
 		stepsize,
 		minChrom,
@@ -88,21 +110,159 @@ function Input(inputFile::String)
 
 end
 
-function initialize()
+function WellMixedInput(inputFile::String)
 
-	# Default values to be fed into ploidyMovement
-	data = Input()
+	# Dictionary that contains info from the toml (INPUT) file
+	data = TOML.tryparsefile(inputFile)
+
+	# Get the parameters for the struct.
+	debugging=get(data,"debugging",0)
+	stepsize=get(data,"stepsize",1.0)
+	minChrom=1.0
+	maxChrom=get(data,"maxChrom",5.0)
+	deathRate=get(data,"deathRate",0.1)
+	misRate=get(data,"misRate",0.15)
+	finalDay=get(data,"finalDay",30.0)
+	replating=get(data,"replating",false)
+	startPop=get(data,"startPop",1e3)
+	maxPop=get(data,"maxPop",1e6)
+	compartmentMinimum=get(data,"compartmentMinimum",false)
+	progress_check=get(data,"progress_check",false)
+	interpolation_order = get(data,"interpolation_order",2)
+	
+
+	WellMixedInput(
+		debugging,
+		stepsize,
+		minChrom,
+		maxChrom,
+		deathRate,
+		misRate,
+		finalDay,
+		replating,
+		startPop,
+		maxPop,
+		compartmentMinimum,
+		progress_check,
+		interpolation_order
+		)
+
+end
+
+function SpatialInput()
+
+	# Get the parameters for the struct.
+	debugging= 0
+	stepsize= 1.0 
+	minChrom=1.0
+	maxChrom=5.0
+	deathRate=0.1
+	misRate=0.15
+	finalDay=30.0
+	replating=false
+	startPop=1e3
+	maxPop=1e6
+	compartmentMinimum=false
+	Γ = 0.05
+	Γₑ = 0.5
+	ϕ = 0.5
+	Ξ = 0.5
+	χ = 2.0
+	δ = 0.005
+	Np = [21,21]
+	progress_check=false
+	interpolation_order=2
+	max_cell_cycle_duration = 100.0
+
+	SpatialInput(
+		debugging,
+		stepsize,
+		minChrom,
+		maxChrom,
+		deathRate,
+		misRate,
+		Γ,
+		Γₑ,
+		ϕ,
+		Ξ,
+		χ,
+		δ,
+		Np,
+		finalDay,
+		replating,
+		startPop,
+		maxPop,
+		compartmentMinimum,
+		max_cell_cycle_duration,
+		progress_check,
+		interpolation_order
+		)
+
+end
+
+function SpatialInput(inputFile::String)
+
+	# Dictionary that contains info from the toml (INPUT) file
+	data = TOML.tryparsefile(inputFile)
+
+	# Get the parameters for the struct.
+	debugging=get(data,"debugging",0)
+	stepsize=get(data,"stepsize",1.0)
+	minChrom = 1.0
+	maxChrom=get(data,"maxChrom",5.0)
+	deathRate=get(data,"deathRate",0.1)
+	misRate=get(data,"misRate",0.15)
+	finalDay=get(data,"finalDay",30.0)
+	replating=get(data,"replating",false)
+	startPop=get(data,"startPop",1e3)
+	maxPop=get(data,"maxPop",1e6)
+	compartmentMinimum=get(data,"compartmentMinimum",false)
+	Γ = get(data,"Γ",0.05)
+	Γₑ = get(data,"Γₑ",0.05)
+	ϕ = get(data,"ϕ",1.0)
+	Ξ = get(data,"Ξ",1.0)
+	χ = get(data,"χ",2.0)
+	δ = get(data,"δ",0.005)
+	Np = get(data,"Np",[21,21])
+	progress_check = get(data,"progress_check",false)
+	interpolation_order = get(data,"interpolation_order",2)
+	max_cell_cycle_duration = get(data,"max_cell_cycle_duration",100.0)
+
+	SpatialInput(
+		debugging,
+		stepsize,
+		minChrom,
+		maxChrom,
+		deathRate,
+		misRate,
+		Γ,
+		Γₑ,
+		ϕ,
+		Ξ,
+		χ,
+		δ,
+		Np,
+		finalDay,
+		replating,
+		startPop,
+		maxPop,
+		compartmentMinimum,
+		max_cell_cycle_duration,
+		progress_check,
+		interpolation_order
+		)
+
+end
+
+function initialize()
 
 	# Grab command line args
 	parsed_args = parse_commandline()
 
-	# Replaces default parameters if input file is given
-	if !isnothing(parsed_args["input"])
-		data = Input(parsed_args["input"])
-	end
-
 	# Prints info if set to true
 	verbosity = parsed_args["verbosity"]
+
+	spatial = parsed_args["spatial"]
 
 	# Grab file containing copy number variation
 	CNmatFilename = parsed_args["cnFile"]
@@ -115,6 +275,21 @@ function initialize()
 
 	# Grab initial condition (it is a string so we parse and convert)
 	u0 = Int.(JSON.parse(parsed_args["u0"]))
+
+	# Default values to be fed into ploidyMovement
+	if spatial
+		data = SpatialInput()
+		# Replaces default parameters if input file is given
+		if !isnothing(parsed_args["input"])
+			data = SpatialInput(parsed_args["input"])
+		end
+	else
+		data = WellMixedInput()
+		# Replaces default parameters if input file is given
+		if !isnothing(parsed_args["input"])
+			data = WellMixedInput(parsed_args["input"])
+		end
+	end
 
 	# Error checking
 	if !isfile(CNmatFilename)
@@ -132,7 +307,7 @@ function initialize()
 		end
 	end
 
-	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
+	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity, spatial
 end
 
 function extract_XY(X_filename::String, Y_filename::String)
@@ -158,15 +333,13 @@ function extract_XY(X_filename::String, Y_filename::String)
 
 	return XY_df
 
-	# return X,Y
-
 end
 	
 
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
+	data, CNmatFilename, birthFilename, u0, outputFile, verbosity, spatial = initialize()
 
 	# Printing stuff to terminal
 	if verbosity
@@ -192,24 +365,47 @@ function main()
 	birth_rate = dropdims(birth_rate,dims=2)
 
 	# Run ploidy movement
-	results, time = runPloidyMovement(data,copy_number,birth_rate,u0)
-
-	outputHeader = permutedims(vcat(chromosome_header,time))
-
-	# create header for the solution output
-	# outputHeader = permutedims(
-	# 	vcat(
-	# 		["Chr$chr" for chr in header if typeof(chr) == Int],
-	# 		time
-	# 		)
-	# 		)
-
-	# concatnate the header with the results array
-	output = vcat(outputHeader,results)
-
-	# save to file
-	writedlm( outputFile,  output, ',')
+	# results, time = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
 	
+	if spatial
+
+		sol, cnArray = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
+
+		# Write results to multiple files by time points
+		for (index,t) in enumerate(sol.t)
+			open(outputFile*"_states_time_"*replace(string(t),"." => "_")*".csv","w") do io
+				for (i,cnstate) in enumerate(eachrow(cnArray))
+					z = sol[index].s[cnstate...,:,:]
+					cnstate = "#"*join(string(cnArray[i,:]...),":")
+					writedlm(io,[cnstate])
+					writedlm(io,z,',')
+				end
+			end
+			open(outputFile*"_Energy_time_"*replace(string(t),"." => "_")*".csv","w") do io
+				writedlm(io,sol[index].E,',')
+			end
+		end
+
+		# Save discretized domain
+		writedlm(outputFile*"_x.csv",range(0,1,length=data.Np[1]))
+		writedlm(outputFile*"_y.csv",range(0,1,length=data.Np[2]))
+
+	else
+
+		sol, cnArray,time = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
+
+		# convert to array for output
+		results = hcat(cnArray,sol)
+		outputHeader = permutedims(vcat(chromosome_header,time))
+
+		# concatnate the header with the results array
+		output = vcat(outputHeader,results)
+	
+		# save to file
+		writedlm( outputFile*".csv",  output, ',')
+
+	end
+
 end
 
 @time main()
