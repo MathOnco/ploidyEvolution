@@ -5,6 +5,7 @@ using LinearAlgebra
 using DelimitedFiles,CSV,DataFrames
 using Parameters
 using Distributed
+using Printf
 
 
 
@@ -87,7 +88,7 @@ function ploidy_spatial_model(du,u,pars,t)
 
 	# Grab the parameters
 	@unpack (focal_birthRate,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,
-	domain_Dict,boundary_Dict,max_cell_cycle_duration,debugging) = pars
+	domain_Dict,boundary_Dict,max_cell_cycle_duration,max_birthRate,debugging) = pars
 
 	# FIX ME:: Assume that all chroms have same lower, upper and step size
 	minChrom,stepsize,maxChrom = Int.([chromArray[1] |> f for f in (first,step,length)])
@@ -117,7 +118,7 @@ function ploidy_spatial_model(du,u,pars,t)
 
 		# Gets the points to be used for spatial grid resolution
 		E_cardinal = [E[info...] for info in cardinal_point_info]
-		E_minus,E_plus = E_cardinal[end:-2:1],E_cardinal[end:-2:2]
+		E_minus,E_plus = E_cardinal[end-1:-2:1],E_cardinal[end:-2:1]
 		E_focal = E[coord...]
 
 		if domain_info == 1	# boundary of vessel
@@ -146,7 +147,7 @@ function ploidy_spatial_model(du,u,pars,t)
 			# copy state to local variables for brevity
 			s_focal = s[focal...,coord...]
 			s_cardinal = [s[focal...,info...] for info in cardinal_point_info]
-			s_minus,s_plus = s_cardinal[end:-2:1],s_cardinal[end:-2:2]
+			s_minus,s_plus = s_cardinal[end-1:-2:1],s_cardinal[end:-2:1]
 
 			# Checking the boundary
 			if domain_info == 1	# boundary of vessel
@@ -161,8 +162,10 @@ function ploidy_spatial_model(du,u,pars,t)
 					end
 				end
 			end
+
+			energy_constraint = energy_constrained_birth(E_focal,ϕ)
 			
-			if E_focal > 0
+			if max_birthRate*energy_constraint > log(2)/max_cell_cycle_duration
 				# Inflow from the parents
 				for parentCN in parentCNList
 
@@ -177,7 +180,7 @@ function ploidy_spatial_model(du,u,pars,t)
 
 					# If birth rate is below a threshold determined by amount spent in G1 (default is 100 hours)
 					# then we assume that birth does not occur...
-					energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+					energy_modified_birth_rate = birthRate*energy_constraint
 					if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
 						# Get flow rate from parentCN -> focalCN
 						flowRate = q(parentCN,focalCN,misRate,nChrom)
@@ -189,15 +192,17 @@ function ploidy_spatial_model(du,u,pars,t)
 				end
 
 
-				# Grab the focal cells (max?) birth rate
-				birthRate = focal_birthRate[Int.(focalCN)...]
-				energy_modified_birth_rate = birthRate*energy_constrained_birth(E_focal,ϕ)
+				if s_focal > 0
+					# Grab the focal cells (max?) birth rate
+					birthRate = focal_birthRate[Int.(focalCN)...]
+					energy_modified_birth_rate = birthRate*energy_constraint
 
-				if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
-					# Add it to the inflow to the focal compartment
-					inflow += energy_modified_birth_rate*(1.0 - 2.0*misRate)*s_focal
-				else
-					# println("At energy level $(E_focal), birth rate of $(focalCN) is too low...")
+					if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+						# Add it to the inflow to the focal compartment
+						inflow += energy_modified_birth_rate*(1.0 - 2.0*misRate)*s_focal
+					else
+						# println("At energy level $(E_focal), birth rate of $(focalCN) is too low...")
+					end
 				end
 
 			end
@@ -364,8 +369,8 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	##### This is printed to terminal to tell you what time point you're at #####
 	cb2 = nothing
 	if progress_check
-		print_time(integrator) = println("t = $(floor(integrator.t))")
-		cb2 = PeriodicCallback(print_time, 1.0,save_positions=(false,false))
+		print_time(integrator) = @printf("t = %.2f\n",integrator.t)
+		cb2 = PeriodicCallback(print_time, 0.05,save_positions=(false,false))
 	end
 	cbset = CallbackSet(cb1,cb2)
 
@@ -465,7 +470,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 
 	# But first we find whether the point is interior
 	for k in keys(domain_Dict)
-		i,j = k[1],k[2]
+		i,j = k
 		i_plus = (i == Np[1]) ? 1 : i+1
 		i_minus = (i == 1) ? Np[1] : i-1
 		j_plus = (j == Np[2]) ? 1 : j+1
@@ -493,10 +498,10 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 			if any(z->z==2,get(domain_Dict,k,0) for k in cardinal_directions)
 				# Vessel boundary point
 				normal = [0;0]
-				normal[1] += (i,j_plus) in keys(domain_Dict) ? -1 : 0
-				normal[1] += (i,j_minus) in keys(domain_Dict) ? 1 : 0
-				normal[2] += (i_plus,j) in keys(domain_Dict) ? -1 : 0
-				normal[2] += (i_minus,j) in keys(domain_Dict) ? 1 : 0
+				normal[1] += get(domain_Dict,(i,j_plus),0) == 2 ? -1 : 0
+				normal[1] += get(domain_Dict,(i,j_minus),0) == 2 ? 1 : 0
+				normal[2] += get(domain_Dict,(i_plus,j),0) == 2 ? -1 : 0
+				normal[2] += get(domain_Dict,(i_minus,j),0) == 2 ? 1 : 0
 				# normal/=norm(normal)
 				boundary_Dict[k] = normal
 			else
@@ -554,14 +559,10 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	##### Add the smallest nonzero compartment size (and index) to the progress check
 	cb2 = nothing
 	if progress_check
-		print_time(integrator) = println("t = $(floor(integrator.t))")#$(floor(integrator.t))")
-		cb2 = PeriodicCallback(print_time, 1.0,save_positions=(false,false))
+		print_time(integrator) = @printf("t = %.2f\n",integrator.t)
+		cb2 = PeriodicCallback(print_time, 0.1,save_positions=(false,false))
 	end
 	cbset = CallbackSet(cb1,cb2)
-
-	# If we artificially set populations below threshold to 0
-	# if compartmentMinimum
-	# 	condition = (u,t,integrator)
 
 	if debugging > 0
 		println("Beginning simulation...")
@@ -575,6 +576,8 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 		println("CN = $focalCN, birth rate = $(focal_birthRate[focal...])")
 	end
 
+	max_birthRate = maximum(focal_birthRate)
+
 	# run simulation
 	# isoutofdomain = (u,p,t)->any(x->x<0,u)
 	odePars = (focal_birthRate=focal_birthRate,
@@ -586,9 +589,10 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 				domain_Dict=domain_Dict,
 				boundary_Dict=boundary_Dict,
 				max_cell_cycle_duration=max_cell_cycle_duration,
+				max_birthRate=max_birthRate,
 				debugging=debugging)
 	prob = ODEProblem(ploidy_spatial_model,u0,tspan,odePars)
-	sol = solve(prob,VCABM(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
+	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
 
 	# Maybe lsoda() instead of VCABM() ????
 	#=
