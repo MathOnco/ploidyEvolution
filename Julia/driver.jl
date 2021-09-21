@@ -13,18 +13,9 @@ function parse_commandline()
 		"--spatial", "-s"
 			help = "Use the spatial ploidy model"
 			action = :store_true
-		# "--cnFile", "-c"
-		# 	help = "Contains numeric array of copy numbers and header of which chromosomes"
-		# 	default = "birthLandscapeBrainCancer.txt"
-		# "--birthRateFile", "-b"
-		# 	help = "Contains numeric vector of birth rates"
-		# 	default = "GrowthRate_brain_cancer_CLs.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output"
-		# "--u0"
-		# 	help = "Array that contains CN of initial condition"
-		# 	default = "[1,1,1,1,1]"
     end
 	
     return parse_args(s)

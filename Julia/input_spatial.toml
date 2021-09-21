@@ -23,3 +23,5 @@ E_vessel = 1.0
 saveat = 0.1
 interpolation_order = 2
 blood_vessel_file = "13496_2_Slides_and_Data_xy_test.txt"
+copy_number_file = "birthLandscapeBrainCancer.txt"
+birth_rate_file = "GrowthRate_brain_cancer_CLs.txt"
