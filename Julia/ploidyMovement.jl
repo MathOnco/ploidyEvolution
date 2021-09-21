@@ -338,7 +338,7 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = 1.0
+	u0[startingPopCN...] = startPop
 
 	##compute birth rates associated with each copy number state
 	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
@@ -423,15 +423,17 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	startPop,
 	maxPop,
 	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
+	k,E_vessel,
+	saveat,
 	compartmentMinimum,
 	progress_check,
 	max_cell_cycle_duration,
+	blood_vessel_file,
 	interpolation_order) = params
 
 	# convert max cell cycle to days (the time scale used)
 	max_cell_cycle_duration/= 24.0
 
-	k,E_vessel,saveat = 0.5,1.0,0.1
 	#= Build domain matrix:
 
 	0 : In domain
@@ -439,7 +441,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	2 : Interior of blood vessel
 
 	=#
-	df = CSV.read("13496_2_Slides_and_Data_xy_test.txt",DataFrame)
+	df = CSV.read(blood_vessel_file,DataFrame)
 	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
 	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
 	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
@@ -509,8 +511,6 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 			end
 		end
 	end
-
-
 
 	# Initialize energy to be zero outside the interior of the blood vessels
 	E0 = zeros(Np...)

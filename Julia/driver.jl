@@ -13,18 +13,18 @@ function parse_commandline()
 		"--spatial", "-s"
 			help = "Use the spatial ploidy model"
 			action = :store_true
-		"--cnFile", "-c"
-			help = "Contains numeric array of copy numbers and header of which chromosomes"
-			default = "birthLandscapeBrainCancer.txt"
-		"--birthRateFile", "-b"
-			help = "Contains numeric vector of birth rates"
-			default = "GrowthRate_brain_cancer_CLs.txt"
+		# "--cnFile", "-c"
+		# 	help = "Contains numeric array of copy numbers and header of which chromosomes"
+		# 	default = "birthLandscapeBrainCancer.txt"
+		# "--birthRateFile", "-b"
+		# 	help = "Contains numeric vector of birth rates"
+		# 	default = "GrowthRate_brain_cancer_CLs.txt"
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output"
-		"--u0"
-			help = "Array that contains CN of initial condition"
-			default = "[1,1,1,1,1]"
+		# "--u0"
+		# 	help = "Array that contains CN of initial condition"
+		# 	default = "[1,1,1,1,1]"
     end
 	
     return parse_args(s)
@@ -40,10 +40,13 @@ struct WellMixedInput
 	deathRate::Float64				# universal death rate
 	misRate::Float64 				# universal missegregation rate
 	finalDay::Real					# end of simulation
+	u0::Vector{Int}					# Initial condition
 	replating::Bool					# Whether we replate the cells
 	startPop::Real					# Starting population size 
 	maxPop::Real					# Max population before replating
 	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
+	copy_number_file::String		# Contains numeric array of copy numbers and header of which chromosomes
+	birth_rate_file::String			# Contains numeric vector of birth rates
 	progress_check::Bool			# Prints the current time of the simulation
 	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
@@ -63,13 +66,20 @@ struct SpatialInput
 	Ξ::Number						# Energy needed for half maximal directional motion
 	χ::Number						# Directed motion magnitude
 	δ::Number						# Energy consumption
+	k::Number
+	E_vessel::Number
+	saveat::Number
 	Np::Vector{Int}					# Grid size
 	finalDay::Real					# end of simulation
+	u0::Vector{Int}					# Initial condition
 	replating::Bool					# Whether we replate the cells
 	startPop::Real					# Starting population size 
 	maxPop::Real					# Max population before replating
 	compartmentMinimum::Bool		# Sets sizes < 1 to 0 if true
 	max_cell_cycle_duration::Number	# Length of cell cycle (assumed to be in hours)
+	copy_number_file::String		# Contains numeric array of copy numbers and header of which chromosomes
+	birth_rate_file::String			# Contains numeric vector of birth rates
+	blood_vessel_file::String		# Blood vessel coordinate info
 	progress_check::Bool			# Prints the current time of the simulation
 	interpolation_order::Int		# Allows the user to set the order of polyharmonic spline
 
@@ -85,12 +95,15 @@ function WellMixedInput()
 	deathRate=0.1
 	misRate=0.15
 	finalDay=30.0
+	u0 = [1,1,1,1,1]
 	replating=false
 	startPop=1e3
 	maxPop=1e6
 	compartmentMinimum=false
 	progress_check=false
 	interpolation_order=2
+	copy_number_file = "birthLandscapeBrainCancer.txt"
+	birth_rate_file = "GrowthRate_brain_cancer_CLs.txt"
 
 	WellMixedInput(
 		debugging,
@@ -100,10 +113,13 @@ function WellMixedInput()
 		deathRate,
 		misRate,
 		finalDay,
+		u0,
 		replating,
 		startPop,
 		maxPop,
 		compartmentMinimum,
+		copy_number_file,
+		birth_rate_file,
 		progress_check,
 		interpolation_order
 		)
@@ -126,7 +142,10 @@ function WellMixedInput(inputFile::String)
 	replating=get(data,"replating",false)
 	startPop=get(data,"startPop",1e3)
 	maxPop=get(data,"maxPop",1e6)
+	u0 = get(data,"u0",[1,1,1,1,1])
 	compartmentMinimum=get(data,"compartmentMinimum",false)
+	copy_number_file = get(data,"copy_number_file","birthLandscapeBrainCancer.txt")
+	birth_rate_file = get(data,"birth_rate_file","GrowthRate_brain_cancer_CLs.txt")
 	progress_check=get(data,"progress_check",false)
 	interpolation_order = get(data,"interpolation_order",2)
 	
@@ -139,10 +158,13 @@ function WellMixedInput(inputFile::String)
 		deathRate,
 		misRate,
 		finalDay,
+		u0,
 		replating,
 		startPop,
 		maxPop,
 		compartmentMinimum,
+		copy_number_file,
+		birth_rate_file,
 		progress_check,
 		interpolation_order
 		)
@@ -159,6 +181,7 @@ function SpatialInput()
 	deathRate=0.1
 	misRate=0.15
 	finalDay=30.0
+	u0 = [1,1,1,1,1]
 	replating=false
 	startPop=1e3
 	maxPop=1e6
@@ -169,9 +192,13 @@ function SpatialInput()
 	Ξ = 0.5
 	χ = 2.0
 	δ = 0.005
+	k,E_vessel,saveat = 0.5,1.0,0.1
 	Np = [21,21]
 	progress_check=false
 	interpolation_order=2
+	copy_number_file = "birthLandscapeBrainCancer.txt"
+	birth_rate_file = "GrowthRate_brain_cancer_CLs.txt"
+	blood_vessel_file = "13496_2_Slides_and_Data_xy_test.txt"
 	max_cell_cycle_duration = 100.0
 
 	SpatialInput(
@@ -187,13 +214,18 @@ function SpatialInput()
 		Ξ,
 		χ,
 		δ,
+		k,E_vessel,saveat,
 		Np,
 		finalDay,
+		u0,
 		replating,
 		startPop,
 		maxPop,
 		compartmentMinimum,
 		max_cell_cycle_duration,
+		copy_number_file,
+		birth_rate_file,
+		blood_vessel_file,
 		progress_check,
 		interpolation_order
 		)
@@ -223,10 +255,17 @@ function SpatialInput(inputFile::String)
 	Ξ = get(data,"Ξ",1.0)
 	χ = get(data,"χ",2.0)
 	δ = get(data,"δ",0.005)
+	k = get(data,"k",0.5)
+	E_vessel = get(data,"E_vessel",1.0)
+	saveat = get(data,"saveat",0.1)
 	Np = get(data,"Np",[21,21])
+	u0 = get(data,"u0",[1,1,1,1,1])
 	progress_check = get(data,"progress_check",false)
 	interpolation_order = get(data,"interpolation_order",2)
 	max_cell_cycle_duration = get(data,"max_cell_cycle_duration",100.0)
+	blood_vessel_file = get(data,"blood_vessel_file","13496_2_Slides_and_Data_xy_test.txt")
+	copy_number_file = get(data,"copy_number_file","birthLandscapeBrainCancer.txt")
+	birth_rate_file = get(data,"birth_rate_file","GrowthRate_brain_cancer_CLs.txt")
 
 	SpatialInput(
 		debugging,
@@ -241,13 +280,18 @@ function SpatialInput(inputFile::String)
 		Ξ,
 		χ,
 		δ,
+		k,E_vessel,saveat,
 		Np,
 		finalDay,
+		u0,
 		replating,
 		startPop,
 		maxPop,
 		compartmentMinimum,
 		max_cell_cycle_duration,
+		copy_number_file,
+		birth_rate_file,
+		blood_vessel_file,
 		progress_check,
 		interpolation_order
 		)
@@ -264,39 +308,25 @@ function initialize()
 
 	spatial = parsed_args["spatial"]
 
-	# Grab file containing copy number variation
-	CNmatFilename = parsed_args["cnFile"]
-
-	# Grab file containing birth rates
-	birthFilename = parsed_args["birthRateFile"]
-
 	# Grab output file name
 	outputFile = parsed_args["outputfile"]
 
-	# Grab initial condition (it is a string so we parse and convert)
-	u0 = Int.(JSON.parse(parsed_args["u0"]))
+	# # Grab initial condition (it is a string so we parse and convert)
+	# u0 = Int.(JSON.parse(parsed_args["u0"]))
 
 	# Default values to be fed into ploidyMovement
 	if spatial
-		data = SpatialInput()
+		input = SpatialInput()
 		# Replaces default parameters if input file is given
 		if !isnothing(parsed_args["input"])
-			data = SpatialInput(parsed_args["input"])
+			input = SpatialInput(parsed_args["input"])
 		end
 	else
-		data = WellMixedInput()
+		input = WellMixedInput()
 		# Replaces default parameters if input file is given
 		if !isnothing(parsed_args["input"])
-			data = WellMixedInput(parsed_args["input"])
+			input = WellMixedInput(parsed_args["input"])
 		end
-	end
-
-	# Error checking
-	if !isfile(CNmatFilename)
-		error("$CNmatFilename file cannot be found")
-	end
-	if !isfile(birthFilename)
-		error("$birthFilename file cannot be found")
 	end
 
 	# Check to see if input file is given
@@ -307,7 +337,7 @@ function initialize()
 		end
 	end
 
-	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity, spatial
+	return input, outputFile, verbosity, spatial
 end
 
 function extract_XY(X_filename::String, Y_filename::String)
@@ -339,18 +369,26 @@ end
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0, outputFile, verbosity, spatial = initialize()
+	input, outputFile, verbosity, spatial = initialize()
 
 	# Printing stuff to terminal
 	if verbosity
 		println("Input:")
-		for name in fieldnames(typeof(data)) 
-			println("  $name => $(getfield(data,name))")
+		for name in fieldnames(typeof(input)) 
+			println("  $name => $(getfield(input,name))")
 		end
 	end
 
+	# Error checking
+	if !isfile(input.copy_number_file)
+		error("$(input.copy_number_file) file cannot be found")
+	end
+	if !isfile(input.birth_rate_file)
+		error("$(input.birth_rate_file) file cannot be found")
+	end
+
 	# Extract copy number (X) and birth rate (Y) to be used in the interpolation in ploidyMovement.jl
-	CN_birthrate_df = extract_XY(CNmatFilename,birthFilename)
+	CN_birthrate_df = extract_XY(input.copy_number_file,input.birth_rate_file)
 
 	# Get copy number and birth rates
 	local copy_number,birth_rate,chromosome_header
@@ -364,12 +402,13 @@ function main()
 	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
 	birth_rate = dropdims(birth_rate,dims=2)
 
-	# Run ploidy movement
-	# results, time = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
-	
+	# Run ploidy movement and grab params from the input
+	### FIX ME: We want to replace input file with dictionaries that we can grab the param chunk without deleting
+	params = input
+
 	if spatial
 
-		sol, cnArray = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
+		sol, cnArray = runPloidyMovement(params,copy_number,birth_rate,input.u0,spatial)
 
 		# Write results to multiple files by time points
 		for (index,t) in enumerate(sol.t)
@@ -387,12 +426,12 @@ function main()
 		end
 
 		# Save discretized domain
-		writedlm(outputFile*"_x.csv",range(0,1,length=data.Np[1]))
-		writedlm(outputFile*"_y.csv",range(0,1,length=data.Np[2]))
+		writedlm(outputFile*"_x.csv",range(0,1,length=params.Np[1]))
+		writedlm(outputFile*"_y.csv",range(0,1,length=params.Np[2]))
 
 	else
 
-		sol, cnArray,time = runPloidyMovement(data,copy_number,birth_rate,u0,spatial)
+		sol, cnArray,time = runPloidyMovement(params,copy_number,birth_rate,input.u0,spatial)
 
 		# convert to array for output
 		results = hcat(cnArray,sol)
