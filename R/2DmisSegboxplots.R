@@ -80,7 +80,7 @@ inp<-inp[inp$group!="met",]
 dOVERbUNLIST$AdjDB<-(1-dOVERbUNLIST$db)
 
 plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, AdjDB)) + scale_y_continuous(trans="log")
-plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))
+plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome)) + scale_y_continuous(trans="log")
 
 grid.arrange(plot.x, plot.y, ncol=2) # visual verification of the boxplots
 
@@ -89,7 +89,7 @@ plot.y <- layer_data(plot.y)[,1:6]
 colnames(plot.x) <- paste0("x.", gsub("y", "", colnames(plot.x)))
 colnames(plot.y) <- paste0("y.", gsub("y", "", colnames(plot.y)))
 df <- cbind(plot.x, plot.y); rm(plot.x, plot.y)
-df$category <- sort(unique(dOVERbUNLIST$type))
+df$category <- unique(dOVERbUNLIST$type)
 
 df.outliers <- df %>%
   dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>%
@@ -115,9 +115,9 @@ ggplot(df, aes(fill = category, color = category)) +
   geom_segment(aes(x = x.lower, y = y.max, xend = x.upper, yend = y.max)) + #upper end
   
   # outliers
-#  geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
-#  geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
-  
+ geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
+ geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
+
   xlab("AdjDB") + ylab("misSeg") +
-  coord_cartesian(xlim = c(-9, 3), ylim = c(-.1, 1)) +
+  coord_cartesian(xlim = c(-9, 3), ylim = c(-8, 1)) +
   theme_classic()
