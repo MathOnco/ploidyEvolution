@@ -1,25 +1,34 @@
-debugging = 3
+[UniversalParameters]
 stepsize = 1.0
 maxChrom = 2.0
 deathRate = 0.0
 misRate = 0.01
 finalDay = 0.2
-replating = true
-maxPop = 1e6
 startPop = 1e3
-compartmentMinimum = false
-u0 = [1,1,1,1,1]
+starting_copy_number = [1,1,1,1,1]
+max_cell_cycle_duration = 100
+
+[SpatialParameters]
 "Γ" = 0.1
 "Γₑ" = 1.0
 "ϕ" = 0.02
-"Ξ" = 0.02
+"Ξ" = 0.05
 "χ" = 0.5
 "δ" = 0.05
 Np = [21,21]
-progress_check = true
-max_cell_cycle_duration = 100
 k = 0.5
 E_vessel = 1.0
+
+[Options]
+debugging = 3
+compartmentMinimum = false
+replating = false
+maxPop = 1e5
+progress_check = true
 saveat = 0.1
 interpolation_order = 2
+
+[Files]
 blood_vessel_file = "13496_2_Slides_and_Data_xy_test.txt"
+copy_number_file = "birthLandscapeBrainCancer.txt"
+birth_rate_file = "GrowthRate_brain_cancer_CLs.txt"
