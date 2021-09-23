@@ -305,23 +305,30 @@ function q(parent::Vector{T},offspring::Vector{T},misRate::Float64,nChrom::Int) 
 
 end
 
-function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray)
+function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector)
 
-	# Grab the parameters from the struct
-	@unpack (debugging,
-	stepsize,
-	minChrom,
-	maxChrom,
-	deathRate,
-	misRate,
-	finalDay,
-	replating,
-	startPop,
-	maxPop,
-	compartmentMinimum,
-	progress_check,
-	interpolation_order) = params
+	# Grab options that determine output and other parts outside the model
+	@unpack (
+			debugging,
+			compartmentMinimum,
+			replating,
+			maxPop,
+			progress_check,
+			saveat,
+			interpolation_order,
+			) = params.Options
+
+	# Grab the model parameters from the struct
+	@unpack (
+			stepsize,
+			minChrom,
+			maxChrom,
+			deathRate,
+			misRate,
+			finalDay,
+			startPop,
+			starting_copy_number,
+			max_cell_cycle_duration) = params.UniversalParameters
 
 	# Polyharmonic interpolator
 	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y,interpolation_order)
@@ -338,7 +345,7 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	u0 = zeros(Int(maxChrom)*ones(Int,nChrom)...)
-	u0[startingPopCN...] = startPop
+	u0[starting_copy_number...] = startPop
 
 	##compute birth rates associated with each copy number state
 	focal_birthRate = zeros(Int(maxChrom)*ones(Int,nChrom)...);
@@ -388,7 +395,7 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 				deathRate=deathRate,
 				)
 	prob = ODEProblem(ploidy_wellmixed_model,u0,tspan,odePars)
-	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=1,callback=cbset)
+	sol = solve(prob,Tsit5(),maxiters=1e5,abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
 
 	if debugging > 0
 		println("Simulation complete. Collecting results...")
@@ -408,28 +415,42 @@ function simulate_wellmixed(params,X::AbstractArray,Y::AbstractVector,
 
 end
 
-function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray)
+function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 
-	# Grab the parameters from the struct
-	@unpack (debugging,
-	stepsize,
-	minChrom,
-	maxChrom,
-	deathRate,
-	misRate,
-	finalDay,
-	replating,
-	startPop,
-	maxPop,
-	Γ,Γₑ,ϕ,Ξ,χ,δ,Np,
-	k,E_vessel,
-	saveat,
-	compartmentMinimum,
-	progress_check,
-	max_cell_cycle_duration,
-	blood_vessel_file,
-	interpolation_order) = params
+	# Grab options that determine output and other parts outside the model
+	@unpack (
+			debugging,
+			compartmentMinimum,
+			replating,
+			maxPop,
+			progress_check,
+			saveat,
+			interpolation_order,
+			) = params.Options
+
+	# Grab the model parameters from the struct
+	@unpack (
+			stepsize,
+			minChrom,
+			maxChrom,
+			deathRate,
+			misRate,
+			finalDay,
+			startPop,
+			starting_copy_number,
+			max_cell_cycle_duration) = params.UniversalParameters
+
+	# Grab the spatial parameters from the struct
+	@unpack (
+			Γ,
+			Γₑ,
+			ϕ,
+			Ξ,
+			χ,
+			δ,
+			Np,
+			k,
+			E_vessel) = params.SpatialParameters
 
 	# convert max cell cycle to days (the time scale used)
 	max_cell_cycle_duration/= 24.0
@@ -441,7 +462,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	2 : Interior of blood vessel
 
 	=#
-	df = CSV.read(blood_vessel_file,DataFrame)
+	df = CSV.read(params.blood_vessel_file,DataFrame)
 	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
 	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
 	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
@@ -531,8 +552,8 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector,
 	# Time interval to run simulation and initial condition
 	tspan = (0.0,finalDay)
 	s0 = zeros(Int(maxChrom)*ones(Int,nChrom)...,Np...)
-	s0[startingPopCN...,:,:] .= rand(Np...)*startPop 	# CN is randomly placed on the grid
-	[s0[startingPopCN...,k...] = 0 for k in keys(domain_Dict)]
+	s0[starting_copy_number...,:,:] .= rand(Np...)*startPop 	# CN is randomly placed on the grid
+	[s0[starting_copy_number...,k...] = 0 for k in keys(domain_Dict)]
 
 	u0 = ComponentArray(s=s0,E=E0)
 
@@ -624,15 +645,14 @@ end
 #											#
 #############################################
 
-function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,
-	startingPopCN::AbstractArray,spatial::Bool)
+function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,spatial::Bool)
 
 	if spatial
 		println("Running the spatial model...")
-		return simulate_spatial(params,X,Y,startingPopCN)
+		return simulate_spatial(params,X,Y)
 	else
 		println("Running the well-mixed model...")
-		return simulate_wellmixed(params,X,Y,startingPopCN)
+		return simulate_wellmixed(params,X,Y)
 	end
 
 end
