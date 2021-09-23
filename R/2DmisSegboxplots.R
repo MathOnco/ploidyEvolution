@@ -62,7 +62,8 @@ inp<-read.table("../data/Predicted_LaggingChrPct_TCGA.txt")
 names(inp)<-inp[1,]
 inp<-inp[-c(1),]
 inp$Lagging.Chromosome<-as.numeric(inp$Lagging.Chromosome)
-inp$Lagging.Chromosome<-inp$Lagging.Chromosome/max(inp$Lagging.Chromosome)
+inp$Lagging.Chromosome[inp$Lagging.Chromosome>100]=100
+inp$Lagging.Chromosome<-inp$Lagging.Chromosome/100
 ## change names in inp to match type
 inp$group<-gsub("BRCA", "Breast", inp$group)
 inp$group<-gsub("CESC", "Cervix", inp$group)
@@ -76,7 +77,9 @@ inp$group<-gsub("LUSC", "SC Lung", inp$group)
 ## remove mets
 inp<-inp[inp$group!="met",]
 
-plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, db))
+dOVERbUNLIST$AdjDB<-(1-dOVERbUNLIST$db)
+
+plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, AdjDB)) + scale_y_continuous(trans="log")
 plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))
 
 grid.arrange(plot.x, plot.y, ncol=2) # visual verification of the boxplots
@@ -86,7 +89,7 @@ plot.y <- layer_data(plot.y)[,1:6]
 colnames(plot.x) <- paste0("x.", gsub("y", "", colnames(plot.x)))
 colnames(plot.y) <- paste0("y.", gsub("y", "", colnames(plot.y)))
 df <- cbind(plot.x, plot.y); rm(plot.x, plot.y)
-df$category <- sort(unique(df2$type))
+df$category <- sort(unique(dOVERbUNLIST$type))
 
 df.outliers <- df %>%
   dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>%
@@ -112,13 +115,9 @@ ggplot(df, aes(fill = category, color = category)) +
   geom_segment(aes(x = x.lower, y = y.max, xend = x.upper, yend = y.max)) + #upper end
   
   # outliers
-  geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
-  geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
+#  geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
+#  geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
   
-  xlab("dOVERb") + ylab("misSeg") +
-  coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+  xlab("AdjDB") + ylab("misSeg") +
+  coord_cartesian(xlim = c(-9, 3), ylim = c(-.1, 1)) +
   theme_classic()
-
-
-
-+ geom_line(data = as.data.frame(critcurve10), aes(x=as.matrix(critcurve10$X0.), y=as.matrix(critcurve10$X0.9183023921504254)))
