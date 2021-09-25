@@ -6,8 +6,8 @@ birthRates = as.data.frame(c(-2.51405, 1.31437, -1.79009, 0.655826, -1.84878,
 names(birthRates)<-"b"
 
 birthRates$type<-c("Head and neck",
-                   "Head and neck","Esophogaeal",
-                   "Esophogaeal","Colorectal",
+                   "Head and neck","Esophageal",
+                   "Esophageal","Colorectal",
                    "Colorectal","Rectal",
                    "Rectal","Breast",
                    "Breast","Cervix",
@@ -69,7 +69,7 @@ inp$group<-gsub("BRCA", "Breast", inp$group)
 inp$group<-gsub("CESC", "Cervix", inp$group)
 inp$group<-gsub("COAD", "Colorectal", inp$group)
 inp$group<-gsub("DLBC", "D-LBCL", inp$group)
-inp$group<-gsub("ESCA", "Esophogeal", inp$group)
+inp$group<-gsub("ESCA", "Esophageal", inp$group)
 inp$group<-gsub("HNSC", "Head and neck", inp$group)
 inp$group<-gsub("SKCM", "Melanoma", inp$group)
 inp$group<-gsub("READ", "Rectal", inp$group)
@@ -77,10 +77,41 @@ inp$group<-gsub("LUSC", "SC Lung", inp$group)
 ## remove mets
 inp<-inp[inp$group!="met",]
 
+# read in crit curves
+critcurve40=read.csv("~/Downloads/criticalcurve_n_40.csv")
+critcurve20=read.csv("~/Downloads/criticalcurve_n_20.csv")
+critcurve10=read.csv("~/Downloads/criticalcurve_n_10.csv")
+critcurve5=read.csv("~/Downloads/criticalcurve_n_5.csv")
+
+names(critcurve40)<-c("x1","y1")
+names(critcurve20)<-c("x1","y1")
+names(critcurve10)<-c("x1","y1")
+names(critcurve5)<-c("x1","y1")
+
+critcurve40$x1<-(1-critcurve40$x1)
+critcurve20$x1<-(1-critcurve20$x1)
+critcurve10$x1<-(1-critcurve10$x1)
+critcurve5$x1<-(1-critcurve5$x1)
+
+critcurve40$x1[critcurve40$x1==0]<-10^(-3)
+critcurve20$x1[critcurve20$x1==0]<-10^(-3)
+critcurve10$x1[critcurve10$x1==0]<-10^(-3)
+critcurve5$x1[critcurve5$x1==0]<-10^(-3)
+
+critcurve5$y1[critcurve5$y1<min(df$y.min)]<-min(df$y.min)
+critcurve10$y1[critcurve10$y1<min(df$y.min)]<-min(df$y.min)
+critcurve20$y1[critcurve20$y1<min(df$y.min)]<-min(df$y.min)
+critcurve40$y1[critcurve40$y1<min(df$y.min)]<-min(df$y.min)
+
+critcurve5$category<-"Breast"
+critcurve10$category="Breast"
+critcurve20$category="Breast"
+critcurve40$category="Breast"
+
 dOVERbUNLIST$AdjDB<-(1-dOVERbUNLIST$db)
 
-plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, AdjDB)) + scale_y_continuous(trans="log")
-plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome)) + scale_y_continuous(trans="log")
+plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, AdjDB))# + scale_y_continuous(trans="log")
+plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))# + scale_y_continuous(trans="log")
 
 grid.arrange(plot.x, plot.y, ncol=2) # visual verification of the boxplots
 
@@ -97,7 +128,14 @@ df.outliers <- df %>%
 df.outliers <- df.outliers[, list(x.outliers = unlist(x.outliers), y.outliers = unlist(y.outliers)), 
                            by = list(category, x.middle, y.middle)]
 
+
+
 ggplot(df, aes(fill = category, color = category)) +
+  
+  geom_line(data=critcurve5, aes(x=x1, y=y1)) + geom_line(data=critcurve10, aes(x=x1, y=y1)) + geom_line(data=critcurve20, aes(x=x1, y=y1)) + geom_line(data=critcurve40, aes(x=x1, y=y1))+
+  
+  #geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
+  #geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) +
   
   # 2D box defined by the Q1 & Q3 values in each dimension, with outline
   geom_rect(aes(xmin = x.lower, xmax = x.upper, ymin = y.lower, ymax = y.upper), alpha = 0.3) +
@@ -114,10 +152,16 @@ ggplot(df, aes(fill = category, color = category)) +
   geom_segment(aes(x = x.lower, y = y.min, xend = x.upper, yend = y.min)) + #lower end
   geom_segment(aes(x = x.lower, y = y.max, xend = x.upper, yend = y.max)) + #upper end
   
+  # geom_curve(aes(x=critcurve10$X0., y=critcurve10$X0.9183023921504254), data = critcurve10) +
+  
   # outliers
- geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
- geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
-
+#  geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
+#  geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
+  
+  # geom_line(data=critcurve10, x=critcurve10$x, y=critcurve10$y) +
+  
   xlab("AdjDB") + ylab("misSeg") +
-  coord_cartesian(xlim = c(-9, 3), ylim = c(-8, 1)) +
+  scale_x_continuous(trans="log") + scale_y_continuous(trans="log") +
+  # scale_x_continuous(limits=c(.5, 1)) +
+  # coord_cartesian(xlim = c(-9, 3), ylim = c(-8, 1)) +
   theme_classic()
