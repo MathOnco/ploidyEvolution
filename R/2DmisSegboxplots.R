@@ -77,6 +77,9 @@ inp$group<-gsub("LUSC", "SC Lung", inp$group)
 ## remove mets
 inp<-inp[inp$group!="met",]
 
+#inp<-(inp[inp$group==c("HNSC","ESCA"),])
+
+
 # read in crit curves
 critcurve40=read.csv("~/Downloads/criticalcurve_n_40.csv")
 critcurve20=read.csv("~/Downloads/criticalcurve_n_20.csv")
@@ -108,19 +111,22 @@ critcurve10$category="Breast"
 critcurve20$category="Breast"
 critcurve40$category="Breast"
 
-dOVERbUNLIST$AdjDB<-(1-dOVERbUNLIST$db)
+dOVERbUNLIST$one_minus_d_over_b<-(1-dOVERbUNLIST$db)
 
-plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, AdjDB))# + scale_y_continuous(trans="log")
-plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))# + scale_y_continuous(trans="log")
+plot.x <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, one_minus_d_over_b))  + coord_flip()# + scale_y_continuous(trans="log")
+#plot.z <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, db)) + coord_flip()# + scale_y_continuous(trans="log")
+plot.y <- ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))  + coord_flip()# + scale_y_continuous(trans="log")
 
+pdf("2D_boxplots_correctlabels_Ithink.pdf", width = 7,height = 7)
 grid.arrange(plot.x, plot.y, ncol=2) # visual verification of the boxplots
+dev.off()
 
 plot.x <- layer_data(plot.x)[,1:6]
 plot.y <- layer_data(plot.y)[,1:6]
 colnames(plot.x) <- paste0("x.", gsub("y", "", colnames(plot.x)))
 colnames(plot.y) <- paste0("y.", gsub("y", "", colnames(plot.y)))
 df <- cbind(plot.x, plot.y); rm(plot.x, plot.y)
-df$category <- unique(dOVERbUNLIST$type)
+df$category <- sort(unique(dOVERbUNLIST$type))
 
 df.outliers <- df %>%
   dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>%
@@ -160,8 +166,8 @@ ggplot(df, aes(fill = category, color = category)) +
   
   # geom_line(data=critcurve10, x=critcurve10$x, y=critcurve10$y) +
   
-  xlab("AdjDB") + ylab("misSeg") +
+  xlab("1-d/b") + ylab("misSeg") +
   scale_x_continuous(trans="log") + scale_y_continuous(trans="log") +
-  # scale_x_continuous(limits=c(.5, 1)) +
+  # scale_x_continuous(limits=c(.1, 1)) +
   # coord_cartesian(xlim = c(-9, 3), ylim = c(-8, 1)) +
   theme_classic()
