@@ -1,6 +1,6 @@
 [UniversalParameters]
 stepsize = 1.0
-maxChrom = 2.0
+maxChrom = 1.0
 deathRate = 0.0
 misRate = 0.01
 finalDay = 0.2
@@ -15,6 +15,7 @@ max_cell_cycle_duration = 100
 "Ξ" = 0.05
 "χ" = 0.5
 "δ" = 0.05
+Lp = [1000.0,1000.0]
 Np = [21,21]
 k = 0.5
 E_vessel = 1.0
