@@ -101,6 +101,9 @@ function ploidy_spatial_model(du,u,pars,t)
 	dp = (Np .- 1).^(-1)
 	sum_dp_invsq = sum(dp.^(-2))
 
+	# cflow = 0.0
+	# dflow = 0.0
+
 	# Iterate over each coordinate
 	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
 
@@ -229,6 +232,10 @@ function ploidy_spatial_model(du,u,pars,t)
 
 			# Update the RHS dependent on where we are in the domain
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
+
+			# dflow += diffusion
+			# cflow += chemotaxis
+
 		end
 
 		# Diffusion of energy molecule through the tissue
@@ -241,6 +248,8 @@ function ploidy_spatial_model(du,u,pars,t)
 		du.E[coord...] = diffusion - consumption
 		
 	end
+
+	# @show dflow,cflow
 
 end
 
@@ -448,6 +457,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 			Ξ,
 			χ,
 			δ,
+			Lp,
 			Np,
 			k,
 			E_vessel) = params.SpatialParameters
@@ -463,13 +473,13 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 
 	=#
 	df = CSV.read(params.blood_vessel_file,DataFrame)
-	maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
-	minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
-	df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
-	df[!,"Centroid Y µm"] .= (df[!,"Centroid Y µm"] .- minY)./(maxY .- minY)
+	# maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
+	# minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
+	# df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
+	# df[!,"Centroid Y µm"] .= (df[!,"Centroid Y µm"] .- minY)./(maxY .- minY)
 
-	x = range(0,1,length=Np[1])
-	y = range(0,1,length=Np[2])
+	x = range(0,Lp[1],length=Np[1])
+	y = range(0,Lp[2],length=Np[2])
 	dp = (Np .- 1).^(-1)
 
 	df[!,"Centroid X µm"] .= x[searchsortedfirst.(Ref(x),df[!,"Centroid X µm"])]

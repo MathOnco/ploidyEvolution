@@ -81,6 +81,7 @@ struct SpatialParameters
 	Ξ::Number						# Energy needed for half maximal directional motion
 	χ::Number						# Directed motion magnitude
 	δ::Number						# Energy consumption
+	Lp::Vector{<:Number}
 	Np::Vector{Int}
 	k::Number
 	E_vessel::Number
@@ -192,6 +193,7 @@ function SpatialParameters(;
 	Ξ = 0.02,
 	χ = 0.5,
 	δ = 0.05,
+	Lp = [1000.0,1000.0],
 	Np = [21,21],
 	k = 0.5,
 	E_vessel = 1.0)
@@ -203,6 +205,7 @@ function SpatialParameters(;
 					Ξ,
 					χ,
 					δ,
+					Lp,
 					Np,
 					k,
 					E_vessel
