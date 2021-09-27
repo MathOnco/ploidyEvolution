@@ -7,22 +7,14 @@
 birthRates = as.data.frame(
   c(
     -2.51405,
-    1.31437,
-    -1.79009,
-    0.655826,
-    -1.84878,
-    0.91377,
-    -1.21294,
-    0.194515,
-    -2.49839,
-    0.888437,
-    -1.39956,
-    0.162913,
-    -2.07355,
-    0.447807,
-    -2.59514,
-    0.991364,
-    -3.31508,
+    1.31437,-1.79009,
+    0.655826,-1.84878,
+    0.91377,-1.21294,
+    0.194515,-2.49839,
+    0.888437,-1.39956,
+    0.162913,-2.07355,
+    0.447807,-2.59514,
+    0.991364,-3.31508,
     1.04925
   )
 )
@@ -55,22 +47,14 @@ birthRates$type <- c(
 growthRates = as.data.frame(
   c(
     -5.3441,
-    0.874367,
-    -1.98498,
-    0.477869,
-    -7.00215,
-    1.54467,
-    -5.46545,
-    0.578148,
-    -6.30794,
-    0.998794,
-    -6.78071,
-    1.06405,
-    -5.04616,
-    0.410637,
-    -4.85863,
-    0.246221,
-    -5.4622,
+    0.874367,-1.98498,
+    0.477869,-7.00215,
+    1.54467,-5.46545,
+    0.578148,-6.30794,
+    0.998794,-6.78071,
+    1.06405,-5.04616,
+    0.410637,-4.85863,
+    0.246221,-5.4622,
     1.83844
   )
 )
@@ -117,8 +101,8 @@ names(dOVERbUNLIST) <- c("db", "type")
 
 # read in lagging chromosome data
 inp <- read.table("../data/Predicted_LaggingChrPct_TCGA.txt")
-names(inp) <- inp[1, ]
-inp <- inp[-c(1), ]
+names(inp) <- inp[1,]
+inp <- inp[-c(1),]
 inp$Lagging.Chromosome <- as.numeric(inp$Lagging.Chromosome)
 inp$Lagging.Chromosome[inp$Lagging.Chromosome > 100] = 100
 inp$Lagging.Chromosome <- inp$Lagging.Chromosome / 100
@@ -133,7 +117,7 @@ inp$group <- gsub("SKCM", "Melanoma", inp$group)
 inp$group <- gsub("READ", "Rectal", inp$group)
 inp$group <- gsub("LUSC", "SC Lung", inp$group)
 ## remove mets
-inp <- inp[inp$group != "met", ]
+inp <- inp[inp$group != "met",]
 
 # inp<-(inp[inp$group==c("HNSC","ESCA"),])
 
@@ -148,6 +132,11 @@ names(critcurve40) <- c("x1", "y1")
 names(critcurve20) <- c("x1", "y1")
 names(critcurve10) <- c("x1", "y1")
 names(critcurve5) <- c("x1", "y1")
+### replace last crit curve values with other values
+critcurve5[500, 1:2] <- c(49999 / 50000, 0.0000324124)
+critcurve10[500, 1:2] <- c(49999 / 50000, 0.0000597771)
+critcurve20[500, 1:2] <- c(49999 / 50000, 0.000114273)
+critcurve40[500, 1:2] <- c(49999 / 50000, 0.000222757)
 ### change x-values to 1-x for visualization later
 critcurve40$x1 <- (1 - critcurve40$x1)
 critcurve20$x1 <- (1 - critcurve20$x1)
@@ -163,11 +152,7 @@ critcurve5$category <- "Head and neck"
 critcurve10$category = "Head and neck"
 critcurve20$category = "Head and neck"
 critcurve40$category = "Head and neck"
-### replace last crit curve values with other values
-critcurve5[500,1:2]<-c(49999/50000, 0.0000324124)
-critcurve10[500,1:2]<-c(49999/50000, 0.0000597771)
-critcurve20[500,1:2]<-c(49999/50000, 0.000114273)
-critcurve40[500,1:2]<-c(49999/50000, 0.000222757)
+
 ### Add 1-d/b to dOVERb dataframe (Again, for visualization)
 dOVERbUNLIST$one_minus_d_over_b <- (1 - dOVERbUNLIST$db)
 
@@ -205,14 +190,9 @@ df.outliers <-
                      y.outliers = unlist(y.outliers)),
               by = list(category, x.middle, y.middle)]
 
-### Now that your df is set up, limit the y-values of curves so that they are in the range of your df values (otherwise plot is ugly)
-critcurve5$y1[critcurve5$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve10$y1[critcurve10$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve20$y1[critcurve20$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve40$y1[critcurve40$y1 < min(df$y.min)] <- min(df$y.min)
-
 
 ### And here the magic happens
+pdf("2D_boxplots_no_adjustment_to_critcurve_yvals.pdf", width = 7,height = 7)
 ggplot(df, aes(fill = category, color = category)) +
   geom_line(data = critcurve5,
             aes(x = x1, y = y1),
@@ -302,10 +282,8 @@ ggplot(df, aes(fill = category, color = category)) +
   # geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
   
   xlab("1-d/b") + ylab("misSeg") +
-  scale_x_continuous(trans = "log" ,breaks = c(0.002478752, 0.049787068,1)
-  ) + scale_y_continuous(trans =
-                            "log", 
- ) +
+  scale_x_continuous(trans = "log") + scale_y_continuous(trans =
+                                                           "log",) +
   # scale_x_continuous(limits=c(0, 2)) + scale_y_continuous(limits=c(0,1))+
   # coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
   theme_classic() +
@@ -314,3 +292,4 @@ ggplot(df, aes(fill = category, color = category)) +
     panel.grid.minor = element_blank(),
     panel.background = element_rect(colour = "black", size = 4)
   )
+dev.off()
