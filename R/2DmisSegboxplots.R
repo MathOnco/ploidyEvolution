@@ -178,7 +178,7 @@ plot.y <-
 #plot.z <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, db)) + coord_flip()#
 
 ### Now take a look at the two boxplots together (good for checking that your 2D output is right later)
-# pdf("2D_boxplots_setting_xyticks.pdf", width = 7,height = 7)
+# pdf("2D_boxplots_499critpoints.pdf", width = 7,height = 7)
 grid.arrange(plot.x, plot.y, ncol = 2) # visual verification of the boxplots
 # dev.off()
 
@@ -201,10 +201,16 @@ df.outliers <-
               by = list(category, x.middle, y.middle)]
 
 ### Now that your df is set up, limit the y-values of your crit curves so that they are in the range of your df values (otherwise plot is ugly)
-critcurve5$y1[critcurve5$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve10$y1[critcurve10$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve20$y1[critcurve20$y1 < min(df$y.min)] <- min(df$y.min)
-critcurve40$y1[critcurve40$y1 < min(df$y.min)] <- min(df$y.min)
+# critcurve5$y1[critcurve5$y1 < min(df$y.min)] <- min(df$y.min)
+# critcurve10$y1[critcurve10$y1 < min(df$y.min)] <- min(df$y.min)
+# critcurve20$y1[critcurve20$y1 < min(df$y.min)] <- min(df$y.min)
+# critcurve40$y1[critcurve40$y1 < min(df$y.min)] <- min(df$y.min)
+
+### replace last crit curve values with other values
+critcurve5[500,1:2]<-c(49999/50000, 0.0000324124)
+critcurve10[500,1:2]<-c(49999/50000, 0.0000597771)
+critcurve20[500,1:2]<-c(49999/50000, 0.000114273)
+critcurve40[500,1:2]<-c(49999/50000, 0.000222757)
 
 ### And here the magic happens
 ggplot(df, aes(fill = category, color = category)) +
@@ -296,10 +302,11 @@ ggplot(df, aes(fill = category, color = category)) +
   # geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
   
   xlab("1-d/b") + ylab("misSeg") +
-  scale_x_continuous(trans = "log",
-                     breaks = c(0.002478752, 0.018315638, 0.135335283, 1.00)) + scale_y_continuous(trans =
-                                                                                                     "log",
-                                                                                                   breaks = c(0.002478752, 0.018315638, 0.135335283, 1.00)) +
+  # scale_x_continuous(trans="log") +
+  scale_x_continuous(trans = "log" ,
+  ) + scale_y_continuous(trans =
+                            "log",
+ ) +
   # scale_x_continuous(limits=c(0, 2)) + scale_y_continuous(limits=c(0,1))+
   # coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
   theme_classic() +
