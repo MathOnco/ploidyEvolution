@@ -87,7 +87,7 @@ end
 function ploidy_spatial_model(du,u,pars,t)
 
 	# Grab the parameters
-	@unpack (focal_birthRate,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,k,E_vessel,
+	@unpack (focal_birthRate,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,dp,k,E_vessel,
 	domain_Dict,boundary_Dict,max_cell_cycle_duration,max_birthRate,debugging) = pars
 
 	# FIX ME:: Assume that all chroms have same lower, upper and step size
@@ -98,7 +98,7 @@ function ploidy_spatial_model(du,u,pars,t)
 	s, E = u.s, u.E
 
 	coordsList = [1:num_points for num_points in Np]
-	dp = (Np .- 1).^(-1)
+	# dp = (Np .- 1).^(-1)
 	sum_dp_invsq = sum(dp.^(-2))
 
 	# cflow = 0.0
@@ -220,12 +220,12 @@ function ploidy_spatial_model(du,u,pars,t)
 
 			# chemotaxis
 			chemotaxis = χ*(
-				(
+				s_focal*(
 				sum(
 					(chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
 					for i in 1 : length(dp)
-				)
-				- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ))*s_focal + 
+					)
+				- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ)) + 
 				sum(
 					(s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
 					for i in 1 : length(dp)))/4.0
@@ -246,6 +246,8 @@ function ploidy_spatial_model(du,u,pars,t)
 
 		# update the energy compartment
 		du.E[coord...] = diffusion - consumption
+
+		# dflow += diffusion
 		
 	end
 
@@ -480,11 +482,11 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 
 	x = range(0,Lp[1],length=Np[1])
 	y = range(0,Lp[2],length=Np[2])
-	dp = (Np .- 1).^(-1)
+	dp = Lp./(Np .- 1)
 
-	df[!,"Centroid X µm"] .= x[searchsortedfirst.(Ref(x),df[!,"Centroid X µm"])]
-	df[!,"Centroid Y µm"] .= y[searchsortedfirst.(Ref(y),df[!,"Centroid Y µm"])]
-	df = combine(groupby(df,["Centroid X µm","Centroid Y µm"]),last)
+	# df[!,"Centroid X µm"] .= x[searchsortedfirst.(Ref(x),df[!,"Centroid X µm"])]
+	# df[!,"Centroid Y µm"] .= y[searchsortedfirst.(Ref(y),df[!,"Centroid Y µm"])]
+	# df = combine(groupby(df,["Centroid X µm","Centroid Y µm"]),last)
 
 	domain_Dict = Dict{Tuple{Int,Int},Int}() # 1 = boundary blood vessel, 2 = inside blood vessel
 
@@ -492,7 +494,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 		xdist = (x[i] .- df[!,"Centroid X µm"]).^2
 		for j = 1 : Np[2]
 			ydist = (y[j] .- df[!,"Centroid Y µm"]).^2
-			if minimum(xdist .+ ydist) < sum(dp.^2)/4
+			if minimum(xdist .+ ydist) < sum(dp.^2)
 				domain_Dict[(i,j)]=1
 			end
 		end
@@ -616,7 +618,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 				chromArray=chromArray,
 				misRate=misRate,
 				deathRate=deathRate,
-				Γ=Γ,Γₑ=Γₑ,ϕ=ϕ,Ξ=Ξ,χ=χ,δ=δ,Np=Np,k=k,E_vessel=E_vessel,
+				Γ=Γ,Γₑ=Γₑ,ϕ=ϕ,Ξ=Ξ,χ=χ,δ=δ,Np=Np,dp=dp,k=k,E_vessel=E_vessel,
 				domain_Dict=domain_Dict,
 				boundary_Dict=boundary_Dict,
 				max_cell_cycle_duration=max_cell_cycle_duration,
