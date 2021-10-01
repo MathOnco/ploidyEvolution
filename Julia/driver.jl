@@ -187,11 +187,11 @@ Options(d::Dict) = Options(;d...)
 
 
 function SpatialParameters(;
-	Γ = 0.1,
+	Γ = 500,
 	Γₑ = 1.0,
 	ϕ = 0.02,
 	Ξ = 0.02,
-	χ = 0.5,
+	χ = 100,
 	δ = 0.05,
 	Lp = [1000.0,1000.0],
 	Np = [21,21],
