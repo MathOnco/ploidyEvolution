@@ -1,11 +1,11 @@
 [UniversalParameters]
 stepsize = 1.0
-maxChrom = 1.0
+maxChrom = 5.0
 deathRate = 0.0
 misRate = 0.01
 finalDay = 0.2
 startPop = 1e3
-starting_copy_number = [1,1,1,1,1]
+starting_copy_number = [2,2,2,2,2]
 max_cell_cycle_duration = 100
 
 [SpatialParameters]

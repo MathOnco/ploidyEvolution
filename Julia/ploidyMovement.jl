@@ -11,7 +11,7 @@ using Printf
 
 # Load the file that contains the Polyharmonic interpolator function
 include("polyHarmonicInterp.jl")
-
+include("stochastic.jl")
 
 """
 
@@ -284,7 +284,7 @@ end
 
 function chemotaxis_form(energy::Number,Ξ::Number)
 
-	return log(Ξ + energy)
+	return log(Ξ + max(0,energy))
 
 end
 
@@ -649,6 +649,277 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 
 end
 
+#easiest to write an entirely new function to simulate hybrid model,
+# however due to overlap with simulate_spatial() would be easiest to break out
+# common parts (e.g. vessel processing) into their own functions
+function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
+
+	# Grab options that determine output and other parts outside the model
+	@unpack (
+			debugging,
+			compartmentMinimum,
+			replating,
+			maxPop,
+			progress_check,
+			saveat,
+			interpolation_order,
+			) = params.Options
+
+	# Grab the model parameters from the struct
+	@unpack (
+			stepsize,
+			minChrom,
+			maxChrom,
+			deathRate,
+			misRate,
+			finalDay,
+			startPop,
+			starting_copy_number,
+			max_cell_cycle_duration) = params.UniversalParameters
+
+	# Grab the spatial parameters from the struct
+	@unpack (
+			Γ,
+			Γₑ,
+			ϕ,
+			Ξ,
+			χ,
+			δ,
+			Lp,
+			Np,
+			k,
+			E_vessel) = params.SpatialParameters
+
+	# convert max cell cycle to days (the time scale used)
+	max_cell_cycle_duration/= 24.0
+
+	#= Build domain matrix:
+
+	0 : In domain
+	1 : Boundary of blood vessel
+	2 : Interior of blood vessel
+
+	=#
+	df = CSV.read(params.blood_vessel_file,DataFrame)
+	# maxX,maxY=maximum(df[!,"Centroid X µm"]),maximum(df[!,"Centroid Y µm"])
+	# minX,minY=minimum(df[!,"Centroid X µm"]),minimum(df[!,"Centroid Y µm"])
+	# df[!,"Centroid X µm"] .= (df[!,"Centroid X µm"] .- minX)./(maxX .- minX)
+	# df[!,"Centroid Y µm"] .= (df[!,"Centroid Y µm"] .- minY)./(maxY .- minY)
+
+	x = range(0,Lp[1],length=Np[1])
+	y = range(0,Lp[2],length=Np[2])
+	dp = Lp./(Np .- 1)
+
+	# df[!,"Centroid X µm"] .= x[searchsortedfirst.(Ref(x),df[!,"Centroid X µm"])]
+	# df[!,"Centroid Y µm"] .= y[searchsortedfirst.(Ref(y),df[!,"Centroid Y µm"])]
+	# df = combine(groupby(df,["Centroid X µm","Centroid Y µm"]),last)
+
+	domain_Dict = Dict{Tuple{Int,Int},Int}() # 1 = boundary blood vessel, 2 = inside blood vessel
+
+	for i = 1 : Np[1]
+		xdist = (x[i] .- df[!,"Centroid X µm"]).^2
+		for j = 1 : Np[2]
+			ydist = (y[j] .- df[!,"Centroid Y µm"]).^2
+			if minimum(xdist .+ ydist) < sum(dp.^2)
+				domain_Dict[(i,j)]=1
+			end
+		end
+	end
+
+	# Fill dict with info about the normal vector
+	boundary_Dict = Dict{Tuple{Int,Int},Any}()
+
+	# But first we find whether the point is interior
+	for k in keys(domain_Dict)
+		i,j = k
+		i_plus = (i == Np[1]) ? 1 : i+1
+		i_minus = (i == 1) ? Np[1] : i-1
+		j_plus = (j == Np[2]) ? 1 : j+1
+		j_minus = (j == 1) ? Np[2] : j-1
+
+		# Vessel interior point
+		if issubset([(i,j_plus),(i,j_minus),(i_plus,j),(i_minus,j)],keys(domain_Dict))
+			domain_Dict[k] = 2
+		end
+	end
+
+	# If no cardinal direction has an interior point we will delete it from the dict
+	for (k,v) in domain_Dict
+
+		# We are at an interior point
+		if v == 1
+			i,j = k[1],k[2]
+			i_plus = (i == Np[1]) ? 1 : i+1
+			i_minus = (i == 1) ? Np[1] : i-1
+			j_plus = (j == Np[2]) ? 1 : j+1
+			j_minus = (j == 1) ? Np[2] : j-1
+
+			cardinal_directions = [(i,j_plus),(i,j_minus),(i_plus,j),(i_minus,j)]
+
+			if any(z->z==2,get(domain_Dict,k,0) for k in cardinal_directions)
+				# Vessel boundary point
+				normal = [0;0]
+				normal[1] += get(domain_Dict,(i,j_plus),0) == 2 ? -1 : 0
+				normal[1] += get(domain_Dict,(i,j_minus),0) == 2 ? 1 : 0
+				normal[2] += get(domain_Dict,(i_plus,j),0) == 2 ? -1 : 0
+				normal[2] += get(domain_Dict,(i_minus,j),0) == 2 ? 1 : 0
+				# normal/=norm(normal)
+				boundary_Dict[k] = normal
+			else
+				delete!(domain_Dict,k)
+			end
+		end
+	end
+
+	# Initialize energy to be zero outside the interior of the blood vessels
+	E0 = zeros(Np...)
+	[E0[k...]=E_vessel for (k,v) in domain_Dict if v==2]
+
+	# Polyharmonic interpolator
+	interp = PolyharmonicInterpolation.PolyharmonicInterpolator(X,Y,interpolation_order)
+
+	# Number of chromosomes (inferred from interp)
+	nChrom = interp.dim
+
+	# The allowable states
+	chromArray = [minChrom:stepsize:maxChrom for i in 1:nChrom]
+
+	# Total number of copy number states
+	nComp = prod(length(arr) for arr in chromArray)
+
+	# Time interval to run simulation and initial condition
+	dt=0.1 # needs to be a parameter
+	tspan = (0.0,dt)
+	s0 = zeros(1,Np...) #assume hybrid model always starts with 1 species
+	s0[1,:,:] .= rand(Np...)*startPop 	# CN is randomly placed on the grid
+	[s0[1,k...] = 0 for k in keys(domain_Dict)]
+
+	u0 = ComponentArray(s=s0,E=E0)
+
+	# If we are replating, we do so when the population is million-fold in size
+	cb1 = nothing
+	if replating
+		# Replate if above maxPop
+		condition = (u,t,integrator) -> sum(u) - maxPop	
+
+		# This replates so that u sums to 1 (as in the initial condition)
+		affect!(integrator) = begin
+			if debugging > 1
+				println("Max population reached at t = $(integrator.t)...replating.")
+			end
+			integrator.u /= maxPop
+		end
+
+		# Create callback
+		cb1 = ContinuousCallback(condition,affect!,nothing)
+
+	end
+
+	##### This is printed to terminal to tell you what time point you're at ######
+	##### Add the smallest nonzero compartment size (and index) to the progress check
+	cb2 = nothing
+	if progress_check
+		print_time(integrator) = @printf("t = %.2f\n",integrator.t)
+		cb2 = PeriodicCallback(print_time, 0.1,save_positions=(false,false))
+	end
+	cbset = CallbackSet(cb1,cb2)
+
+	if debugging > 0
+		println("Beginning simulation...")
+	end
+
+	##compute birth rates associated with each copy number state
+	sIndex=[starting_copy_number]
+	birthRates = [max(PolyharmonicInterpolation.polyharmonicSpline(interp,starting_copy_number')[1],0.0)]
+	println(birthRates)
+	println(misRate)
+	M=transition_matrix(sIndex,birthRates)
+
+	max_birthRate = maximum(birthRates)
+
+	#setup stochastic part
+	stochInitPars = (Lp=Lp,Np=Np,ϕ=ϕ, nChrom=nChrom, maxChrom=maxChrom,dt=dt,
+    misrate=misRate,deathRate=deathRate,Γ=Γ, χ=χ,Ξ=Ξ,interp=interp,
+	max_cell_cycle_duration=max_cell_cycle_duration, domain_Dict=domain_Dict)
+    s_s=setup_stochastic(stochInitPars)
+	u_s=zeros(Np...)
+
+	# run simulation
+	# isoutofdomain = (u,p,t)->any(x->x<0,u)
+	odePars = (nChrom=nChrom,
+				chromArray=chromArray,
+				misRate=misRate,
+				deathRate=deathRate,
+				Γ=Γ,Γₑ=Γₑ,ϕ=ϕ,Ξ=Ξ,χ=χ,δ=δ,Np=Np,dp=dp,k=k,E_vessel=E_vessel,
+				domain_Dict=domain_Dict,
+				boundary_Dict=boundary_Dict,
+				max_cell_cycle_duration=max_cell_cycle_duration,
+				max_birthRate=max_birthRate,
+				debugging=debugging)
+
+
+	for i in 1:1000
+		
+		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,saveat,cbset,sIndex,birthRates,M,u_s)
+		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
+		if append_state 
+			println(size(s_new))
+			u0= ComponentArray(s=s_new,E=u0.E)
+			M=transition_matrix(sIndex,birthRates)
+			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
+			println(compartment_sizes)
+			println(birthRates)
+			println(sIndex)
+		end
+		if  relegation_index[1]<1000
+			ui = s_new[relegation_index[2],:,:]
+			br = birthRates[relegation_index[2]]
+			cn = sIndex[relegation_index[2]]
+			s_s=addClone(s_s, ui, cn, br)
+			s_new = s_new[1:size(s_new,1) .!= relegation_index[2],:,:]
+			birthRates = birthRates[1:size(birthRates,1) .!= relegation_index[2]]
+			sIndex = sIndex[1:size(sIndex,1) .!= relegation_index[2]]
+			u0= ComponentArray(s=s_new,E=u0.E)
+			println(birthRates)
+			println(sIndex)
+			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
+			println(compartment_sizes)
+		end
+
+			# Write results to multiple files by time points
+		open(string(i,pad=4)*"_states"*".csv","w") do io
+			for i in 1:length(sIndex)
+				z = u0.s[i,:,:]
+				cnstate = "#"*join(string(sIndex[i]...),":")
+				writedlm(io,[cnstate])
+				writedlm(io,z,',')
+			end
+		end
+		open(string(i,pad=4)*"_Energy"*".csv","w") do io
+			writedlm(io,u0.E,',')
+		end
+		df=vcat(count_clones(s_s),count_clones(u0.s,sIndex,birthRates))
+		open(string(i,pad=4)*"_population"*".csv","w") do io
+			writedlm(io,df,',')
+		end
+
+		Nstoch=sum(u_s)
+		Npde=sum(u0.s)
+		Nstates = length(keys(s_s.popDict))
+		Nstatespde = size(u0.s,1)
+		println("PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states)")
+		
+	end
+
+	if debugging > 0
+		println("Simulation complete")
+	end
+
+	return 0,0
+
+end
+
+
 #############################################
 #											#
 #											#
@@ -657,11 +928,16 @@ end
 #											#
 #############################################
 
-function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,spatial::Bool)
+function runPloidyMovement(params,X::AbstractArray,Y::AbstractVector,spatial::Bool,hybrid::Bool)
 
 	if spatial
-		println("Running the spatial model...")
-		return simulate_spatial(params,X,Y)
+		if hybrid
+			println("Running the hybrid model...")
+			return simulate_hybrid(params,X,Y)
+		else
+			println("Running the spatial model...")
+			return simulate_spatial(params,X,Y)
+		end
 	else
 		println("Running the well-mixed model...")
 		return simulate_wellmixed(params,X,Y)

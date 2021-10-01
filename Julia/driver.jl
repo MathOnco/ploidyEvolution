@@ -13,6 +13,9 @@ function parse_commandline()
 		"--spatial", "-s"
 			help = "Use the spatial ploidy model"
 			action = :store_true
+		"--hybrid", "-m"
+			help = "Use the hybrid stochastic/pde ploidy model"
+			action = :store_true
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
 			default = "output"
@@ -138,12 +141,12 @@ Files(d::Dict) = Files(;d...)
 
 function UniversalParameters(;stepsize= 1.0, 
 	minChrom=1.0,
-	maxChrom=5.0,
-	deathRate=0.1,
-	misRate=0.15,
+	maxChrom=3.0,
+	deathRate=0.3,
+	misRate=0.1,
 	finalDay=30.0,
 	startPop=1e3,
-	starting_copy_number = [1,1,1,1,1],
+	starting_copy_number = [2,2,2,2,2],
 	max_cell_cycle_duration = 100)
 
 	UniversalParameters(
@@ -188,7 +191,7 @@ Options(d::Dict) = Options(;d...)
 
 function SpatialParameters(;
 	Γ = 500,
-	Γₑ = 1.0,
+	Γₑ = 5000,
 	ϕ = 0.02,
 	Ξ = 0.02,
 	χ = 100,
@@ -279,6 +282,8 @@ function initialize()
 
 	spatial = parsed_args["spatial"]
 
+	hybrid = parsed_args["hybrid"]
+
 	# Grab output file name
 	outputFile = parsed_args["outputfile"]
 
@@ -309,7 +314,7 @@ function initialize()
 		println()
 	end
 
-	return input, outputFile, verbosity, spatial
+	return input, outputFile, verbosity, spatial, hybrid
 end
 
 function extract_XY(X_filename::String, Y_filename::String)
@@ -341,7 +346,7 @@ end
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	input, outputFile, verbosity, spatial = initialize()
+	input, outputFile, verbosity, spatial, hybrid = initialize()
 
 	# Printing stuff to terminal
 	if verbosity
@@ -386,8 +391,13 @@ function main()
 										input.UniversalParameters,
 										input.SpatialParameters,
 										input.Files.blood_vessel_file)
+		
+		if hybrid
+			runPloidyMovement(params,copy_number,birth_rate,spatial,hybrid)
+			return 0
+		end
 
-		sol, cnArray = runPloidyMovement(params,copy_number,birth_rate,spatial)
+		sol, cnArray = runPloidyMovement(params,copy_number,birth_rate,spatial,hybrid)
 
 		# Write results to multiple files by time points
 		for (index,t) in enumerate(sol.t)
@@ -412,7 +422,7 @@ function main()
 
 		params = WellMixedInputParameters(input.Options,input.UniversalParameters)
 
-		sol, cnArray,time = runPloidyMovement(params,copy_number,birth_rate,spatial)
+		sol, cnArray,time = runPloidyMovement(params,copy_number,birth_rate,spatial,hybrid)
 
 		# convert to array for output
 		results = hcat(cnArray,sol)
