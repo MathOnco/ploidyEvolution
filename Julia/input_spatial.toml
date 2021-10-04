@@ -19,6 +19,7 @@ Lp = [1000.0,1000.0]
 Np = [21,21]
 k = 0.5
 E_vessel = 1.0
+stochasticThreshold=1000
 
 [Options]
 debugging = 3

@@ -688,7 +688,8 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 			Lp,
 			Np,
 			k,
-			E_vessel) = params.SpatialParameters
+			E_vessel,
+			stochasticThreshold) = params.SpatialParameters
 
 	# convert max cell cycle to days (the time scale used)
 	max_cell_cycle_duration/= 24.0
@@ -831,16 +832,19 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	##compute birth rates associated with each copy number state
 	sIndex=[starting_copy_number]
 	birthRates = [max(PolyharmonicInterpolation.polyharmonicSpline(interp,starting_copy_number')[1],0.0)]
-	println(birthRates)
-	println(misRate)
+	#println(birthRates)
+	#println(misRate)
 	M=transition_matrix(sIndex,birthRates)
 
 	max_birthRate = maximum(birthRates)
 
+	Random.seed!(42)
+
 	#setup stochastic part
 	stochInitPars = (Lp=Lp,Np=Np,ϕ=ϕ, nChrom=nChrom, maxChrom=maxChrom,dt=dt,
     misrate=misRate,deathRate=deathRate,Γ=Γ, χ=χ,Ξ=Ξ,interp=interp,
-	max_cell_cycle_duration=max_cell_cycle_duration, domain_Dict=domain_Dict)
+	max_cell_cycle_duration=max_cell_cycle_duration, domain_Dict=domain_Dict,
+	stochasticThreshold=stochasticThreshold)
     s_s=setup_stochastic(stochInitPars)
 	u_s=zeros(Np...)
 
@@ -863,15 +867,15 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,saveat,cbset,sIndex,birthRates,M,u_s)
 		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
 		if append_state 
-			println(size(s_new))
+			#println(size(s_new))
 			u0= ComponentArray(s=s_new,E=u0.E)
 			M=transition_matrix(sIndex,birthRates)
 			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
-			println(compartment_sizes)
-			println(birthRates)
-			println(sIndex)
+			#println(compartment_sizes)
+			#println(birthRates)
+			#println(sIndex)
 		end
-		if  relegation_index[1]<1000
+		if  relegation_index[1]< stochasticThreshold
 			ui = s_new[relegation_index[2],:,:]
 			br = birthRates[relegation_index[2]]
 			cn = sIndex[relegation_index[2]]
@@ -880,10 +884,10 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 			birthRates = birthRates[1:size(birthRates,1) .!= relegation_index[2]]
 			sIndex = sIndex[1:size(sIndex,1) .!= relegation_index[2]]
 			u0= ComponentArray(s=s_new,E=u0.E)
-			println(birthRates)
-			println(sIndex)
+			#println(birthRates)
+			#println(sIndex)
 			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
-			println(compartment_sizes)
+			#println(compartment_sizes)
 		end
 
 			# Write results to multiple files by time points

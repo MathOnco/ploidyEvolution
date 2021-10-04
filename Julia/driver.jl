@@ -88,6 +88,7 @@ struct SpatialParameters
 	Np::Vector{Int}
 	k::Number
 	E_vessel::Number
+	stochasticThreshold::Number
 	
 end
 
@@ -199,7 +200,8 @@ function SpatialParameters(;
 	Lp = [1000.0,1000.0],
 	Np = [21,21],
 	k = 0.5,
-	E_vessel = 1.0)
+	E_vessel = 1.0,
+	stochasticThreshold=1000)
 
 	SpatialParameters(
 					Γ,
@@ -211,7 +213,8 @@ function SpatialParameters(;
 					Lp,
 					Np,
 					k,
-					E_vessel
+					E_vessel,
+					stochasticThreshold
 					)
 
 

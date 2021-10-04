@@ -210,6 +210,7 @@ mutable struct stochasticCompartment
     interp
     max_cell_cycle_duration
     domain_Dict
+    stochasticThreshold
 end
 
 # perform migration for entire stochastic model
@@ -239,7 +240,7 @@ function replicate(s::stochasticCompartment, E0,dE0,sIndex,s0)
                 end
             else
                 si=findall(==(m.state),sIndex)
-                s0[si,ceil(Int64,c.x),ceil(Int64,c.x)].+=1
+                s0[si,ceil(Int64,c.x),ceil(Int64,c.y)].+=1
             end              
             
         end
@@ -265,7 +266,7 @@ function spatial_summary(s::stochasticCompartment)
     u=zeros(s.Np...)
     for cl in values(s.popDict)
         for c in cl.pop
-            u[ceil(Int64,c.x),ceil(Int64,c.x)] = u[ceil(Int64,c.x),ceil(Int64,c.x)]+1
+            u[ceil(Int64,c.x),ceil(Int64,c.y)] = u[ceil(Int64,c.x),ceil(Int64,c.y)]+1
         end
     end
     return u
@@ -275,7 +276,7 @@ end
 function graduate_clones(s::stochasticCompartment)
     #currently just allowing one clone to graduate per timestep
     for k in keys(s.popDict)
-        if length(s.popDict[k].pop) > 1000 
+        if length(s.popDict[k].pop) > s.stochasticThreshold 
             clones = k 
             birthRate = s.popDict[k].birthrate
             pos=zeros(1,s.Np...)
@@ -406,7 +407,7 @@ end
 ## throughout simulation etc. Should return a stochasticCompartment object
 function setup_stochastic(params)
 
-    @unpack (Lp,Np,ϕ, nChrom,maxChrom,dt,misrate,deathRate,Γ,χ,Ξ,interp,max_cell_cycle_duration, domain_Dict) = params
+    @unpack (Lp,Np,ϕ, nChrom,maxChrom,dt,misrate,deathRate,Γ,χ,Ξ,interp,max_cell_cycle_duration, domain_Dict, stochasticThreshold) = params
     
     # needs fixed. We need to trace back these parms and determine their units
     dp=Lp./(Np .- 1)
@@ -419,7 +420,7 @@ function setup_stochastic(params)
 
     popDict = Dict{Array,clone}()
     s = stochasticCompartment(popDict,Np,ϕ,χ,Ξ, maxChrom,dt,misrate,deathRate,
-    chromosome_selector,uniform01,dnorm,interp,max_cell_cycle_duration, domain_Dict)
+    chromosome_selector,uniform01,dnorm,interp,max_cell_cycle_duration, domain_Dict, stochasticThreshold)
     return(s)
 end
 
@@ -634,11 +635,11 @@ end
 
 function run_hybrid_step(i,odePars,u,tspan,s_s,saveat,cbset,sIndex,birthRates,M,u_s)
 	#M as well will need to be pulled out of odePars
-	println("PDE step...")
+	#println("PDE step...")
 	odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 	prob = ODEProblem(ploidy_hybrid_model,u,tspan,odePars)
 	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
-	println("Stochastic step...")
+	#println("Stochastic step...")
 	u.E=sol[length(sol)].E
 	u.s=sol[length(sol)].s
 
