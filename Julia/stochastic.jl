@@ -416,7 +416,7 @@ function setup_stochastic(params)
     
     chromosome_selector = DiscreteUniform(1,nChrom) # random integer 1:nchrom
     uniform01 = Uniform(0,1) # random continous uniform dist.
-    dnorm = Normal(0,dt*Γ) #normal distribution for cell migration
+    dnorm = Normal(0,sqrt(2*Γ*dt)) #normal distribution for cell migration
 
     popDict = Dict{Array,clone}()
     s = stochasticCompartment(popDict,Np,ϕ,χ,Ξ, maxChrom,dt,misrate,deathRate,
@@ -462,13 +462,11 @@ end
 function ploidy_hybrid_model(du,u,pars,t)
 
 	# Grab the parameters
-	@unpack (M,u_s,birthRates,sIndex,nChrom,chromArray,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,dp,k,E_vessel,
+	@unpack (M,u_s,birthRates,sIndex,nChrom,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,dp,k,E_vessel,
 	domain_Dict,boundary_Dict,max_cell_cycle_duration,max_birthRate,debugging) = pars
 
     nChrom = length(sIndex[1])
 
-	# Convert chrom array to integer
-	intChromArray = [Int(first(x)):Int(step(x)):Int(last(x)) for x in chromArray]
 	s, E = u.s, u.E
 
 	coordsList = [1:num_points for num_points in Np]
@@ -633,12 +631,12 @@ function transition_matrix(sIndex,birthRates)
     return M
 end
 
-function run_hybrid_step(i,odePars,u,tspan,s_s,saveat,cbset,sIndex,birthRates,M,u_s)
+function run_hybrid_step(i,odePars,u,tspan,s_s,saveat,sIndex,birthRates,M,u_s)
 	#M as well will need to be pulled out of odePars
 	#println("PDE step...")
 	odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 	prob = ODEProblem(ploidy_hybrid_model,u,tspan,odePars)
-	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,saveat=saveat,callback=cbset)
+	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,saveat=saveat)
 	#println("Stochastic step...")
 	u.E=sol[length(sol)].E
 	u.s=sol[length(sol)].s

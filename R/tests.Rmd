@@ -1,0 +1,59 @@
+---
+title: "tests"
+output: html_document
+---
+
+01_diffusion 
+
+Pass condition - distribution of cells should look similar from stochastic component, pde component vs reactran solver.
+
+Total number of cells should stay constant throughout (1e5)
+
+```{r}
+library(ReacTran)
+N     <- 20          # number of grid cells
+XX    <- 1000           # total size
+Dy    <- Dx <- 500  # diffusion coeff, X- and Y-direction
+
+ini   <- 100000           # initial value at x=0
+dy    <- dx <- XX/N  # grid size
+
+
+
+N2  <- ceiling(N/2)
+X   <- seq (dx, by = dx, len = (N2-1))
+X   <- c(-rev(X), 0, X)# The model equations
+Diff2D <- function (t, y, parms)  {
+  CONC  <- matrix(nrow = N, ncol = N, y)
+  dCONC <- tran.2D(CONC, D.x = Dx, D.y = Dy, dx = dx, dy = dy)$dC 
+  return (list(dCONC))}# initial condition: 0 everywhere, except in central point
+y <- matrix(nrow = N, ncol = N, data = 0)
+y[N2, N2] <- ini  # initial concentration in the central point...# solve for 10 time units
+times <- 0:10
+out <- ode.2D (y = y, func = Diff2D, t = times, parms = NULL,dim = c(N,N), lrw = 160000)
+
+
+M  <-  matrix(nrow = N, ncol = N,data = subset(out, time == 10))
+Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/01_diffusion/pde.csv",sep=",")
+Mstoch <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/01_diffusion/stochastic.csv",sep=",")
+
+ePDE <- as.matrix((M-Mpde)/M)
+ePDE_abs <- as.matrix(M-Mpde)
+
+x <- data.frame(value=c(unlist(M[10,]),unlist(Mpde[10,]),unlist(Mstoch[10,])),
+                L=rep(seq(0,1000,1000/19),3),
+                id=c(rep("ReacTran",20),rep("PDE",20),rep("stochastic",20)))
+
+
+library(ggplot2)
+
+p <- ggplot(x,aes(x=L,y=value,color=id))+
+  geom_line()+
+  scale_y_log10()
+p
+
+sum(Mstoch)
+sum(Mpde)
+```
+
+

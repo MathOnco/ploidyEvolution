@@ -851,7 +851,6 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	# run simulation
 	# isoutofdomain = (u,p,t)->any(x->x<0,u)
 	odePars = (nChrom=nChrom,
-				chromArray=chromArray,
 				misRate=misRate,
 				deathRate=deathRate,
 				Γ=Γ,Γₑ=Γₑ,ϕ=ϕ,Ξ=Ξ,χ=χ,δ=δ,Np=Np,dp=dp,k=k,E_vessel=E_vessel,
@@ -862,10 +861,11 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 				debugging=debugging)
 
 
-	for i in 1:1000
-		
-		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,saveat,cbset,sIndex,birthRates,M,u_s)
+	for i in 1:ceil(Int64,finalDay/dt)
+		t=i*dt
+		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,saveat,sIndex,birthRates,M,u_s)
 		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
+		max_birthRate = maximum(birthRates)
 		if append_state 
 			#println(size(s_new))
 			u0= ComponentArray(s=s_new,E=u0.E)
@@ -911,7 +911,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		Npde=sum(u0.s)
 		Nstates = length(keys(s_s.popDict))
 		Nstatespde = size(u0.s,1)
-		println("PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states)")
+		println("time: $t, PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states)")
 		
 	end
 
