@@ -56,4 +56,68 @@ sum(Mstoch)
 sum(Mpde)
 ```
 
+```{r}
+library(ReacTran)
+N     <- 20          # number of grid cells
+XX    <- 1000           # total size
+Dy    <- Dx <- 1000  # diffusion coeff, X- and Y-direction
 
+ini   <- 100000           # initial value at x=0
+dy    <- dx <- XX/N  # grid size
+
+
+
+N2  <- ceiling(N/2)
+X   <- seq (dx, by = dx, len = (N2-1))
+X   <- c(-rev(X), 0, X)# The model equations
+Diff2D <- function (t, y, parms)  {
+  CONC  <- matrix(nrow = N, ncol = N, y)
+  dCONC <- tran.2D(CONC, D.x = Dx, D.y = Dy, dx = dx, dy = dy)$dC 
+  return (list(dCONC))}# initial condition: 0 everywhere, except in central point
+y <- matrix(nrow = N, ncol = N, data = 0)
+y[N2, N2] <- ini  # initial concentration in the central point...# solve for 10 time units
+times <- 0:30
+out <- ode.2D (y = y, func = Diff2D, t = times, parms = NULL,dim = c(N,N), lrw = 160000)
+
+
+M  <-  matrix(nrow = N, ncol = N,data = subset(out, time == 30))
+Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/pde.csv",sep=",")
+Mstoch <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/stochastic.csv",sep=",")
+
+ePDE <- as.matrix((M-Mpde)/M)
+ePDE_abs <- as.matrix(M-Mpde)
+
+x <- data.frame(value=c(unlist(M[,10]),unlist(Mpde[,10]),unlist(Mstoch[,10])),
+                L=rep(seq(0,1000,1000/19),3),
+                id=c(rep("ReacTran",20),rep("PDE",20),rep("stochastic",20)))
+
+
+library(ggplot2)
+
+p <- ggplot(x,aes(x=L,y=value,color=id))+
+  geom_line()+
+  scale_y_log10()
+p
+
+sum(Mstoch)
+sum(Mpde)
+```
+
+
+```{r}
+Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/pde.csv",sep=",")
+Mstoch <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/stochastic.csv",sep=",")
+
+E0 <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/E0.csv",sep=",")
+
+pde <- unlist(Mpde[round(nrow(Mpde)/2),])
+s <- unlist(Mstoch[round(nrow(Mpde)/2),])
+
+df <- data.frame(value=c(pde,s),id=c(rep("pde",length(pde)),rep("stoch",length(s))),index=c(1:nrow(Mpde),1:nrow(Mpde)))
+
+p <- ggplot(df,aes(x=index,y=value,color=id))+
+  geom_line()
+p
+
+image(as.matrix(E0))
+```
