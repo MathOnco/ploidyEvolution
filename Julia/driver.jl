@@ -143,10 +143,10 @@ Files(d::Dict) = Files(;d...)
 function UniversalParameters(;stepsize= 1.0, 
 	minChrom=1.0,
 	maxChrom=3.0,
-	deathRate=0.3,
-	misRate=0.1,
-	finalDay=30.0,
-	startPop=1e3,
+	deathRate=0.1,
+	misRate=0.05,
+	finalDay=100.0,
+	startPop=1e2,
 	starting_copy_number = [2,2,2,2,2],
 	max_cell_cycle_duration = 100)
 
@@ -192,14 +192,14 @@ Options(d::Dict) = Options(;d...)
 
 function SpatialParameters(;
 	Γ = 500,
-	Γₑ = 5000,
-	ϕ = 0.02,
+	Γₑ = 20000,
+	ϕ = 0.5,
 	Ξ = 0.02,
 	χ = 100,
-	δ = 0.05,
+	δ = 0.01,
 	Lp = [1000.0,1000.0],
 	Np = [21,21],
-	k = 0.5,
+	k = 0.1,
 	E_vessel = 1.0,
 	stochasticThreshold=1000)
 

@@ -9,6 +9,36 @@ Pass condition - distribution of cells should look similar from stochastic compo
 
 Total number of cells should stay constant throughout (1e5)
 
+
+```{r}
+
+proc_data <- function(Mx,id,Lp=1000){
+  Np <- ncol(Mx)
+  colnames(Mx) <- 1:ncol(Mx)
+  Mx$y <- 1:nrow(Mx)
+  m <- reshape2::melt(Mx,id.vars="y")
+  colnames(m) <- c("y","x","cells")
+  m$y <- as.numeric(m$y)*Lp/(Np-1)
+  m$x <- as.numeric(m$x)*Lp/(Np-1)
+  m$id <- id
+  return(m)
+}
+
+ut <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/01_diffusion/pde.csv",sep=",")
+
+u0 <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/01_diffusion/u0.csv",sep=",")
+
+x <- rbind(proc_data(ut,"day 10"),proc_data(u0,"day 0"))
+
+p <- ggplot(x,aes(x=x,y=y,fill=cells))+
+  facet_grid(cols=vars(id))+
+  geom_raster()+
+  scale_fill_viridis_c(trans="log")+
+  theme_classic(base_size=16)
+p
+
+```
+
 ```{r}
 library(ReacTran)
 N     <- 20          # number of grid cells
@@ -49,60 +79,87 @@ library(ggplot2)
 
 p <- ggplot(x,aes(x=L,y=value,color=id))+
   geom_line()+
-  scale_y_log10()
+  theme_bw(base_size = 16)+
+  scale_y_continuous("cells/site")+
+  scale_color_discrete("")
 p
-
-sum(Mstoch)
-sum(Mpde)
-```
-
-```{r}
-library(ReacTran)
-N     <- 20          # number of grid cells
-XX    <- 1000           # total size
-Dy    <- Dx <- 1000  # diffusion coeff, X- and Y-direction
-
-ini   <- 100000           # initial value at x=0
-dy    <- dx <- XX/N  # grid size
-
-
-
-N2  <- ceiling(N/2)
-X   <- seq (dx, by = dx, len = (N2-1))
-X   <- c(-rev(X), 0, X)# The model equations
-Diff2D <- function (t, y, parms)  {
-  CONC  <- matrix(nrow = N, ncol = N, y)
-  dCONC <- tran.2D(CONC, D.x = Dx, D.y = Dy, dx = dx, dy = dy)$dC 
-  return (list(dCONC))}# initial condition: 0 everywhere, except in central point
-y <- matrix(nrow = N, ncol = N, data = 0)
-y[N2, N2] <- ini  # initial concentration in the central point...# solve for 10 time units
-times <- 0:30
-out <- ode.2D (y = y, func = Diff2D, t = times, parms = NULL,dim = c(N,N), lrw = 160000)
-
-
-M  <-  matrix(nrow = N, ncol = N,data = subset(out, time == 30))
-Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/pde.csv",sep=",")
-Mstoch <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/stochastic.csv",sep=",")
-
-ePDE <- as.matrix((M-Mpde)/M)
-ePDE_abs <- as.matrix(M-Mpde)
-
-x <- data.frame(value=c(unlist(M[,10]),unlist(Mpde[,10]),unlist(Mstoch[,10])),
-                L=rep(seq(0,1000,1000/19),3),
-                id=c(rep("ReacTran",20),rep("PDE",20),rep("stochastic",20)))
-
-
-library(ggplot2)
 
 p <- ggplot(x,aes(x=L,y=value,color=id))+
   geom_line()+
-  scale_y_log10()
+  theme_bw(base_size = 16)+
+  scale_y_log10("cells/site")+
+  scale_color_discrete("")
 p
 
 sum(Mstoch)
 sum(Mpde)
 ```
+02_diffusion
 
+Vessels are place in a line adjacent to the initial cells. This corrals the cells into a strip, reducing to a 1D diffusion problem. Provided we don't let the cells diffuse to the edge of the grid, we can compare this result to a 1d gaussian distribution. 
+
+```{r}
+
+Gauss1D <- function(x,x0,D,t){
+  exp(-(x-x0)^2/(4*D*t))/sqrt(4*pi*D*t)
+}
+
+proc_data <- function(Mx,id,Lp=1000){
+  Np <- ncol(Mx)
+  colnames(Mx) <- 1:ncol(Mx)
+  Mx$y <- 1:nrow(Mx)
+  m <- reshape2::melt(Mx,id.vars="y")
+  colnames(m) <- c("y","x","cells")
+  m$y <- as.numeric(m$y)*Lp/(Np-1)
+  m$x <- as.numeric(m$x)*Lp/(Np-1)
+  m$id <- id
+  return(m)
+}
+
+Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/pde.csv",sep=",")
+Mstoch <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/02_diffusion/stochastic.csv",sep=",")
+
+x <- rbind(proc_data(Mpde,"pde"),proc_data(Mstoch,"stochastic"))
+Npde <- sum(x$cells[x$id=="pde"])
+Ns <- sum(x$cells[x$id=="stochastic"])
+
+mx <- median(x$x)
+y <- subset(x,x==mx)
+y$theory <- sapply(y$y,Gauss1D,x0=mx,D=1000,t=5)*100000*(diff(unique(x$x))[1])/3
+p <- ggplot(x,aes(x=x,y=y,fill=cells))+
+  facet_grid(cols=vars(id))+
+  geom_raster()+
+  scale_fill_viridis_c(trans="log")+
+  theme_classic(base_size=16)
+p
+
+p <- ggplot(y,aes(x=y,y=cells))+
+  facet_grid(cols=vars(id))+
+  geom_line(aes(color="model"))+
+  theme_bw(base_size = 16)+
+  geom_line(aes(y=theory,color="theory"))
+p
+
+
+```
+03_taxis
+
+to generate some meaningful data for comparison, produce data with a constant gradient after the log transform. Following data has a gradient of 0.01 (Energy/um). taxis (X) is a flux measured in units of speed/gradient, i.e: (um/day)/(Energy/um). 
+
+So if we want the cells to travel at 10uM/day, then:
+X=10/0.01 = 1000
+
+```{r}
+Np <- 60
+L <- 1000
+dp <- L/(Np-1)
+
+pp <- seq(dp,1000,dp)/100
+
+Ei <- exp(pp)-0.02
+fEi <- log(Ei+0.02)
+
+```
 
 ```{r}
 Mpde <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/pde.csv",sep=",")
@@ -112,12 +169,94 @@ E0 <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia
 
 pde <- unlist(Mpde[round(nrow(Mpde)/2),])
 s <- unlist(Mstoch[round(nrow(Mpde)/2),])
+E0 <- unlist(E0[round(nrow(Mpde)/2),])
 
 df <- data.frame(value=c(pde,s),id=c(rep("pde",length(pde)),rep("stoch",length(s))),index=c(1:nrow(Mpde),1:nrow(Mpde)))
+df$index <- 1000*df$index/max(df$index)
+
+E0 <- data.frame(E0,L=(1000*1:length(E0)/length(E0)))
 
 p <- ggplot(df,aes(x=index,y=value,color=id))+
   geom_line()
 p
 
-image(as.matrix(E0))
+p <- ggplot(E0,aes(x=L,y=log(E0)))+
+  geom_line()
+p
+
+
+```
+```{r}
+
+load_test <- function(t){
+  dir <- "C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/"
+  pde <- paste(dir,"pde_",t,".csv",sep="")
+  stoch <- paste(dir,"stochastic_",t,".csv",sep="")
+  
+  Mpde <- read.table(pde,sep=",")
+  Mstoch <- read.table(stoch,sep=",")
+  
+  pde <- unlist(Mpde[round(nrow(Mpde)/2),])
+  s <- unlist(Mstoch[round(nrow(Mpde)/2),])
+  
+  df <- data.frame(value=c(pde,s),id=c(rep("pde",length(pde)),rep("stoch",length(s))),index=c(1:nrow(Mpde),1:nrow(Mpde)))
+  df$index <- 1000*df$index/max(df$index)
+  df$time <- t
+  return(df)
+  
+}
+
+
+
+E0 <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/03_taxis/E0.csv",sep=",")
+
+
+E0 <- unlist(E0[round(nrow(E0)/2),])
+E0 <- data.frame(E0,L=(1000*1:length(E0)/length(E0)))
+
+p <- ggplot(E0,aes(x=L,y=log(E0)))+
+  geom_line()+
+  theme_bw(base_size=16)
+
+p
+
+df <- do.call(rbind,lapply(c(10,20,30,40), load_test))
+
+p <- ggplot(df,aes(x=index,y=value,color=id))+
+  facet_grid(rows=vars(time))+
+  geom_line()+
+  geom_line(aes(x=10*time+500,color="theory"))+
+  scale_y_continuous(limits=c(0,800))+
+  theme_bw(base_size=16)
+
+p
+
+p <- ggplot(subset(df,time==40),aes(x=index,y=value,color=id))+
+  geom_line()+
+  geom_line(aes(x=10*time+500,color="theory"))+
+  theme_bw(base_size=16)
+
+p
+
+
+
+
+```
+
+test 05_birth & death
+
+
+```{r}
+
+nc <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/05_birth/cells.csv",sep=",",header = T)
+
+nc <- reshape2::melt(nc,id.vars="time")
+
+library(ggplot2)
+
+p <- ggplot(nc,aes(x=time,y=value,color=variable))+
+  geom_line()+
+  scale_y_log10()
+p
+
 ```

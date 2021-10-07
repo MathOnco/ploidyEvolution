@@ -5,16 +5,23 @@ include("stochastic.jl")
 include("ploidyMovement.jl")
 
 Γtest=1000
-tspan=(0.0,30.0)
-Np=[20,20]
+tspan=(0.0,5.0)
+Np=[21,21]
 Lp=[1000,1000]
 
 domain_Dict = Dict{Tuple{Int,Int},Int}() # 1 = boundary blood vessel, 2 = inside blood vessel
 
+mp=ceil(Int64,Np[1]/2)
+
 for i in 1:Np[1]
-    domain_Dict[(1,i)]=1
-    domain_Dict[(Np[1],i)]=2
-    domain_Dict[(Np[1]-1,i)]=1
+
+    domain_Dict[(i,mp+1)]=1
+    domain_Dict[(i,mp+2)]=1
+    domain_Dict[(i,mp+3)]=1
+
+    domain_Dict[(i,mp-3)]=1
+    domain_Dict[(i,mp-1)]=1
+    domain_Dict[(i,mp-2)]=1
 end
 
 # Fill dict with info about the normal vector
@@ -65,7 +72,7 @@ end
 dp = Lp./(Np .- 1)
 starting_copy_number=[1,1,1,1,1]
 sIndex=[starting_copy_number]
-birthRates = [0.37]
+birthRates = [0.0]
 
 odePars = (nChrom=5,
 misRate=0.0,
@@ -74,7 +81,7 @@ deathRate=0.0,
 domain_Dict=domain_Dict,
 boundary_Dict=boundary_Dict,
 max_cell_cycle_duration=5,
-max_birthRate=0.37,
+max_birthRate=0.0,
 debugging=0)
 M=zeros(1,1)
 s0=zeros(1,Np...)
@@ -114,7 +121,7 @@ ci = clone(pop,starting_copy_number,br)
 u=zeros(Np...)
 dE0=zeros(2,Np...)
 
-for i in 1:300
+for i in 1:ceil(Int64,tspan[2]/dt)
     migrate(ci,Np,dnorm,dE0,E0,χ,Ξ, domain_Dict)
 end
 

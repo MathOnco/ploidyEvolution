@@ -797,34 +797,6 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 
 	u0 = ComponentArray(s=s0,E=E0)
 
-	# If we are replating, we do so when the population is million-fold in size
-	cb1 = nothing
-	if replating
-		# Replate if above maxPop
-		condition = (u,t,integrator) -> sum(u) - maxPop	
-
-		# This replates so that u sums to 1 (as in the initial condition)
-		affect!(integrator) = begin
-			if debugging > 1
-				println("Max population reached at t = $(integrator.t)...replating.")
-			end
-			integrator.u /= maxPop
-		end
-
-		# Create callback
-		cb1 = ContinuousCallback(condition,affect!,nothing)
-
-	end
-
-	##### This is printed to terminal to tell you what time point you're at ######
-	##### Add the smallest nonzero compartment size (and index) to the progress check
-	cb2 = nothing
-	if progress_check
-		print_time(integrator) = @printf("t = %.2f\n",integrator.t)
-		cb2 = PeriodicCallback(print_time, 0.1,save_positions=(false,false))
-	end
-	cbset = CallbackSet(cb1,cb2)
-
 	if debugging > 0
 		println("Beginning simulation...")
 	end
@@ -839,7 +811,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	max_birthRate = maximum(birthRates)
 
 	Random.seed!(42)
-
+	println("using random seed 42...")
 	#setup stochastic part
 	stochInitPars = (Lp=Lp,Np=Np,ϕ=ϕ, nChrom=nChrom, maxChrom=maxChrom,dt=dt,
     misrate=misRate,deathRate=deathRate,Γ=Γ, χ=χ,Ξ=Ξ,interp=interp,
@@ -860,12 +832,15 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 				max_birthRate=max_birthRate,
 				debugging=debugging)
 
+	pde_active= true # flag to handle situation when there are no clones above threshold.
+	# (model currently starts with a PDE population by default)
 
 	for i in 1:ceil(Int64,finalDay/dt)
 		t=i*dt
-		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,saveat,sIndex,birthRates,M,u_s)
+		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,sIndex,birthRates,M,u_s)
 		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
 		max_birthRate = maximum(birthRates)
+		println(length(sIndex))
 		if append_state 
 			#println(size(s_new))
 			u0= ComponentArray(s=s_new,E=u0.E)
@@ -875,17 +850,30 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 			#println(birthRates)
 			#println(sIndex)
 		end
-		if  relegation_index[1]< stochasticThreshold
-			ui = s_new[relegation_index[2],:,:]
-			br = birthRates[relegation_index[2]]
-			cn = sIndex[relegation_index[2]]
-			s_s=addClone(s_s, ui, cn, br)
+		if  relegation_index[1]< stochasticThreshold && sum(u0.s)>0
+			## handle special case when there is still a dummy population in the PDE model
+			if sum(sIndex[1])<1
+				## do not add deleted dummy population to the stochastic model
+			else
+				## extract info about deleted population
+				ui = s_new[relegation_index[2],:,:] 
+				br = birthRates[relegation_index[2]]
+				cn = sIndex[relegation_index[2]]
+				s_s=addClone(s_s, ui, cn, br)
+			end
+			## remove state from PDE model
 			s_new = s_new[1:size(s_new,1) .!= relegation_index[2],:,:]
 			birthRates = birthRates[1:size(birthRates,1) .!= relegation_index[2]]
 			sIndex = sIndex[1:size(sIndex,1) .!= relegation_index[2]]
 			u0= ComponentArray(s=s_new,E=u0.E)
-			#println(birthRates)
-			#println(sIndex)
+			if length(sIndex)<1
+				println("pde compartment deactivated...")
+				## if no populations above threshold still need to run pde model to handle 
+				## diffusion. PDE function expects a cell population, so we feed it an array of zeros so it will still run.
+				u0= ComponentArray(s= zeros(1,Np...) ,E=u0.E)
+				sIndex=[repeat([0],length(starting_copy_number))]
+				birthRates=0
+			end
 			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
 			#println(compartment_sizes)
 		end
@@ -902,17 +890,32 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		open(string(i,pad=4)*"_Energy"*".csv","w") do io
 			writedlm(io,u0.E,',')
 		end
-		df=vcat(count_clones(s_s),count_clones(u0.s,sIndex,birthRates))
-		open(string(i,pad=4)*"_population"*".csv","w") do io
-			writedlm(io,df,',')
-		end
 
-		Nstoch=sum(u_s)
-		Npde=sum(u0.s)
 		Nstates = length(keys(s_s.popDict))
 		Nstatespde = size(u0.s,1)
+		
+		Nstoch=sum(u_s)
+		Npde=sum(u0.s)
+
 		println("time: $t, PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states)")
 		
+		
+		if Nstatespde>0
+			if length(keys(s_s.popDict))>0
+				df=vcat(count_clones(s_s),count_clones(u0.s,sIndex,birthRates))
+				open(string(i,pad=4)*"_population"*".csv","w") do io
+					writedlm(io,df,',')
+				end
+			else
+				df=count_clones(u0.s,sIndex,birthRates)
+				open(string(i,pad=4)*"_population"*".csv","w") do io
+					writedlm(io,df,',')
+				end
+			end
+		end
+
+
+
 	end
 
 	if debugging > 0

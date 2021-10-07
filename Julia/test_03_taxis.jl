@@ -5,15 +5,17 @@ include("stochastic.jl")
 include("ploidyMovement.jl")
 
 Γtest=300
-χtest=500
-tspan=(0.0,10.0)
+χtest=1000
+tspan=(0.0,40.0)
 Np=[60,60]
 Lp=[1000,1000]
+Ξ=0.02
 
 boundary_Dict = Dict{Tuple{Int,Int},Any}()
 domain_Dict = Dict{Tuple{Int,Int},Int}()
 
 dp = Lp./(Np .- 1)
+pp=0:(Lp[1]/(Np[1]-1)):Lp[1]
 starting_copy_number=[1,1,1,1,1]
 sIndex=[starting_copy_number]
 birthRates = [0]
@@ -21,7 +23,7 @@ birthRates = [0]
 odePars = (nChrom=5,
 misRate=0.0,
 deathRate=0.0,
-Γ=Γtest,Γₑ=0.0,ϕ=0.02,Ξ=0.02,χ=χtest*10,δ=0.0,Np=Np,dp=dp,k=0.0,E_vessel=0.0,
+Γ=Γtest,Γₑ=0.0,ϕ=0.02,Ξ=Ξ,χ=χtest,δ=0.0,Np=Np,dp=dp,k=0.0,E_vessel=0.0,
 domain_Dict=domain_Dict,
 boundary_Dict=boundary_Dict,
 max_cell_cycle_duration=5,
@@ -33,11 +35,10 @@ s0[1,ceil(Int64,Np[1]/2),ceil(Int64,Np[2]/2)]=100000
 E0=zeros(Np...)
 for i in 1:Np[1]
 
-    E0[:,i].=i
+    E0[:,i].=exp(pp[i]/100)-Ξ
 
 end
-E0[:,1].=0.5
-E0[:,Np[1]].=0.5
+
 u_s=zeros(Np...)
 u0 = ComponentArray(s=s0,E=E0)
 odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
@@ -59,8 +60,8 @@ end
 pop = MutableLinkedList{cell}()
 br=0.0
 dt=0.1
-χ=χtest/max(dp...)^2
-Ξ=0.02
+χ=dt*χtest/max(dp...)
+
 Γ=Γtest/max(dp...)^2
 dnorm = Normal(0,sqrt(2*Γ*dt)) 
 for i in 1:100000
@@ -70,7 +71,10 @@ end
 ci = clone(pop,starting_copy_number,br)
 
 u=zeros(Np...)
-dE0=grad(E0,Np)
+
+
+dE0=map(x->chemotaxis_form(x,Ξ),E0)
+dE0 = grad(dE0,Np,dp)
 
 for i in 1:ceil(Int64,tspan[2]/dt)
     migrate(ci,Np,dnorm,dE0,E0,χ,Ξ, domain_Dict)

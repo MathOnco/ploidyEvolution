@@ -87,9 +87,9 @@ end
 
 # migrate a cell
 function move(c::cell,Np,dnorm, dE0,E0,χ,Ξ,domain_Dict)
-    if get(domain_Dict,(ceil(Int64,c.x),ceil(Int64,c.y)),0) == 2
-        println("$c in vessel! move()")
-    end
+    #if get(domain_Dict,(ceil(Int64,c.x),ceil(Int64,c.y)),0) == 2
+     #   println("$c in vessel! move()")
+    #end
     
     ix = ceil(Int64,c.x)
     iy = ceil(Int64,c.y)
@@ -103,8 +103,8 @@ function move(c::cell,Np,dnorm, dE0,E0,χ,Ξ,domain_Dict)
     # and may even end up frequently skipping "over" vessels. Therefore strategy will jsut be to have one attempt at coords
     # and if they end up inside a vessel, cell just retains its old coords.  
     
-    new_x = c.x + rand(dnorm,1)[1] + χ*dE0[1,ix,iy]*log(E0[ix,iy]+Ξ)
-    new_y = c.y + rand(dnorm,1)[1] + χ*dE0[2,ix,iy]*log(E0[ix,iy]+Ξ)
+    new_x = c.x + rand(dnorm,1)[1] + χ*dE0[1,ix,iy]#*log(E0[ix,iy]+Ξ)
+    new_y = c.y + rand(dnorm,1)[1] + χ*dE0[2,ix,iy]#*log(E0[ix,iy]+Ξ)
 
     ##implement boundary conditions (NOTE this can be broken if migration longer than Np])
     ## consider % operator to fix overstepping? or just do..while
@@ -211,6 +211,7 @@ mutable struct stochasticCompartment
     max_cell_cycle_duration
     domain_Dict
     stochasticThreshold
+    dp
 end
 
 # perform migration for entire stochastic model
@@ -391,7 +392,8 @@ end
 ## then return updated versions of each
 function stochastic_step(s::stochasticCompartment, E0, s0, info)
     @unpack (sIndex,birthRates) = info
-    dE0 = grad(E0,s.Np)
+    dE0=map(x->chemotaxis_form(x,s.Ξ),E0)
+    dE0 = grad(dE0,s.Np,s.dp)
     #unclear what is best order to do these steps
     s=die(s)
     s=migrate(s,dE0,E0)
@@ -412,7 +414,7 @@ function setup_stochastic(params)
     # needs fixed. We need to trace back these parms and determine their units
     dp=Lp./(Np .- 1)
     Γ=Γ/max(dp...)^2
-    χ=χ/max(dp...)^2
+    χ=dt*χ/max(dp...)
     
     chromosome_selector = DiscreteUniform(1,nChrom) # random integer 1:nchrom
     uniform01 = Uniform(0,1) # random continous uniform dist.
@@ -420,7 +422,7 @@ function setup_stochastic(params)
 
     popDict = Dict{Array,clone}()
     s = stochasticCompartment(popDict,Np,ϕ,χ,Ξ, maxChrom,dt,misrate,deathRate,
-    chromosome_selector,uniform01,dnorm,interp,max_cell_cycle_duration, domain_Dict, stochasticThreshold)
+    chromosome_selector,uniform01,dnorm,interp,max_cell_cycle_duration, domain_Dict, stochasticThreshold,dp)
     return(s)
 end
 
@@ -436,13 +438,13 @@ function wrap(index,Npi)
 end
 
 #get the gradient of a 2d array
-function grad(R2,Np)
+function grad(R2,Np,dp)
     dR2 = zeros(2,size(R2)...)
     for i in 1:size(R2)[1]
         for j in 1:size(R2)[2]
             #1st order central diff
-            dR2[1,i,j]=(R2[wrap(i+1,Np[1]),j]-R2[wrap(i-1,Np[1]),j])/(2*Np[1])
-            dR2[2,i,j]=(R2[i,wrap(j+1,Np[2])]-R2[i,wrap(j-1,Np[2])])/(2*Np[2])
+            dR2[1,i,j]=(R2[wrap(i+1,Np[1]),j]-R2[wrap(i-1,Np[1]),j])/(2*dp[1])
+            dR2[2,i,j]=(R2[i,wrap(j+1,Np[2])]-R2[i,wrap(j-1,Np[2])])/(2*dp[2])
         end
     end
     return dR2
@@ -631,12 +633,14 @@ function transition_matrix(sIndex,birthRates)
     return M
 end
 
-function run_hybrid_step(i,odePars,u,tspan,s_s,saveat,sIndex,birthRates,M,u_s)
+function run_hybrid_step(i,odePars,u,tspan,s_s,sIndex,birthRates,M,u_s)
 	#M as well will need to be pulled out of odePars
 	#println("PDE step...")
+
+
 	odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 	prob = ODEProblem(ploidy_hybrid_model,u,tspan,odePars)
-	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,saveat=saveat)
+	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,save_on=false)
 	#println("Stochastic step...")
 	u.E=sol[length(sol)].E
 	u.s=sol[length(sol)].s

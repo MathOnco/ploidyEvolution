@@ -29,6 +29,11 @@ debugging=0)
 M=zeros(1,1)
 s0=zeros(1,Np...)
 s0[1,ceil(Int64,Np[1]/2),ceil(Int64,Np[2]/2)]=100000
+u0=s0[1,:,:]
+open("test_output/01_diffusion/u0.csv","w") do io
+    writedlm(io,u0,',')
+end
+
 E0=zeros(Np...)
 u_s=zeros(Np...)
 u0 = ComponentArray(s=s0,E=E0)
