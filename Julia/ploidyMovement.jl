@@ -228,7 +228,7 @@ function ploidy_spatial_model(du,u,pars,t)
 				- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ)) + 
 				sum(
 					(s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
-					for i in 1 : length(dp)))/4.0
+					for i in 1 : length(dp))/4.0)
 
 			# Update the RHS dependent on where we are in the domain
 			du.s[focal...,coord...] = inflow - outflow + diffusion - chemotaxis
@@ -840,7 +840,6 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,sIndex,birthRates,M,u_s)
 		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
 		max_birthRate = maximum(birthRates)
-		println(length(sIndex))
 		if append_state 
 			#println(size(s_new))
 			u0= ComponentArray(s=s_new,E=u0.E)
@@ -879,16 +878,23 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		end
 
 			# Write results to multiple files by time points
-		open(string(i,pad=4)*"_states"*".csv","w") do io
-			for i in 1:length(sIndex)
-				z = u0.s[i,:,:]
-				cnstate = "#"*join(string(sIndex[i]...),":")
-				writedlm(io,[cnstate])
-				writedlm(io,z,',')
+		if i%100 == 0
+			open(string(i,pad=4)*"_pdestates"*".csv","w") do io
+				for i in 1:length(sIndex)
+					z = u0.s[i,:,:]
+					cnstate = "#"*join(string(sIndex[i]...),":")
+					writedlm(io,[cnstate])
+					writedlm(io,z,',')
+				end
 			end
-		end
-		open(string(i,pad=4)*"_Energy"*".csv","w") do io
-			writedlm(io,u0.E,',')
+			open(string(i,pad=4)*"_Energy"*".csv","w") do io
+				writedlm(io,u0.E,',')
+			end
+	
+			df = summarise_clones(s_s)
+			open(string(i,pad=4)*"_stochstates"*".csv","w") do io
+				writedlm(io,df,',')
+			end
 		end
 
 		Nstates = length(keys(s_s.popDict))
@@ -917,6 +923,9 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 
 
 	end
+
+
+
 
 	if debugging > 0
 		println("Simulation complete")

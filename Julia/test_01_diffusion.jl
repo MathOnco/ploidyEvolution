@@ -5,8 +5,8 @@ include("stochastic.jl")
 include("ploidyMovement.jl")
 
 Γtest=500
-tspan=(0.0,10.0)
-Np=[20,20]
+tspan=(0.0,5.0)
+Np=[50,50]
 Lp=[1000,1000]
 
 boundary_Dict = Dict{Tuple{Int,Int},Any}()
@@ -69,7 +69,7 @@ ci = clone(pop,starting_copy_number,br)
 u=zeros(Np...)
 dE0=zeros(2,Np...)
 
-for i in 1:100
+for i in 1:50
     migrate(ci,Np,dnorm,dE0,E0,χ,Ξ, domain_Dict)
 end
 

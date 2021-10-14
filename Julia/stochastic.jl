@@ -303,10 +303,8 @@ function addClone(s::stochasticCompartment, ui, cn, br)
     ci = clone(pop,cn,br)
     for i in (1:size(ui)[1])
         for j in (1:size(ui)[2])
-            # different possibilities exist for how to transfer deterministic->stochastic
-            # here we choose to round the deterministic population to the nearest Int per grid site and emplace into stoch. model
-            # but another alternative could be to treat det. pop. as a probability distribution and randomly realise from that dist
-            Ncells = round(ui[i,j])
+            p = Poisson(ui[i,j])
+            Ncells = rand(p,1)[1]
             if Ncells>0
                 for k in 1:Ncells
                     c=cell((i-rand()),(j-rand()))
@@ -371,7 +369,15 @@ end
 function summarise_clone(ci::clone)
     df = repeat(ci.cn',outer=(length(ci.pop),1))
     xy = hcat(map(c->[c.x,c.y],ci.pop)...)'
-    return DataFrame(hcat(df,xy),:auto)
+    return hcat(df,xy)
+end
+
+# get x,y & cn of each cell and return in a dataframe
+function summarise_clones(s::stochasticCompartment)
+
+    df = map(summarise_clone,values(s.popDict))
+    df = reduce(vcat,df)
+    return df
 end
 
 # get x,y & cn of each cell and return in a dataframe
@@ -461,7 +467,259 @@ function grid_neighbours(coord,Npi)
     return neighbours
 end
 
+function Skplus(n0,n1,n2)
+    if n0==n1 
+        return n1
+    end
+    r = (n2-n1)/(n1-n0)
+    val = n1+0.5*(r + abs(r))/(1+abs(r))*(n1-n0)
+    return val
+end
+
+function Skminus(n1,n2,n3)
+    if n2==n3  
+        return n2 
+    end
+    r = (n2-n1)/(n3-n2)
+    val = n2+0.5*(r + abs(r))/(1+abs(r))*(n2-n3)
+    return val
+end
+
 function ploidy_hybrid_model(du,u,pars,t)
+    #println(t)
+	# Grab the parameters
+	@unpack (M,u_s,birthRates,sIndex,nChrom,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,dp,k,E_vessel,
+	domain_Dict,boundary_Dict,max_cell_cycle_duration,max_birthRate,debugging) = pars
+
+    nChrom = length(sIndex[1])
+
+	s, E = u.s, u.E
+
+	coordsList = [1:num_points for num_points in Np]
+	# dp = (Np .- 1).^(-1)
+	sum_dp_invsq = sum(dp.^(-2))
+    Npi = Np[1]
+    dpi=dp[1]
+
+	# cflow = 0.0
+	# dflow = 0.0
+
+	# Iterate over each coordinate
+	for coord in Iterators.product((1:length(coords) for coords in coordsList)...)
+
+		# Get whether we are interior (0), at boundary of vessel (1) or inside vessel (2)
+		domain_info = get(domain_Dict,coord,0)
+
+		if domain_info == 2 # Inside blood vessel we make no changes
+			du.s[:,coord...] .= 0.0
+			du.E[coord...] = 0.0
+			continue
+		end
+
+		# Gets indicies used to calculate spatial impact (assume periodic)
+		cardinal_point_info = get_cardinal_gridpoints([elem for elem in coord],Np)
+
+		# Gets the points to be used for spatial grid resolution
+		E_cardinal = [E[info...] for info in cardinal_point_info]
+		E_minus,E_plus = E_cardinal[end-1:-2:1],E_cardinal[end:-2:1]
+		E_focal = E[coord...]
+
+		if domain_info == 1	# boundary of vessel
+			normal_vector = boundary_Dict[coord] 	# Grab normal vector
+			for i = 1 : length(dp)
+				if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
+					E_plus[i] = E_minus[i] - 2.0*dp[i]*k*(E_focal - E_vessel)
+				elseif normal_vector[i] > 0 # The leftward point is in the vessel
+					E_minus[i] =  E_plus[i] - 2.0*dp[i]*k*(E_focal - E_vessel)
+				end
+			end
+		end
+
+		# Iterate over each compartment
+		for si in 1:length(sIndex)
+
+			# Initialize inflow to 0
+			inflow = 0.0
+
+			# copy state to local variables for brevity
+			s_focal = s[si...,coord...]
+			s_cardinal = [s[si...,info...] for info in cardinal_point_info]
+			s_minus,s_plus = s_cardinal[end-1:-2:1],s_cardinal[end:-2:1]
+
+			# Checking the boundary
+			if domain_info == 1	# boundary of vessel
+				normal_vector = boundary_Dict[coord] 	# Grab normal vector
+				for i = 1 : length(dp)
+					if normal_vector[i] < 0 # The rightward point is in the vessel so we replace it with the B.C.
+						s_plus[i] = s_minus[i] + χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
+						chemotaxis_form(E_minus[i],Ξ))
+					elseif normal_vector[i] > 0 # The leftward point is in the vessel
+						s_minus[i] = s_plus[i] - χ/Γ*s_focal*(chemotaxis_form(E_plus[i],Ξ) - 
+						chemotaxis_form(E_minus[i],Ξ))
+					end
+				end
+			end
+
+			energy_constraint = energy_constrained_birth(E_focal,ϕ)
+			
+            for sj in 1:length(sIndex)
+
+                s_parent = s[sj,coord...]
+
+                # Get max birth rate
+                birthRate = M[sj,si]
+
+                if s_parent == 0.0 || birthRate == 0.0
+                    continue
+                end
+
+                # If birth rate is below a threshold determined by amount spent in G1 (default is 100 hours)
+                # then we assume that birth does not occur...
+                energy_modified_birth_rate = birthRate*energy_constraint
+                if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+                    # Get flow rate from parentCN -> focalCN
+                    flowRate = misRate/nChrom
+                    inflow += energy_modified_birth_rate*flowRate*s_parent
+                else
+                    # println("At energy level $(E_focal), birth rate of $(parentCN) is too low...")
+                end
+
+            end
+
+
+            if s_focal > 0
+                # Grab the focal cells (max?) birth rate
+                birthRate = birthRates[si]
+                energy_modified_birth_rate = birthRate*energy_constraint
+
+                if energy_modified_birth_rate > log(2)/max_cell_cycle_duration
+                    # Add it to the inflow to the focal compartment
+                    inflow += energy_modified_birth_rate*(1.0 - 2.0*misRate)*s_focal
+                else
+                    # println("At energy level $(E_focal), birth rate of $(focalCN) is too low...")
+                end
+            end
+
+			# Death of the focal compartment
+			outflow = deathRate*s_focal
+
+			# u_xx -> (u[i+1] + u[i-1] - 2u[i])/dx^2 
+			# random migration
+			#diffusion = Γ*(sum((s_plus[i] + s_minus[i])/dp[i]^2 for i in 1:length(dp)) 
+			#- 2.0*sum_dp_invsq*s_focal)
+            diffusion_influx = sum(map(x->Γ*s[si,x...],grid_neighbours(coord,Npi)))/dpi^2
+            diffusion_outflux= Γ*4*s[si,coord...]/dpi^2   
+            
+            diffusion = diffusion_influx-diffusion_outflux
+            
+			# chemotaxis
+			#chemotaxis = χ*(
+			#	s_focal*(
+			#	sum(
+			#		(chemotaxis_form(E_plus[i],Ξ) + chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
+			#		for i in 1 : length(dp)
+			#		)
+			#	- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ)) + 
+			#	sum(
+			#		(s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
+			#		for i in 1 : length(dp))/4.0)
+
+            ## taxis with limiters (Eq 24 Gerish & Chaplain)
+            vip=(chemotaxis_form(E[wrap(coord[1]+1,Npi),coord[2]],Ξ)-chemotaxis_form(E[coord...],Ξ))/dpi
+            vjp= (chemotaxis_form(E[coord[1],wrap(coord[2]+1,Npi)],Ξ)-chemotaxis_form(E[coord...],Ξ))/dpi
+            vim=(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[wrap(coord[1]-1,Npi),coord[2]],Ξ))/dpi
+            vjm= (chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[coord[1],wrap(coord[2]-1,Npi)],Ξ))/dpi
+            
+
+            Tip = max(0,vip)*Skplus(s[si,wrap(coord[1]-1,Npi),coord[2]],s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]])+
+            min(0,vip)*Skminus(s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]],s[si,wrap(coord[1]+2,Npi),coord[2]])
+            
+            Tim = max(0,vim)*Skplus(s[si,wrap(coord[1]-2,Npi),coord[2]],s[si,wrap(coord[1]-1,Npi),coord[2]],s[si,coord...])+
+            min(0,vim)*Skminus(s[si,wrap(coord[1]-1,Npi),coord[2]],s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]])
+
+            Tjp = max(0,vjp)*Skplus(s[si,coord[1],wrap(coord[2]-1,Npi)],s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)])+
+            min(0,vjp)*Skminus(s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)],s[si,coord[1],wrap(coord[2]+2,Npi)])
+            
+            Tjm = max(0,vjm)*Skplus(s[si,coord[1],wrap(coord[2]-2,Npi)],s[si,coord[1],wrap(coord[2]-1,Npi)],s[si,coord...])+
+            min(0,vjm)*Skminus(s[si,coord[1],wrap(coord[2]-1,Npi)],s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)])
+
+            chemotaxis = χ*(Tim+Tjm-Tip-Tjp)/dpi
+
+            ## taxis with simple upwinding:
+            #chemo_influx = sum(map(x->max(0,χ*(s[si,x...]*(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[x...],Ξ)))),grid_neighbours(coord,Npi)))/dpi^2
+            #chemo_outflux = sum(map(x->max(0,χ*(s[si,coord...]*(chemotaxis_form(E[x...],Ξ)-chemotaxis_form(E[coord...],Ξ)))),grid_neighbours(coord,Npi)))/dpi^2
+			#chemotaxis=chemo_influx-chemo_outflux
+            # Update the RHS dependent on where we are in the domain
+			du.s[si,coord...] = inflow - outflow + diffusion + chemotaxis
+
+			# dflow += diffusion
+			# cflow += chemotaxis
+
+		end
+
+		# Diffusion of energy molecule through the tissue
+		diffusion = Γₑ*(sum((E_plus[i] + E_minus[i])/dp[i]^2 for i in 1:length(dp)) - 2.0*sum_dp_invsq*E_focal)
+
+		# Consumption by the cells at the grid point designated by coord.
+		consumption = δ*E_focal*(sum(s[:,coord...])+u_s[coord...])
+
+		# update the energy compartment
+		du.E[coord...] = diffusion - consumption
+
+		# dflow += diffusion
+		
+	end
+
+    for coord in keys(domain_Dict)
+        if domain_Dict[coord]==2
+            du.s[:,coord...].=0
+            neighbours = grid_neighbours(coord,Npi)
+            for n in neighbours
+                if domain_Dict[n]==2
+                    # do nothing for neighbours that are also vessels
+                else
+                    ## for noflux in diffusion,
+                    ## we can simply "give back" 25% of the efflux per bounding coord:
+                    du.s[:,n...]=du.s[:,n...]+Γ*s[:,n...]/dpi^2   
+                    
+                    ## for noflux in chemotaxis:
+                    for si in 1:length(sIndex)
+                        if sum(n)>sum(coord)
+                            #find the velocity through the interface
+                            v=(chemotaxis_form(E[n...],Ξ)-chemotaxis_form(E[coord...],Ξ))/dpi
+                            
+                            np1 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
+                            np2 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
+                   
+                            T = max(0,v)*Skplus(s[si,np1...],s[si,coord...],s[si,n...])+
+                            min(0,v)*Skminus(s[si,coord...],s[si,n...],s[si,np2...])
+
+                            du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
+
+                        else
+                            v=(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[n...],Ξ))/dpi
+                            np2 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
+                            np1 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
+                                               
+                            T = max(0,v)*Skplus(s[si,np1...],s[si,n...],s[si,coord...])+
+                            min(0,v)*Skminus(s[si,n...],s[si,coord...],s[si,np2...])
+
+                            du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
+                        end
+                        
+                    end
+                    
+                end
+            end
+        end
+
+    end
+
+	# @show dflow,cflow
+
+end
+
+function ploidy_hybrid_model_old(du,u,pars,t)
 
 	# Grab the parameters
 	@unpack (M,u_s,birthRates,sIndex,nChrom,misRate,deathRate,Γ,Γₑ,ϕ,Ξ,χ,δ,Np,dp,k,E_vessel,
@@ -474,6 +732,8 @@ function ploidy_hybrid_model(du,u,pars,t)
 	coordsList = [1:num_points for num_points in Np]
 	# dp = (Np .- 1).^(-1)
 	sum_dp_invsq = sum(dp.^(-2))
+    Npi = Np[1]
+    dpi=dp[1]
 
 	# cflow = 0.0
 	# dflow = 0.0
@@ -581,7 +841,11 @@ function ploidy_hybrid_model(du,u,pars,t)
 			# random migration
 			diffusion = Γ*(sum((s_plus[i] + s_minus[i])/dp[i]^2 for i in 1:length(dp)) 
 			- 2.0*sum_dp_invsq*s_focal)
-
+            #diffusion_influx = sum(map(x->Γ*s[si,x...],grid_neighbours(coord,Npi)))/dpi^2
+            #diffusion_outflux= Γ*4*s[si,coord...]/dpi^2   
+            
+            #diffusion = diffusion_influx-diffusion_outflux
+            
 			# chemotaxis
 			chemotaxis = χ*(
 				s_focal*(
@@ -592,9 +856,12 @@ function ploidy_hybrid_model(du,u,pars,t)
 				- 2.0*sum_dp_invsq*chemotaxis_form(E_focal,Ξ)) + 
 				sum(
 					(s_plus[i] - s_minus[i])*(chemotaxis_form(E_plus[i],Ξ) - chemotaxis_form(E_minus[i],Ξ))/dp[i]^2
-					for i in 1 : length(dp)))/4.0
+					for i in 1 : length(dp))/4.0)
 
-			# Update the RHS dependent on where we are in the domain
+            #chemo_influx = sum(map(x->max(0,χ*(s[si,x...]*(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[x...],Ξ)))),grid_neighbours(coord,Npi)))/dpi^2
+            #chemo_outflux = sum(map(x->max(0,χ*(s[si,coord...]*(chemotaxis_form(E[x...],Ξ)-chemotaxis_form(E[coord...],Ξ)))),grid_neighbours(coord,Npi)))/dpi^2
+			#chemotaxis=chemo_influx-chemo_outflux
+            # Update the RHS dependent on where we are in the domain
 			du.s[si,coord...] = inflow - outflow + diffusion - chemotaxis
 
 			# dflow += diffusion
@@ -614,7 +881,6 @@ function ploidy_hybrid_model(du,u,pars,t)
 		# dflow += diffusion
 		
 	end
-
 	# @show dflow,cflow
 
 end
@@ -640,7 +906,7 @@ function run_hybrid_step(i,odePars,u,tspan,s_s,sIndex,birthRates,M,u_s)
 
 	odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 	prob = ODEProblem(ploidy_hybrid_model,u,tspan,odePars)
-	sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5,save_on=false)
+	sol = solve(prob,save_on=false)
 	#println("Stochastic step...")
 	u.E=sol[length(sol)].E
 	u.s=sol[length(sol)].s

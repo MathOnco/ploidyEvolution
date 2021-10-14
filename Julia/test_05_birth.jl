@@ -48,7 +48,7 @@ function main()
     E_vessel=0.0
     max_cell_cycle_duration=4
     debugging=0
-    stochasticThreshold=1000
+    stochasticThreshold=5000
     dt=0.1
     tspan = (0.0,dt)
     finalDay=100
@@ -141,7 +141,7 @@ function main()
         Npde=sum(u0.s)
     
         out=hcat(t,Nstoch,Npde)
-        sE0 = sum(u.E)
+        sE0 = sum(u0.E)
         println("time: $t, PDE: $Npde, Stochastic: $Nstoch, Energy $sE0")
         open("test_output/05_birth/cells.csv","a") do io
             writedlm(io,out,',')

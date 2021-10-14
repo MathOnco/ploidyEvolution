@@ -1,0 +1,252 @@
+---
+title: "preliminary pde figure"
+output: html_document
+---
+
+
+```{r setup, echo=FALSE}
+
+knitr::opts_knit$set(root.dir = "C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/00_full_tests/")
+
+```
+
+
+
+
+Model parameters were chosen such that the original cell population would reach a steady state with a *reasonable* density of cells. 
+
+```{r}
+library(ggplot2)
+ff <- list.files("000_parameterisation/")
+ff <- ff[grepl("_population",ff)]
+dt <- 0.1
+
+x <- do.call(rbind,lapply(ff, function(f){
+  xf <- read.table((paste("000_parameterisation/",f,sep="")),sep=",")
+  i <- as.numeric(unlist(strsplit(f,split="_"))[1])
+  n <- as.numeric(xf[ncol(xf)])
+  data.frame(i,n)
+}))
+x$i <- x$i*dt
+
+p <- ggplot(x,aes(x=i,y=n))+
+  geom_line()+
+  scale_y_log10("total cells")+
+  scale_x_continuous("days")+
+  theme_bw(base_size=16)
+p
+
+```
+The spatial distribution of cells and energy at this steady state is shown. 
+
+```{r}
+library(ggplot2)
+
+proc_spat <- function(fname,dir){
+  i <- as.numeric(unlist(strsplit(fname,split="_"))[1])
+  x <- read.table((paste(dir,fname,sep="")),sep=",")
+  colnames(x) <- 1:ncol(x)
+  x$y <- 1:nrow(x)
+  
+  x <- reshape2::melt(x,id.vars="y")
+  colnames(x) <- c("y","x","v")
+  x$i <- i
+  return(x)
+}
+
+plot_spat <- function(x,fill_label){
+  p <- ggplot(x,aes(x=x,y=y,fill=v))+
+    geom_raster()+
+    theme_classic(base_size=16)+  
+    scale_fill_viridis_c(fill_label,trans="log")+
+    theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank())
+  p
+}
+
+ff <- list.files("000_parameterisation/")
+fE <- tail(ff[grepl("_Energy",ff)],1)
+fc <- tail(ff[grepl("_states",ff)],1)
+
+xE <- proc_spat(fE,"000_parameterisation/")
+plot_spat(xE,"energy")
+
+xc <- proc_spat(fc,"000_parameterisation/")
+plot_spat(xc,"cells/site")
+
+
+```
+
+
+```{r}
+
+proc_pop <- function(fname,dir,nchrom=5){
+  i <- as.numeric(unlist(strsplit(fname,split="_"))[1])
+  x <- read.table((paste(dir,fname,sep="")),sep=",")
+  cn <- x[,1:nchrom]
+  cn <- sapply(interaction(cn),as.character)
+  x <- x[,(nchrom+1):ncol(x)]
+  colnames(x)[1:2] <- c("br","n")
+  x$cn <- cn
+  x$f <- x$n/sum(x$n)
+  x$i <- i
+  return(x)
+}
+dt <- 0.1
+ff <- list.files("000_sample_output/")
+fp <- ff[grepl("_population",ff)]
+
+xp <- do.call(rbind,lapply(fp,proc_pop,dir="000_sample_output/"))
+
+maxf <- aggregate(xp$f, by=list(xp$cn),max)
+maxf <- maxf[order(maxf$x,decreasing = T),]
+cn_sel <- maxf$Group.1[1:7]
+
+xp <- xp[xp$cn%in%cn_sel,]
+xp$i <- xp$i*dt
+
+
+
+p <- ggplot(xp,aes(x=i,y=n,color=cn))+
+  geom_line()+
+  scale_y_continuous("number")+
+  scale_x_continuous("days")+
+  theme_classic(base_size=16)
+p
+
+p <- ggplot(xp,aes(x=i,y=f,color=cn))+
+  geom_line()+
+  scale_y_continuous("frequency")+
+  scale_x_continuous("days")+
+  theme_classic(base_size=16)
+p
+
+```
+
+```{r}
+Np <- 61
+nchrom<-5
+ff <- list.files("061_sample_output/")
+fs <- ff[grepl("_stochstates",ff)]
+fs <- fs[4]
+x <- read.table(paste("061_sample_output/",fs,sep=""),sep=",")
+
+cn <- x[,1:nchrom]
+cn <- sapply(interaction(cn),as.character)
+
+x <- x[,(nchrom+1):ncol(x)]
+x <- x[cn%in%cn_sel,]
+colnames(x) <- c("x","y")
+x$x <- ceiling(x$x)
+x$y <- ceiling(x$y)
+cn <- cn[cn%in%cn_sel]
+x$cn <- cn
+x$cells <- 1
+
+x <- lapply(unique(x$cn),function(i) x[x$cn==i,])
+
+xs <- do.call(rbind,lapply(x, function(x){
+  cn <- x$cn[1]
+  x <- aggregate(x$cells,by=list(x$x,x$y),sum)
+  colnames(x) <- c("y","x","v")
+  m <- matrix(0,Np,Np)
+  for(i in 1:nrow(x)){
+   m[x$x[i],x$y[i]] <-  m[x$x[i],x$y[i]] + x$v[i]
+  }
+  
+  m <- data.frame(m)
+  colnames(m) <- 1:ncol(m)
+  m$y <- 1:nrow(m)
+  x <- reshape2::melt(m,id.vars="y")
+  colnames(x) <- c("y","x","v")
+  x$cn <- cn
+  return(x)
+} ))
+
+
+```
+
+```{r}
+library(stringr)
+ff <- list.files("061_sample_output/")
+fc <- ff[grepl("_pdestates",ff)]
+fc <- fc[1]
+
+cn <- readLines(paste("061_sample_output/",fc,sep=""))
+cn <- cn[grepl("#",cn)]
+
+cn <- str_replace(cn,"#","")
+cn <- str_replace_all(cn,":",".") 
+
+
+xc <- read.table(paste("061_sample_output/",fc,sep=""),sep=",")
+
+xc <- do.call(rbind,lapply(1:length(cn), function(i){
+  x <- xc[(1:ncol(xc))+ncol(xc)*(i-1),]
+  colnames(x) <- 1:ncol(x)
+  x$y <- 1:nrow(x)
+  x <- reshape2::melt(x,id.vars="y")
+  colnames(x) <- c("y","x","v")
+  x$cn <- cn[i]
+  return(x)
+}))
+
+  p <- ggplot(xc,aes(x=x,y=y,fill=v))+
+    facet_wrap(~cn)+
+    geom_raster()+
+    theme_classic(base_size=16)+  
+    scale_fill_viridis_c("cells",trans="log")+
+    theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank())+
+    ggtitle("day 10")
+
+  p
+
+xc <- xc[xc$cn%in%cn_sel,]
+
+```
+
+```{r}
+
+x <- rbind(xc,xs)
+
+  p <- ggplot(x,aes(x=x,y=y,fill=v))+
+    facet_wrap(~cn)+
+    geom_raster()+
+    theme_classic(base_size=16)+  
+    scale_fill_viridis_c("cells",trans="log")+
+    theme(axis.line=element_blank(),axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank())+
+    ggtitle("day 10")
+
+  p
+
+```
+
+
+hierarchical clustering...
+```{r}
+
+ff <- list.files("000_sample_output/")
+ff <- ff[grepl("_population",ff)]
+xp <- read.table(paste("000_sample_output/",tail(ff,1),sep=""),sep=",")
+xpstat <- xp[,6:ncol(xp)]
+xp <- xp[,1:5]
+dp <- dist(xp)
+hp <- hclust(dp)
+cp <- cutree(hp, 2)
+
+tp <- data.frame(cp)
+tp <- cbind(tp,xp,xpstat)
+
+tp1 <- tp[tp$cp==1,]
+tp2 <- tp[tp$cp==2,]
+
+
+```

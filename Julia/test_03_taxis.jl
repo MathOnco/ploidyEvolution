@@ -4,10 +4,10 @@ using DifferentialEquations,ComponentArrays
 include("stochastic.jl")
 include("ploidyMovement.jl")
 
-Γtest=300
+Γtest=100
 χtest=1000
-tspan=(0.0,40.0)
-Np=[60,60]
+tspan=(0.0,50.0)
+Np=[30,30]
 Lp=[1000,1000]
 Ξ=0.02
 
@@ -31,12 +31,12 @@ max_birthRate=0,
 debugging=0)
 M=zeros(1,1)
 s0=zeros(1,Np...)
-s0[1,ceil(Int64,Np[1]/2),ceil(Int64,Np[2]/2)]=100000
+s0[:,ceil(Int64,Np[1]/2),ceil(Int64,Np[1]/4)].=100000
 E0=zeros(Np...)
+
 for i in 1:Np[1]
-
-    E0[:,i].=exp(pp[i]/100)-Ξ
-
+    pp = Lp[1]*(i)/Np[1]/100
+    E0[:,i].= exp(pp)-0.02
 end
 
 u_s=zeros(Np...)
@@ -44,15 +44,19 @@ u0 = ComponentArray(s=s0,E=E0)
 odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 
 prob = ODEProblem(ploidy_hybrid_model,u0,tspan,odePars)
-sol = solve(prob,VCABM(),abstol=1e-8,reltol=1e-5)
+sol = solve(prob,AutoTsit5(Rosenbrock23()))
 #println("Stochastic step...")
-s=sol[length(sol)].s
+for t in 0:10:round(Int64,tspan[2])
+    s=sol(t).s
 
-open("test_output/03_taxis/pde.csv","w") do io
-    for i in 1:length(sIndex)
-        z = s[1,:,:]
-        writedlm(io,z,',')
+    open("test_output/03_taxis/linear/"*string(t,pad=3)*"pde.csv","w") do io
+        for i in 1:length(sIndex)
+            z = s[1,:,:]
+            writedlm(io,z,',')
+        end
     end
+    
+
 end
 
 ## test cell diffusion in stochastic model
@@ -65,7 +69,8 @@ dt=0.1
 Γ=Γtest/max(dp...)^2
 dnorm = Normal(0,sqrt(2*Γ*dt)) 
 for i in 1:100000
-    c = cell(ceil(Int64,Np[1]/2)-rand(),ceil(Int64,Np[2]/2)-rand())
+    c = cell(ceil(Int64,Np[1]/2)-rand(),ceil(Int64,Np[1]/4)-rand())
+    
     push!(pop, c)
 end
 ci = clone(pop,starting_copy_number,br)
@@ -78,16 +83,19 @@ dE0 = grad(dE0,Np,dp)
 
 for i in 1:ceil(Int64,tspan[2]/dt)
     migrate(ci,Np,dnorm,dE0,E0,χ,Ξ, domain_Dict)
+    if i%100==0
+        u=zeros(Np...)
+        for cl in ci.pop
+            u[ceil(Int64,cl.x),ceil(Int64,cl.y)]=u[ceil(Int64,cl.x),ceil(Int64,cl.y)]+1
+        end
+        savestamp=round(Int64,i/10)
+        open("test_output/03_taxis/linear/"*string(savestamp,pad=3)*"stoch.csv","w") do io
+            writedlm(io,u,',')
+        end
+    end
 end
 
-for cl in ci.pop
-    u[ceil(Int64,cl.x),ceil(Int64,cl.y)]=u[ceil(Int64,cl.x),ceil(Int64,cl.y)]+1
-end
 
-open("test_output/03_taxis/stochastic.csv","w") do io
-    writedlm(io,u,',')
-end
-
-open("test_output/03_taxis/E0.csv","w") do io
+open("test_output/03_taxis/linear/E0.csv","w") do io
     writedlm(io,E0,',')
 end
