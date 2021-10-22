@@ -226,22 +226,36 @@ load_test <- function(t){
 
 df <- do.call(rbind,lapply(c("010","020","030","040","050"), load_test))
 
+E0 <- read.table("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/04_taxis/E0.csv",sep=",")
+
+El <- data.frame(E=as.numeric(E0[1,]),L=1:ncol(E0)/ncol(E0)*1000)
+
+
 t_names <- as_labeller(
-     c('10' = "t=10",
-       '20' = "t=20",
-       '30' = "t=30",
-       '40' = "t=40",
-       '50' = "t=50"))
+     c('10' = "day 10",
+       '20' = "day 20",
+       '30' = "day 30",
+       '40' = "day 40",
+       '50' = "day 50"))
+
+df <- df[df$id%in%c("pde","theory")&df$time%in%c(10,20,30,40,50),]
+
+p <- ggplot(El,aes(x=L,y=E))+
+  geom_line()+
+  theme_bw(base_size=16)+
+  scale_y_log10("energy (A.U)")+
+  scale_x_continuous("length (\u00b5m)")
+p
 
 p <- ggplot(df,aes(x=index,y=value,color=id))+
   facet_grid(rows=vars(time),labeller = t_names)+
   geom_line()+
   geom_line(aes(x=index,y=theory,color="theory"))+
   theme_bw(base_size=16)+
-  scale_x_continuous("x")+
-  scale_y_continuous("cells / site")
+  scale_x_continuous("length (\u00b5m)")+
+  scale_y_continuous(expression(cells~site^"-1"))+
+  scale_color_discrete("")
 p
-
 
 
 

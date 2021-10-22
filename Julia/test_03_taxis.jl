@@ -1,4 +1,4 @@
-using DifferentialEquations,ComponentArrays
+using DifferentialEquations,ComponentArrays, Plots
 
 ## test cell diffusion in PDE model
 include("stochastic.jl")
@@ -6,7 +6,7 @@ include("ploidyMovement.jl")
 
 Γtest=100
 χtest=1000
-tspan=(0.0,50.0)
+tspan=(0.0,100.0)
 Np=[30,30]
 Lp=[1000,1000]
 Ξ=0.02
@@ -48,7 +48,10 @@ sol = solve(prob,AutoTsit5(Rosenbrock23()))
 #println("Stochastic step...")
 for t in 0:10:round(Int64,tspan[2])
     s=sol(t).s
-
+    fn="test_output/03_taxis/linear/"*string(t,pad=3)*"cells.png"
+    xt = heatmap(sol(t).s[1,:,:])
+    display(xt)
+    png(fn) 
     open("test_output/03_taxis/linear/"*string(t,pad=3)*"pde.csv","w") do io
         for i in 1:length(sIndex)
             z = s[1,:,:]

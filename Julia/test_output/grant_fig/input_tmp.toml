@@ -1,0 +1,37 @@
+[UniversalParameters]
+stepsize = 1.0
+maxChrom = 5.0
+deathRate = 0.2
+misRate = 0.1
+finalDay = 60
+startPop = 5
+starting_copy_number = [2,2,2,2,2]
+max_cell_cycle_duration = 100
+
+[SpatialParameters]
+"Γ" = 2000
+"Γₑ" = 10000
+"ϕ" = 0.4
+"Ξ" = 0.02
+"χ" = 100
+"δ" = 0.01
+Lp = [2500.0,2500.0]
+Np = [121,121]
+k = 0.01
+E_vessel = 1.0
+stochasticThreshold=2000
+
+[Options]
+debugging = 3
+compartmentMinimum = false
+replating = false
+maxPop = 1e5
+progress_check = true
+saveat = 0.1
+interpolation_order = 2
+
+[Files]
+
+blood_vessel_file = "6069_vessels.txt"
+copy_number_file = "birthLandscapeBrainCancer.txt"
+birth_rate_file = "GrowthRate_brain_cancer_CLs.txt"

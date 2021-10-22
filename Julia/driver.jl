@@ -1,4 +1,4 @@
-using TOML, CSV, DataFrames, ArgParse, JSON
+using TOML, CSV, DataFrames, ArgParse, JSON, Profile
 
 # Used to search through command line for particular arguments
 function parse_commandline()
@@ -442,3 +442,4 @@ function main()
 end
 
 @time main()
+

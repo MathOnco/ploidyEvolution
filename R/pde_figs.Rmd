@@ -170,18 +170,22 @@ xs <- do.call(rbind,lapply(x, function(x){
 
 ```{r}
 library(stringr)
-ff <- list.files("061_sample_output/")
-fc <- ff[grepl("_pdestates",ff)]
-fc <- fc[1]
+library(ggplot2)
+#ff <- list.files("061_sample_output/")
+#fc <- ff[grepl("_pdestates",ff)]
+ff <- list.files()
+fc <- ff[grepl("states",ff)]
+fc <- fc[720]
 
-cn <- readLines(paste("061_sample_output/",fc,sep=""))
+#cn <- readLines(paste("061_sample_output/",fc,sep=""))
+cn <- readLines(fc)
 cn <- cn[grepl("#",cn)]
 
 cn <- str_replace(cn,"#","")
 cn <- str_replace_all(cn,":",".") 
 
 
-xc <- read.table(paste("061_sample_output/",fc,sep=""),sep=",")
+xc <- read.table(fc,sep=",")
 
 xc <- do.call(rbind,lapply(1:length(cn), function(i){
   x <- xc[(1:ncol(xc))+ncol(xc)*(i-1),]
@@ -206,7 +210,7 @@ xc <- do.call(rbind,lapply(1:length(cn), function(i){
 
   p
 
-xc <- xc[xc$cn%in%cn_sel,]
+#xc <- xc[xc$cn%in%cn_sel,]
 
 ```
 

@@ -1,0 +1,753 @@
+Overhead ╎ [+additional indent] Count File:Line; Function
+=========================================================
+   ╎1766 @Base\task.jl:411; (::VSCodeServer.var"#53#54")()
+   ╎ 1766 @VSCodeServer\src\eval.jl:34; macro expansion
+   ╎  1766 @Base\essentials.jl:706; invokelatest(::Any)
+   ╎   1766 @Base\essentials.jl:708; #invokelatest#2
+   ╎    1766 @VSCodeServer\src\eval.jl:197; (::VSCodeServer.var"#55#59"{VSCodeServer.ReplRunCodeRequestParams})()
+   ╎     1766 @Base\logging.jl:603; with_logger
+   ╎    ╎ 1766 @Base\logging.jl:491; with_logstate(f::Function, logstate::Any)
+   ╎    ╎  1766 @VSCodeServer\src\eval.jl:122; (::VSCodeServer.var"#56#60"{Bool, Bool, Bool, Module, String, Int64, Int64, String, VSCodeServer.ReplRunCodeRequestParams})()
+   ╎    ╎   1766 @VSCodeServer\src\repl.jl:36; hideprompt(f::VSCodeServer.var"#57#61"{Bool, Bool, Bool, Module, String, Int64, Int64, String, VSCodeServer.ReplRunCodeRequestParams})
+   ╎    ╎    1766 @VSCodeServer\src\eval.jl:151; (::VSCodeServer.var"#57#61"{Bool, Bool, Bool, Module, String, Int64, Int64, String, VSCodeServer.ReplRunCodeRequestParams})()
+   ╎    ╎     1766 @VSCodeServer\src\repl.jl:185; withpath(f::VSCodeServer.var"#58#62"{Bool, Bool, Module, String, Int64, Int64, String, VSCodeServer.ReplRunCodeRequestParams}, path::String)
+   ╎    ╎    ╎ 1766 @VSCodeServer\src\eval.jl:153; (::VSCodeServer.var"#58#62"{Bool, Bool, Module, String, Int64, Int64, String, VSCodeServer.ReplRunCodeRequestParams})()
+   ╎    ╎    ╎  1766 @VSCodeServer\src\eval.jl:205; inlineeval##kw
+   ╎    ╎    ╎   1766 @VSCodeServer\src\eval.jl:207; inlineeval(m::Module, code::String, code_line::Int64, code_column::Int64, file::String; softscope::Bool)
+   ╎    ╎    ╎    1766 @Base\essentials.jl:706; invokelatest(::Any, ::Any, ::Vararg{Any, N} where N)
+   ╎    ╎    ╎     1766 @Base\essentials.jl:708; invokelatest(::Any, ::Any, ::Vararg{Any, N} where N; kwargs::Base.Iterators.Pairs{Union{}, Union{}, Tuple{}, NamedTuple{(), Tuple{}}})
+   ╎    ╎    ╎    ╎ 1766 @Base\loading.jl:1126; include_string(m::Module, txt::String, fname::String)
+   ╎    ╎    ╎    ╎  1766 @Base\loading.jl:1116; include_string(mapexpr::typeof(identity), mod::Module, code::String, filename::String)
+  8╎    ╎    ╎    ╎   1766 @Base\boot.jl:360; eval
+   ╎    ╎    ╎    ╎    1    @Base\compiler\typeinfer.jl:921; typeinf_ext_toplevel(mi::Core.MethodInstance, world::UInt64)
+   ╎    ╎    ╎    ╎     1    @Base\compiler\typeinfer.jl:925; typeinf_ext_toplevel(interp::Core.Compiler.NativeInterpreter, linfo::Core.MethodInstance)
+   ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\typeinfer.jl:892; typeinf_ext(interp::Core.Compiler.NativeInterpreter, mi::Core.MethodInstance)
+   ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:214; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1520; typeinf_nocycle(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1462; typeinf_local(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1167; abstract_eval_statement(interp::Core.Compiler.NativeInterpreter, e::Any, vtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1040; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1033; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:143; abstract_call_gf_by_type(interp::Core.Compiler.NativeInterpreter, f::Any, argtypes::Vector{Any}, atype::Any, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:490; abstract_call_method(interp::Core.Compiler.NativeInterpreter, method::Method, sig::Any, sparams::Core.SimpleVector, hardlimit::Bool, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:806; typeinf_edge(interp::Core.Compiler.NativeInterpreter, method::Method, atypes::Any, sparams::Core.SimpleVector, caller::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\typeinfer.jl:214; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1520; typeinf_nocycle(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1462; typeinf_local(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1167; abstract_eval_statement(interp::Core.Compiler.NativeInterpreter, e::Any, vtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1040; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:952; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:738; abstract_apply(interp::Core.Compiler.NativeInterpreter, itft::Any, aft::Any, aargtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1033; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:143; abstract_call_gf_by_type(interp::Core.Compiler.NativeInterpreter, f::Any, argtypes::Vector{Any}, atype::Any, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:490; abstract_call_method(interp::Core.Compiler.NativeInterpreter, method::Method, sig::Any, sparams::Core.SimpleVector, hardlimit::Bool, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\typeinfer.jl:806; typeinf_edge(interp::Core.Compiler.NativeInterpreter, method::Method, atypes::Any, sparams::Core.SimpleVector, caller::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:214; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1520; typeinf_nocycle(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1462; typeinf_local(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1167; abstract_eval_statement(interp::Core.Compiler.NativeInterpreter, e::Any, vtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1040; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:952; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:738; abstract_apply(interp::Core.Compiler.NativeInterpreter, itft::Any, aft::Any, aargtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1033; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:143; abstract_call_gf_by_type(interp::Core.Compiler.NativeInterpreter, f::Any, argtypes::Vector{Any}, atype::Any, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:490; abstract_call_method(interp::Core.Compiler.NativeInterpreter, method::Method, sig::Any, sparams::Core.SimpleVector, hardlimit::Bool, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\typeinfer.jl:806; typeinf_edge(interp::Core.Compiler.NativeInterpreter, method::Method, atypes::Any, sparams::Core.SimpleVector, caller::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:244; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\optimize.jl:272; optimize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\ssair\driver.jl:139; run_passes(ci::Core.CodeInfo, nargs::Int64, sv::Core.Compiler.OptimizationState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\ssair\ir.jl:1395; compact!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\ssair\ir.jl:1395; compact!(code::Core.Compiler.IRCode, allow_cfg_transforms::Bool)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\ssair\ir.jl:542; Core.Compiler.IncrementalCompact(code::Core.Compiler.IRCode, allow_cfg_transforms::Bool)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:449; fill
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\array.jl:451; fill
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\boot.jl:457; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    30   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\test_00_speed.jl:47; run10x(du::ComponentVector{Float64}, u0::ComponentVector{Float64}, odePars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_birthRate,...
+ 13╎    ╎    ╎    ╎     30   @Base\coreio.jl:4; println(xs::Int64)
+   ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\typeinfer.jl:921; typeinf_ext_toplevel(mi::Core.MethodInstance, world::UInt64)
+   ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:925; typeinf_ext_toplevel(interp::Core.Compiler.NativeInterpreter, linfo::Core.MethodInstance)
+   ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:892; typeinf_ext(interp::Core.Compiler.NativeInterpreter, mi::Core.MethodInstance)
+   ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\typeinfer.jl:214; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1520; typeinf_nocycle(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1462; typeinf_local(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1167; abstract_eval_statement(interp::Core.Compiler.NativeInterpreter, e::Any, vtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1040; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:952; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:738; abstract_apply(interp::Core.Compiler.NativeInterpreter, itft::Any, aft::Any, aargtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1033; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Nothing, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:143; abstract_call_gf_by_type(interp::Core.Compiler.NativeInterpreter, f::Any, argtypes::Vector{Any}, atype::Any, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:490; abstract_call_method(interp::Core.Compiler.NativeInterpreter, method::Method, sig::Any, sparams::Core.SimpleVector, hardlimit::Bool, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:806; typeinf_edge(interp::Core.Compiler.NativeInterpreter, method::Method, atypes::Any, sparams::Core.SimpleVector, caller::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\typeinfer.jl:214; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1520; typeinf_nocycle(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:1462; typeinf_local(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:1167; abstract_eval_statement(interp::Core.Compiler.NativeInterpreter, e::Any, vtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\abstractinterpretation.jl:1040; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\abstractinterpretation.jl:1056; abstract_call(interp::Core.Compiler.NativeInterpreter, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\abstractinterpretation.jl:1033; abstract_call_known(interp::Core.Compiler.NativeInterpreter, f::Any, fargs::Vector{Any}, argtypes::Vector{Any}, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\abstractinterpretation.jl:143; abstract_call_gf_by_type(interp::Core.Compiler.NativeInterpreter, f::Any, argtypes::Vector{Any}, atype::Any, sv::Core.Compiler.InferenceState, max_methods::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\abstractinterpretation.jl:490; abstract_call_method(interp::Core.Compiler.NativeInterpreter, method::Method, sig::Any, sparams::Core.SimpleVector, hardlimit::Bool, sv::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:806; typeinf_edge(interp::Core.Compiler.NativeInterpreter, method::Method, atypes::Any, sparams::Core.SimpleVector, caller::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\compiler\typeinfer.jl:209; typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\compiler\typeinfer.jl:272; _typeinf(interp::Core.Compiler.NativeInterpreter, frame::Core.Compiler.InferenceState)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\compiler\typeinfer.jl:376; cache_result!(interp::Core.Compiler.NativeInterpreter, result::Core.Compiler.InferenceResult)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\compiler\typeinfer.jl:351; transform_result_for_cache
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\compiler\typeinfer.jl:331; maybe_compress_codeinfo(interp::Core.Compiler.NativeInterpreter, linfo::Core.MethodInstance, ci::Core.CodeInfo)
+   ╎    ╎    ╎    ╎    ╎ 16   @Base\strings\io.jl:73; println(io::Base.TTY, xs::Int64)
+   ╎    ╎    ╎    ╎    ╎  16   @Base\strings\io.jl:46; print(::Base.TTY, ::Int64, ::String)
+   ╎    ╎    ╎    ╎    ╎   12   @Base\strings\io.jl:35; print(io::Base.TTY, x::Int64)
+   ╎    ╎    ╎    ╎    ╎    12   @Base\show.jl:969; show
+   ╎    ╎    ╎    ╎    ╎     12   @Base\strings\io.jl:185; write
+   ╎    ╎    ╎    ╎    ╎    ╎ 12   @Base\stream.jl:1064; unsafe_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎  11   @Base\stream.jl:981; uv_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+ 11╎    ╎    ╎    ╎    ╎    ╎   11   @Base\stream.jl:1024; uv_write_async(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\stream.jl:992; uv_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\task.jl:768; wait
+  1╎    ╎    ╎    ╎    ╎    ╎    1    @Base\task.jl:760; poptask(W::Base.InvasiveLinkedListSynchronized{Task})
+   ╎    ╎    ╎    ╎    ╎   4    @Base\strings\io.jl:187; print
+   ╎    ╎    ╎    ╎    ╎    4    @Base\strings\io.jl:185; write
+   ╎    ╎    ╎    ╎    ╎     4    @Base\stream.jl:1064; unsafe_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\stream.jl:981; uv_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+  2╎    ╎    ╎    ╎    ╎    ╎  2    @Base\stream.jl:1024; uv_write_async(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\stream.jl:992; uv_write(s::Base.TTY, p::Ptr{UInt8}, n::UInt64)
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\task.jl:767; wait
+  1╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:801; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\task.jl:768; wait
+  1╎    ╎    ╎    ╎    ╎    ╎   1    @Base\task.jl:760; poptask(W::Base.InvasiveLinkedListSynchronized{Task})
+   ╎    ╎    ╎    ╎    1727 c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\test_00_speed.jl:48; run10x(du::ComponentVector{Float64}, u0::ComponentVector{Float64}, odePars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_birthRate,...
+  7╎    ╎    ╎    ╎     7    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:547; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  4╎    ╎    ╎    ╎     4    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:550; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+ 12╎    ╎    ╎    ╎     304  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:559; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 10   @Base\array.jl:683; collect(itr::Base.Generator{Tuple{Int64, Int64}, typeof(identity)})
+   ╎    ╎    ╎    ╎    ╎  9    @Base\array.jl:669; _array_for
+  9╎    ╎    ╎    ╎    ╎   9    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:701; collect_to_with_first!
+  1╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎ 282  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:263; get_cardinal_gridpoints
+   ╎    ╎    ╎    ╎    ╎  282  @Base\array.jl:602; collect
+   ╎    ╎    ╎    ╎    ╎   282  @Base\array.jl:652; _collect
+   ╎    ╎    ╎    ╎    ╎    5    @Base\array.jl:574; _similar_for
+   ╎    ╎    ╎    ╎    ╎     5    @Base\abstractarray.jl:742; similar
+   ╎    ╎    ╎    ╎    ╎    ╎ 5    @Base\abstractarray.jl:750; similar
+   ╎    ╎    ╎    ╎    ╎    ╎  5    @Base\boot.jl:457; Array
+  5╎    ╎    ╎    ╎    ╎    ╎   5    @Base\boot.jl:448; Array
+  1╎    ╎    ╎    ╎    ╎    1    @Base\array.jl:738; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}})
+   ╎    ╎    ╎    ╎    ╎    77   @Base\array.jl:739; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}})
+   ╎    ╎    ╎    ╎    ╎     77   @Base\iterators.jl:1089; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎ 77   @Base\iterators.jl:1095; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎  77   @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎   76   none:0; (::var"#83#87"{Int64, Vector{Int64}, Vector{Int64}})(v::Int64)
+ 75╎    ╎    ╎    ╎    ╎    ╎    75   @Base\array.jl:349; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:263; #83
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\int.jl:253; mod
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\div.jl:228; fld
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\div.jl:263; div
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\int.jl:88; *
+   ╎    ╎    ╎    ╎    ╎    7    @Base\array.jl:741; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}})
+   ╎    ╎    ╎    ╎    ╎     7    @Base\abstractarray.jl:802; empty
+   ╎    ╎    ╎    ╎    ╎    ╎ 7    @Base\boot.jl:467; Array
+  7╎    ╎    ╎    ╎    ╎    ╎  7    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    31   @Base\array.jl:742; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}})
+   ╎    ╎    ╎    ╎    ╎     30   @Base\array.jl:929; push!
+ 30╎    ╎    ╎    ╎    ╎    ╎ 30   @Base\array.jl:884; _growend!
+   ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:930; push!
+  1╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    161  @Base\array.jl:743; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}})
+  2╎    ╎    ╎    ╎    ╎     2    @Base\array.jl:759; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}}, st::Tuple{Int64, Base.Generator{Base.Iterators.Filter{var"#84#88"{Int64, Vector{Int64}}, UnitRange{Int64}}, var"#83#87"{Int6...
+   ╎    ╎    ╎    ╎    ╎     8    @Base\array.jl:761; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}}, st::Tuple{Int64, Base.Generator{Base.Iterators.Filter{var"#84#88"{Int64, Vector{Int64}}, UnitRange{Int64}}, var"#83#87"{Int6...
+   ╎    ╎    ╎    ╎    ╎    ╎ 8    @Base\iterators.jl:1090; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎  8    @Base\generator.jl:47; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎   8    none:0; (::var"#83#87"{Int64, Vector{Int64}, Vector{Int64}})(v::Int64)
+  5╎    ╎    ╎    ╎    ╎    ╎    5    @Base\array.jl:349; copy
+  1╎    ╎    ╎    ╎    ╎    ╎    2    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:263; #83
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\int.jl:253; mod
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\div.jl:228; fld
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\div.jl:262; div
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\div.jl:217; div
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\int.jl:261; div
+   ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:765; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}}, st::Tuple{Int64, Base.Generator{Base.Iterators.Filter{var"#84#88"{Int64, Vector{Int64}}, UnitRange{Int64}}, var"#83#87"{Int6...
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:929; push!
+  1╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:884; _growend!
+   ╎    ╎    ╎    ╎    ╎     148  @Base\array.jl:770; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}}, st::Tuple{Int64, Base.Generator{Base.Iterators.Filter{var"#84#88"{Int64, Vector{Int64}}, UnitRange{Int64}}, var"#83#87"{Int6...
+   ╎    ╎    ╎    ╎    ╎    ╎ 76   @Base\iterators.jl:1090; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\iterators.jl:451; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    1    none:0; #84
+  1╎    ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:0; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎  75   @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎   75   none:0; (::var"#83#87"{Int64, Vector{Int64}, Vector{Int64}})(v::Int64)
+ 73╎    ╎    ╎    ╎    ╎    ╎    73   @Base\array.jl:349; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    2    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:263; #83
+  1╎    ╎    ╎    ╎    ╎    ╎     2    @Base\int.jl:253; mod
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\div.jl:228; fld
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\div.jl:262; div
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\div.jl:217; div
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\int.jl:261; div
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\iterators.jl:1093; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\range.jl:674; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎    1    @Base\promotion.jl:0; ==
+   ╎    ╎    ╎    ╎    ╎    ╎ 71   @Base\iterators.jl:1095; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎  71   @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎   71   none:0; (::var"#83#87"{Int64, Vector{Int64}, Vector{Int64}})(v::Int64)
+ 71╎    ╎    ╎    ╎    ╎    ╎    71   @Base\array.jl:349; copy
+  2╎    ╎    ╎    ╎    ╎     2    @Base\generator.jl:0; grow_to!(dest::Vector{Vector{Int64}}, itr::Base.Iterators.Flatten{Base.Generator{UnitRange{Int64}, var"#85#86"{Vector{Int64}, Vector{Int64}}}}, st::Tuple{Int64, Base.Generator{Base.Iterators.Filter{var"#84#88"{Int64, Vector{Int64}}, UnitRange{Int64}}, var"#83#87"{Int6...
+   ╎    ╎    ╎    ╎     130  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:562; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  9╎    ╎    ╎    ╎    ╎ 9    @Base\array.jl:0; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}})
+  2╎    ╎    ╎    ╎    ╎ 2    @Base\array.jl:672; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}})
+   ╎    ╎    ╎    ╎    ╎ 12   @Base\array.jl:678; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}})
+   ╎    ╎    ╎    ╎    ╎  1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:777; iterate
+  1╎    ╎    ╎    ╎    ╎    1    @Base\array.jl:777; iterate
+   ╎    ╎    ╎    ╎    ╎  11   @Base\generator.jl:47; iterate
+ 11╎    ╎    ╎    ╎    ╎   11   none:0; #27
+   ╎    ╎    ╎    ╎    ╎ 107  @Base\array.jl:683; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}})
+  1╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:0; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+  1╎    ╎    ╎    ╎    ╎  106  @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{Vector{Vector{Int64}}, var"#27#34"{Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎   105  @Base\array.jl:724; collect_to!
+  1╎    ╎    ╎    ╎    ╎    1    @Base\array.jl:0; iterate
+   ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:777; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:801; getindex
+   ╎    ╎    ╎    ╎    ╎    103  @Base\generator.jl:47; iterate
+102╎    ╎    ╎    ╎    ╎     103  @Base\array.jl:0; #27
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\reshapedarray.jl:233; getindex(::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\abstractarray.jl:616; checkbounds
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\abstractarray.jl:595; checkbounds
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:642; checkbounds_indices
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:673; checkindex
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\bool.jl:36; &
+   ╎    ╎    ╎    ╎     18   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:563; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 16   @Base\array.jl:826; getindex(A::Vector{Float64}, I::StepRange{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎  16   @Base\array.jl:670; _array_for
+   ╎    ╎    ╎    ╎    ╎   2    @Base\abstractarray.jl:89; axes
+   ╎    ╎    ╎    ╎    ╎    2    @Base\range.jl:515; size
+   ╎    ╎    ╎    ╎    ╎     2    @Base\range.jl:576; length(r::StepRange{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\int.jl:202; div
+  2╎    ╎    ╎    ╎    ╎    ╎  2    @Base\int.jl:130; flipsign
+   ╎    ╎    ╎    ╎    ╎   14   @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    14   @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎     14   @Base\boot.jl:457; Array
+ 14╎    ╎    ╎    ╎    ╎    ╎ 14   @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎ 2    @Base\range.jl:22; Colon
+   ╎    ╎    ╎    ╎    ╎  2    @Base\range.jl:24; _colon
+   ╎    ╎    ╎    ╎    ╎   2    @Base\range.jl:263; StepRange
+   ╎    ╎    ╎    ╎    ╎    2    @Base\range.jl:208; StepRange
+  1╎    ╎    ╎    ╎    ╎     1    @Base\range.jl:213; steprange_last(start::Int64, step::Int64, stop::Int64)
+   ╎    ╎    ╎    ╎    ╎     1    @Base\range.jl:238; steprange_last(start::Int64, step::Int64, stop::Int64)
+  1╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\int.jl:262; rem
+  8╎    ╎    ╎    ╎     9    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:564; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 1    @Base\reshapedarray.jl:234; getindex(::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎  1    @Base\reshapedarray.jl:244; _unsafe_getindex
+   ╎    ╎    ╎    ╎    ╎   1    @Base\abstractarray.jl:2026; _sub2ind
+   ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:2043; _sub2ind_recurse
+   ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:2043; _sub2ind_recurse
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:2049; offsetin
+  1╎    ╎    ╎    ╎    ╎    ╎  1    @Base\int.jl:86; -
+ 26╎    ╎    ╎    ╎     27   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:584; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\reshapedarray.jl:234; getindex(::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Int64, ::Int64, ::Int64)
+  1╎    ╎    ╎    ╎     219  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:585; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  2╎    ╎    ╎    ╎    ╎ 2    @Base\array.jl:0; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#28#35"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64}})
+   ╎    ╎    ╎    ╎    ╎ 30   @Base\array.jl:678; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#28#35"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64}})
+   ╎    ╎    ╎    ╎    ╎  1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:777; iterate
+   ╎    ╎    ╎    ╎    ╎    1    @Base\array.jl:777; iterate
+  1╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:801; getindex
+   ╎    ╎    ╎    ╎    ╎  29   @Base\generator.jl:47; iterate
+ 28╎    ╎    ╎    ╎    ╎   29   none:0; #28
+   ╎    ╎    ╎    ╎    ╎    1    @Base\reshapedarray.jl:233; getindex(::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Int64, ::Int64, ::Int64)
+  1╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:616; checkbounds
+   ╎    ╎    ╎    ╎    ╎ 186  @Base\array.jl:683; collect(itr::Base.Generator{Vector{Vector{Int64}}, var"#28#35"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64}})
+   ╎    ╎    ╎    ╎    ╎  186  @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{Vector{Vector{Int64}}, var"#28#35"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎   186  @Base\array.jl:724; collect_to!
+   ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:44; iterate
+   ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:777; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:801; getindex
+   ╎    ╎    ╎    ╎    ╎    185  @Base\generator.jl:47; iterate
+185╎    ╎    ╎    ╎    ╎     185  @Base\array.jl:0; #28
+   ╎    ╎    ╎    ╎     151  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:586; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:825; getindex(A::Vector{Float64}, I::StepRange{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎ 149  @Base\array.jl:826; getindex(A::Vector{Float64}, I::StepRange{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎  146  @Base\array.jl:670; _array_for
+   ╎    ╎    ╎    ╎    ╎   3    @Base\abstractarray.jl:89; axes
+  1╎    ╎    ╎    ╎    ╎    3    @Base\range.jl:515; size
+   ╎    ╎    ╎    ╎    ╎     2    @Base\range.jl:576; length(r::StepRange{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\int.jl:202; div
+  1╎    ╎    ╎    ╎    ╎    ╎  1    @Base\int.jl:263; div
+  1╎    ╎    ╎    ╎    ╎    ╎  1    @Base\int.jl:130; flipsign
+   ╎    ╎    ╎    ╎    ╎   143  @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    143  @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎     143  @Base\boot.jl:457; Array
+143╎    ╎    ╎    ╎    ╎    ╎ 143  @Base\boot.jl:448; Array
+  1╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:0; getindex
+  1╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:801; getindex
+  1╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎ 1    @Base\range.jl:22; Colon
+   ╎    ╎    ╎    ╎    ╎  1    @Base\range.jl:24; _colon
+   ╎    ╎    ╎    ╎    ╎   1    @Base\range.jl:263; StepRange
+   ╎    ╎    ╎    ╎    ╎    1    @Base\range.jl:208; StepRange
+  1╎    ╎    ╎    ╎    ╎     1    @Base\range.jl:244; steprange_last(start::Int64, step::Int64, stop::Int64)
+  5╎    ╎    ╎    ╎     5    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:602; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+ 19╎    ╎    ╎    ╎     19   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:606; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  2╎    ╎    ╎    ╎     3    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:611; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\float.jl:365; ==(x::Float64, y::Float64)
+  3╎    ╎    ╎    ╎     4    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:629; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 1    @Base\operators.jl:305; >(x::Float64, y::Int64)
+   ╎    ╎    ╎    ╎    ╎  1    @Base\float.jl:407; <
+  1╎    ╎    ╎    ╎    ╎   1    @Base\float.jl:365; ==
+  5╎    ╎    ╎    ╎     5    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:632; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  2╎    ╎    ╎    ╎     3    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:634; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\operators.jl:305; >(x::Float64, y::Float64)
+  6╎    ╎    ╎    ╎     6    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:643; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+ 12╎    ╎    ╎    ╎     152  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:649; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\float.jl:335; /(x::Float64, y::Float64)
+104╎    ╎    ╎    ╎    ╎ 138  @Base\tuple.jl:216; map
+ 25╎    ╎    ╎    ╎    ╎  25   @Base\essentials.jl:241; tail
+  6╎    ╎    ╎    ╎    ╎  6    @Base\tuple.jl:29; getindex
+   ╎    ╎    ╎    ╎    ╎  1    @Base\tuple.jl:215; map(f::var"#29#36"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64, Int64}, t::Tuple{Tuple{Int64, Int64}, Tuple{Int64, Int64}, Tuple{Int64, Int64}})
+   ╎    ╎    ╎    ╎    ╎   1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:649; #29
+  1╎    ╎    ╎    ╎    ╎    1    @Base\reshapedarray.jl:233; getindex
+  1╎    ╎    ╎    ╎    ╎  2    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:649; (::var"#29#36"{Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, Int64, Int64})(x::Tuple{Int64, Int64})
+   ╎    ╎    ╎    ╎    ╎   1    @Base\reshapedarray.jl:233; getindex
+  1╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:0; checkbounds
+   ╎    ╎    ╎    ╎    ╎ 1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:462; grid_neighbours(coord::Tuple{Int64, Int64}, Npi::Int64)
+   ╎    ╎    ╎    ╎    ╎  1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:437; wrap
+   ╎    ╎    ╎    ╎    ╎   1    @Base\operators.jl:305; >
+  1╎    ╎    ╎    ╎    ╎    1    @Base\int.jl:83; <
+ 27╎    ╎    ╎    ╎     31   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:650; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  4╎    ╎    ╎    ╎    ╎ 4    @Base\operators.jl:560; *
+  3╎    ╎    ╎    ╎     3    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:652; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+116╎    ╎    ╎    ╎     125  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:692; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  5╎    ╎    ╎    ╎    ╎ 5    @Base\operators.jl:560; +
+   ╎    ╎    ╎    ╎    ╎ 4    @ComponentArrays\src\namedtuple_interface.jl:14; getproperty
+   ╎    ╎    ╎    ╎    ╎  4    @ComponentArrays\src\array_interface.jl:116; _getindex
+   ╎    ╎    ╎    ╎    ╎   4    @ComponentArrays\src\array_interface.jl:121; macro expansion
+   ╎    ╎    ╎    ╎    ╎    4    @Base\views.jl:133; maybeview
+  2╎    ╎    ╎    ╎    ╎     4    @Base\subarray.jl:177; view
+  2╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\abstractarray.jl:616; checkbounds
+  4╎    ╎    ╎    ╎     5    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:700; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\operators.jl:560; *
+ 73╎    ╎    ╎    ╎     97   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:703; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+ 14╎    ╎    ╎    ╎    ╎ 14   @Base\abstractarray.jl:1167; getindex(::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Function, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎ 9    @Base\abstractarray.jl:1170; getindex(::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Function, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎  9    @Base\multidimensional.jl:832; _getindex
+   ╎    ╎    ╎    ╎    ╎   8    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    8    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎     8    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎ 8    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎  8    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎   8    @Base\boot.jl:457; Array
+  8╎    ╎    ╎    ╎    ╎    ╎    8    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎   1    @Base\multidimensional.jl:846; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    1    @Base\multidimensional.jl:868; _unsafe_getindex!
+   ╎    ╎    ╎    ╎    ╎     1    @Base\multidimensional.jl:855; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\cartesian.jl:64; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\multidimensional.jl:860; macro expansion
+  1╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:839; setindex!
+  1╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:802; getindex(::Matrix{Float64}, ::Int64, ::Int64)
+100╎    ╎    ╎    ╎     101  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:706; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 1    @ComponentArrays\src\namedtuple_interface.jl:14; getproperty
+   ╎    ╎    ╎    ╎    ╎  1    @ComponentArrays\src\array_interface.jl:116; _getindex
+   ╎    ╎    ╎    ╎    ╎   1    @ComponentArrays\src\array_interface.jl:121; macro expansion
+   ╎    ╎    ╎    ╎    ╎    1    @Base\views.jl:133; maybeview
+   ╎    ╎    ╎    ╎    ╎     1    @Base\subarray.jl:177; view
+   ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:616; checkbounds
+   ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\abstractarray.jl:601; checkbounds
+   ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\abstractarray.jl:678; checkindex
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:673; checkindex
+  1╎    ╎    ╎    ╎    ╎    ╎     1    @Base\int.jl:442; <=
+   ╎    ╎    ╎    ╎     299  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:712; ploidy_hybrid_model(du::ComponentVector{Float64}, u::ComponentVector{Float64}, pars::NamedTuple{(:M, :u_s, :birthRates, :sIndex, :nChrom, :misRate, :deathRate, :Γ, :Γₑ, :ϕ, :Ξ, :χ, :δ, :Np, :dp, :k, :E_vessel, :domain_Dict, :boundary_Dict, :max_cell_cycle_duration, :max_...
+   ╎    ╎    ╎    ╎    ╎ 299  @Base\abstractarray.jl:2294; map
+   ╎    ╎    ╎    ╎    ╎  299  @Base\array.jl:606; collect_similar(cont::CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, itr::Base.Generator{CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, var"#31#38"{ComponentVector{Float64, Vector{Float64}, Tuple{Axis{(s = ViewAxis(1:5000, ShapedAxi...
+   ╎    ╎    ╎    ╎    ╎   299  @Base\array.jl:696; _collect(c::CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, itr::Base.Generator{CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, var"#31#38"{ComponentVector{Float64, Vector{Float64}, Tuple{Axis{(s = ViewAxis(1:5000, ShapedAxis((2, 50, ...
+   ╎    ╎    ╎    ╎    ╎    299  @Base\array.jl:702; collect_to_with_first!
+   ╎    ╎    ╎    ╎    ╎     299  @Base\array.jl:724; collect_to!(dest::Matrix{Vector{Float64}}, itr::Base.Generator{CartesianIndices{2, Tuple{Base.OneTo{Int64}, Base.OneTo{Int64}}}, var"#31#38"{ComponentVector{Float64, Vector{Float64}, Tuple{Axis{(s = ViewAxis(1:5000, ShapedAxis((2, 50, 50), NamedTuple())), E = ViewAxis...
+   ╎    ╎    ╎    ╎    ╎    ╎ 299  @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎  299  c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:712; #31
+  1╎    ╎    ╎    ╎    ╎    ╎   1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:0; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎   5    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:501; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    5    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:287; chemotaxis_form
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\special\log.jl:276; log(x::Float64)
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\float.jl:329; -
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\special\log.jl:277; log(x::Float64)
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\float.jl:332; *
+  2╎    ╎    ╎    ╎    ╎    ╎     3    @Base\special\log.jl:279; log(x::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\special\log.jl:178; log_proc1
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\float.jl:326; +
+   ╎    ╎    ╎    ╎    ╎    ╎   75   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:503; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    8    @Base\abstractarray.jl:2294; map
+   ╎    ╎    ╎    ╎    ╎    ╎     8    @Base\array.jl:606; collect_similar
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\array.jl:690; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#17#21"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\array.jl:696; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#17#21"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  3    @Base\array.jl:577; _similar_for
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   3    @Base\abstractarray.jl:748; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    3    @Base\abstractarray.jl:750; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     3    @Base\boot.jl:457; Array
+  3╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 3    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{UnitRange{Int64}, var"#17#21"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:724; collect_to!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:503; (::var"#17#21"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}})(si::Int64)
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\int.jl:87; +
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:52; *(A::Float64, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    66   @Base\arraymath.jl:55; /(A::Vector{Float64}, B::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎     66   @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 66   @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  66   @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   66   @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    66   @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     66   @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 66   @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  66   @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   66   @Base\boot.jl:457; Array
+ 66╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    66   @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   4    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:504; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    2    @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     2    @Base\multidimensional.jl:832; _getindex
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:846; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\multidimensional.jl:868; _unsafe_getindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\multidimensional.jl:855; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\cartesian.jl:64; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\multidimensional.jl:860; macro expansion
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:38; -(A::Vector{Float64}, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\indices.jl:169; promote_shape
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\indices.jl:177; promote_shape
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\operators.jl:204; !=
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\range.jl:804; ==
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\promotion.jl:410; ==
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:39; -(A::Vector{Float64}, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   11   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:505; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     6    @Base\multidimensional.jl:832; _getindex
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 6    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  6    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   6    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     6    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 6    @Base\boot.jl:457; Array
+  6╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  6    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\arraymath.jl:47; +(A::Vector{Float64}, Bs::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     5    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 5    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  5    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:980; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:963; preprocess
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:966; preprocess_args
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:967; preprocess_args
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:964; preprocess
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:957; broadcast_unalias
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:1349; unalias
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:1384; mightalias
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   74   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:507; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    65   @Base\abstractarray.jl:2294; map
+   ╎    ╎    ╎    ╎    ╎    ╎     65   @Base\array.jl:606; collect_similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 65   @Base\array.jl:696; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#18#22"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  64   @Base\array.jl:577; _similar_for
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   64   @Base\abstractarray.jl:748; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    64   @Base\abstractarray.jl:750; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     64   @Base\boot.jl:457; Array
+ 64╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 64   @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{UnitRange{Int64}, var"#18#22"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:724; collect_to!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:507; (::var"#18#22"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}})(si::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:484; Skminus
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\float.jl:326; +
+   ╎    ╎    ╎    ╎    ╎    ╎    3    @Base\arraymath.jl:52; *(A::Float64, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     3    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 3    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  3    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:983; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\simdloop.jl:77; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:984; macro expansion
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   2    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    2    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     2    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  2    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   2    @Base\boot.jl:457; Array
+  2╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    2    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\arraymath.jl:55; /(A::Vector{Float64}, B::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎     6    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 6    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  6    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   2    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    2    @Base\broadcast.jl:983; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     2    @Base\simdloop.jl:77; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\broadcast.jl:984; macro expansion
+  2╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  2    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   6    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:508; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     5    @Base\multidimensional.jl:832; _getindex
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:841; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:1267; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\multidimensional.jl:887; _setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:910; _unsafe_setindex!(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Vector{Float64}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\multidimensional.jl:898; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\cartesian.jl:64; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\multidimensional.jl:904; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\array.jl:777; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\int.jl:923; -
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\int.jl:86; -
+   ╎    ╎    ╎    ╎    ╎    ╎   2    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:512; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    2    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\ploidyMovement.jl:287; chemotaxis_form
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\special\log.jl:260; log(x::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\special\log.jl:189; log_proc2
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\operators.jl:560; *
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\float.jl:332; *
+  1╎    ╎    ╎    ╎    ╎    ╎     1    @Base\special\log.jl:279; log(x::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎   12   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:514; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    3    @Base\abstractarray.jl:2294; map
+   ╎    ╎    ╎    ╎    ╎    ╎     3    @Base\array.jl:606; collect_similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:691; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#19#23"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\generator.jl:47; iterate
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎   1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:514; (::var"#19#23"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}})(si::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\array.jl:696; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#19#23"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:577; _similar_for
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\abstractarray.jl:748; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:750; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{UnitRange{Int64}, var"#19#23"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:724; collect_to!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:514; (::var"#19#23"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}})(si::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:475; Skplus
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\float.jl:332; *
+   ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\arraymath.jl:52; *(A::Float64, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\arraymath.jl:55; /(A::Vector{Float64}, B::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\range.jl:5; Colon
+  1╎    ╎    ╎    ╎    ╎    ╎     1    @Base\range.jl:287; UnitRange
+   ╎    ╎    ╎    ╎    ╎    ╎   69   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:515; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    62   @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     62   @Base\multidimensional.jl:832; _getindex
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 62   @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  62   @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   62   @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    62   @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     62   @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 62   @Base\boot.jl:457; Array
+ 62╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  62   @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:1267; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\multidimensional.jl:887; _setindex!
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:910; _unsafe_setindex!(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Vector{Float64}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\arraymath.jl:39; -(A::Vector{Float64}, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     6    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 6    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  6    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   2    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    2    @Base\broadcast.jl:983; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     2    @Base\simdloop.jl:77; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 2    @Base\broadcast.jl:984; macro expansion
+  2╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  2    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   15   c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:516; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     5    @Base\multidimensional.jl:832; _getindex
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 5    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  5    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   5    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     5    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 5    @Base\boot.jl:457; Array
+  5╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  5    @Base\boot.jl:448; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:43; +(A::Vector{Float64}, Bs::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎    9    @Base\arraymath.jl:47; +(A::Vector{Float64}, Bs::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     9    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 9    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  9    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:980; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:963; preprocess
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:966; preprocess_args
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:964; preprocess
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:957; broadcast_unalias
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   8    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    8    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     8    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 8    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  8    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   8    @Base\boot.jl:457; Array
+  8╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    8    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   7    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:518; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\abstractarray.jl:2294; map
+  1╎    ╎    ╎    ╎    ╎    ╎     5    @Base\array.jl:606; collect_similar
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:690; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#20#24"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 3    @Base\array.jl:696; _collect(c::UnitRange{Int64}, itr::Base.Generator{UnitRange{Int64}, var"#20#24"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, #unused#::Base.EltypeUnknown, isz::Base.HasSha...
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:577; _similar_for
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\abstractarray.jl:748; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:750; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:701; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{UnitRange{Int64}, var"#20#24"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\array.jl:702; collect_to_with_first!(dest::Vector{Float64}, v1::Float64, itr::Base.Generator{UnitRange{Int64}, var"#20#24"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}}}, st::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\array.jl:724; collect_to!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\generator.jl:47; iterate
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:518; (::var"#20#24"{CartesianIndex{2}, Int64, Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}})(si::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:484; Skminus
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\float.jl:332; *
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:52; *(A::Float64, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\arraymath.jl:55; /(A::Vector{Float64}, B::Float64)
+   ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\boot.jl:457; Array
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   9    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:519; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+  2╎    ╎    ╎    ╎    ╎    ╎    2    @Base\arraymath.jl:37; -(A::Vector{Float64}, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎    7    @Base\arraymath.jl:39; -(A::Vector{Float64}, B::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     7    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 7    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  7    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:936; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\broadcast.jl:980; copyto!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\broadcast.jl:963; preprocess
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\broadcast.jl:966; preprocess_args
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\broadcast.jl:964; preprocess
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\broadcast.jl:957; broadcast_unalias
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\abstractarray.jl:1349; unalias
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\abstractarray.jl:1384; mightalias
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   6    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     6    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 6    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  6    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   6    @Base\boot.jl:457; Array
+  6╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    6    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎   9    c:\Users\4473331\Documents\projects\ploidyEvolution-main\Julia\stochastic.jl:520; taxis_ij(coord::CartesianIndex{2}, Npi::Int64, E::Base.ReshapedArray{Float64, 2, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, s::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tu...
+   ╎    ╎    ╎    ╎    ╎    ╎    5    @Base\abstractarray.jl:1170; getindex
+   ╎    ╎    ╎    ╎    ╎    ╎     5    @Base\multidimensional.jl:832; _getindex
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:841; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 3    @Base\multidimensional.jl:844; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  3    @Base\abstractarray.jl:740; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   3    @Base\reshapedarray.jl:207; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    3    @Base\subarray.jl:65; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     3    @Base\array.jl:358; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 3    @Base\boot.jl:457; Array
+  3╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  3    @Base\boot.jl:448; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\multidimensional.jl:846; _unsafe_getindex(::IndexLinear, ::Base.ReshapedArray{Float64, 3, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}, Tuple{}}, ::Base.Slice{Base.OneTo{Int64}}, ::Int64, ::Int64)
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  1    @Base\multidimensional.jl:868; _unsafe_getindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   1    @Base\multidimensional.jl:855; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    1    @Base\cartesian.jl:64; macro expansion
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     1    @Base\multidimensional.jl:860; macro expansion
+  1╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 1    @Base\array.jl:839; setindex!
+   ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\arraymath.jl:47; +(A::Vector{Float64}, Bs::Vector{Float64})
+   ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\broadcast.jl:872; broadcast_preserving_zero_d
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\broadcast.jl:883; materialize
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\broadcast.jl:908; copy
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\broadcast.jl:196; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\broadcast.jl:197; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎     4    @Base\abstractarray.jl:784; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎ 4    @Base\abstractarray.jl:785; similar
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎  4    @Base\boot.jl:465; Array
+   ╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎   4    @Base\boot.jl:457; Array
+  4╎    ╎    ╎    ╎    ╎    ╎    ╎    ╎    4    @Base\boot.jl:448; Array
+Total snapshots: 1779

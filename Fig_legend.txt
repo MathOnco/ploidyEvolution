@@ -1,0 +1,4 @@
+Fig xx A)Energy density profile used for chemotaxis test 
+B) Cell density profile from PDE implementation compared with theoretical profile. 
+C) Energy distributions around IHC-derived vessels
+D) Cell density distrubutions around IHC-derived vessels

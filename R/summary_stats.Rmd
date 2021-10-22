@@ -1,0 +1,181 @@
+---
+title: "summary_stats"
+output: html_document
+---
+
+As summary statistics for (i), we consider a given patient with $S = {\vec i_1, ... \vec i_k} $ and  $R = {\vec i_1, ... \vec i_l} $ -- the sets of simulated and observed karyotypes respectively. We will perform hierarchical clustering of karyotypes ${S, R}$ to obtain a tree $T$. The percentage of all binary subtrees \(t \in T\) which contain both, $\vec i \in S$ and $\vec i \in R$ will serve as summary statistic, reflecting how well simulated karyotype evolution recapitulates the one observed. \newline
+
+```{r setup, echo=FALSE}
+
+knitr::opts_knit$set(root.dir = "C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/ABC/sweep_00/")
+
+```
+
+```{r}
+
+default <- read.table("default_1_population.csv",sep=",")
+id <- rep(1,nrow(default))
+ff <- list.files()
+
+analyse_sim <- function(i,mr){
+
+
+x <- read.table(mr[i],sep=",")
+id <- c(id,rep(2,nrow(x)))
+x <- rbind(x,default)
+
+x <- x[,1:5]
+dp <- dist(x)
+hp <- hclust(dp)
+
+analyse_row <- function(i){
+  ids <- hp$merge[i,]
+  id0 <- unlist(sapply(ids[ids>0],analyse_row))
+  id1 <- -ids[ids<0]
+  
+  return(c(id0,id1))
+}
+
+analyse_subtree <- function(i){
+  ids <- id[analyse_row(i)]
+  max(ids)!=min(ids)
+}
+
+sm <- mean(sapply(1:nrow(hp$merge), analyse_subtree))
+
+nm <- strsplit(mr[i],split="_")[[1]]
+
+data.frame(par=nm[1],value=nm[2],similarity = sm)
+
+}
+
+analyse_sweep <- function(par){
+  mr <- ff[grepl(par,ff)]
+  mr <- mr[grepl("pop",mr)]
+  x <- do.call(rbind,lapply(1:length(mr),analyse_sim,mr=mr))
+  
+}
+
+pars <- c("deathRate","misRate","difc","difE","Ethresh","taxis","consumption","k")
+
+vals <- c(0.1,0.1,500,10000,0.4,0.02,0.01,0.01)
+
+df0 <- data.frame(par=pars,value=vals)
+
+x <- do.call(rbind,lapply(pars,analyse_sweep))
+
+labs <- as_labeller(
+  c('consumption' = "energy consump.",
+    'deathRate' = "death rate",
+    'difc' = "cell diffusion",
+    'difE' = "energy diffusion",
+    'Ethresh' = "energy demand",
+    'k' = "vessel permeability",
+    'misRate' = "missegregation rate",
+    'taxis' = "taxis energy sensitivity"))
+
+p <- ggplot(x,aes(x=as.numeric(value),y=similarity))+
+  facet_wrap(~par,scales = "free",labeller=labs)+
+  geom_vline(data=df0,aes(xintercept=value))+
+  geom_point()+
+  scale_x_continuous("parameter value")
+p
+
+```
+
+For (ii), we will use an approach we recently developed \cite{kimmel_integrating_2020}. Briefly, let  $ G \in R^{2,2}$ be the spatial distribution of cell concentrations at the end of the simulation, with $G_{m,n}$ denoting the concentration at coordinate $(m,n)$. For all coordinates $B_t$ within distance $t$ to the closest vessel %$ B_t := \{m,n | t-e \leq D_{m,n} \leq t+e \} $ 
+, we calculated the average cell concentration associated with that distance as $C_t = \frac{1}{|B_t|} * \sum_{x,y \in B_t} G_{x,y}$. This will be compared to the cell concentration obtained from IHC (Fig. \ref{fig:MediaSignaturesCCLE}C), using the Wasserstein metric.
+
+```{r}
+proc_spat <- function(fname){
+  id <- unlist(strsplit(fname,split="_"))
+  x <- read.table(fname,sep=",")
+  if (grepl("pde",fname)){
+    nuname <- paste(id[1],id[2],"stochstates.csv",sep="_")
+    y <- read.table(nuname,sep=",")
+    y <- y[,c(ncol(y)-1,ncol(y))]
+    y <- ceiling(y)
+    for(j in 1:nrow(y)){
+      x[y[j,1],y[j,2]]<-x[y[j,1],y[j,2]]+1
+    }
+  }
+  colnames(x) <- 1:ncol(x)
+  x$y <- 1:nrow(x)
+  x$y <- x$y%%(ncol(x)-1)
+  x$y[x$y==0] <- (ncol(x)-1)
+  
+  x <- reshape2::melt(x,id.vars="y")
+  x <- aggregate(x$value,by=list(x=x$variable,y=x$y),sum)
+  colnames(x) <- c("x","y","v")
+  x$x <- as.numeric(x$x)
+  x$y <- as.numeric(x$y)
+  return(x)
+}
+
+dtran<- function(x){
+  y <- x[x$v>0,]
+y$v <- y$v/sum(y$v)
+x <- x[x$v==0,]
+
+mind <- sapply(1:nrow(y), function(i){
+  min(sqrt((y$x[i]-x$x)^2+(y$y[i]-x$y)^2))
+})
+
+y$mind <- mind
+y$mind <- ceiling(y$mind)
+
+x <- aggregate(y$v,by=list(y$mind),sum)
+}
+
+
+```
+
+```{r}
+library(transport)
+library(ggplot2)
+
+get_wass <- function(filename,x0){
+  x1 <- proc_spat(filename)
+  y0 <- dtran(x0)
+  y1 <- dtran(x1)
+  nm <- strsplit(filename,split="_")[[1]]
+  data.frame(par=nm[1],value=nm[2],similarity = wasserstein1d(y0$x,y1$x,1))
+  
+}
+
+analyse_sweep <- function(par,x0){
+  ff <- list.files()
+  mr <- ff[grepl(par,ff)]
+  mr <- mr[grepl("pdestates",mr)]
+  x <- do.call(rbind,lapply(mr,get_wass,x0=x0))
+  
+}
+
+default <- proc_spat("default_1_pdestates.csv")
+x0 <- default
+
+pars <- c("deathRate","misRate","difc","difE","Ethresh","taxis","consumption","k")
+
+vals <- c(0.1,0.1,500,10000,0.4,0.02,0.01,0.01)
+
+df0 <- data.frame(par=pars,value=vals)
+
+x <- do.call(rbind,lapply(pars,analyse_sweep,x0=x0))
+
+labs <- as_labeller(
+  c('consumption' = "energy consump.",
+    'deathRate' = "death rate",
+    'difc' = "cell diffusion",
+    'difE' = "energy diffusion",
+    'Ethresh' = "energy demand",
+    'k' = "vessel permeability",
+    'misRate' = "missegregation rate",
+    'taxis' = "taxis energy sensitivity"))
+
+p <- ggplot(x,aes(x=as.numeric(value),y=similarity))+
+  facet_wrap(~par,scales = "free",labeller=labs)+
+  geom_vline(data=df0,aes(xintercept=value))+
+  geom_point()+
+  scale_y_continuous("distance")
+p
+```

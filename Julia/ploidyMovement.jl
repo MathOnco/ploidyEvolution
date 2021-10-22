@@ -649,6 +649,7 @@ function simulate_spatial(params,X::AbstractArray,Y::AbstractVector)
 
 end
 
+
 #easiest to write an entirely new function to simulate hybrid model,
 # however due to overlap with simulate_spatial() would be easiest to break out
 # common parts (e.g. vessel processing) into their own functions
@@ -792,8 +793,12 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	dt=0.1 # needs to be a parameter
 	tspan = (0.0,dt)
 	s0 = zeros(1,Np...) #assume hybrid model always starts with 1 species
-	s0[1,:,:] .= rand(Np...)*startPop 	# CN is randomly placed on the grid
-	[s0[1,k...] = 0 for k in keys(domain_Dict)]
+	s0[1,:,:] .= startPop 	# CN is randomly placed on the grid
+	for k in keys(domain_Dict)
+		if domain_Dict[k]==2
+			s0[1,k...] = 0
+		end
+	end
 
 	u0 = ComponentArray(s=s0,E=E0)
 
@@ -806,7 +811,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	birthRates = [max(PolyharmonicInterpolation.polyharmonicSpline(interp,starting_copy_number')[1],0.0)]
 	#println(birthRates)
 	#println(misRate)
-	M=transition_matrix(sIndex,birthRates)
+	M=transition_matrix(sIndex,misRate)
 
 	max_birthRate = maximum(birthRates)
 
@@ -835,15 +840,29 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 	pde_active= true # flag to handle situation when there are no clones above threshold.
 	# (model currently starts with a PDE population by default)
 
+	open(string(0,pad=4)*"_pdestates"*".csv","w") do io
+		for i in 1:length(sIndex)
+			z = u0.s[i,:,:]
+			cnstate = "#"*join(string(sIndex[i]...),":")
+			writedlm(io,[cnstate])
+			writedlm(io,z,',')
+		end
+	end
+	open(string(0,pad=4)*"_Energy"*".csv","w") do io
+		writedlm(io,u0.E,',')
+	end
+
+	evals=0
+
 	for i in 1:ceil(Int64,finalDay/dt)
 		t=i*dt
-		s_new, sIndex, birthRates, relegation_index, u_s, append_state = run_hybrid_step(i,odePars,u0,tspan,s_s,sIndex,birthRates,M,u_s)
+		s_new, sIndex, birthRates, relegation_index, u_s, append_state,evals = run_hybrid_step(i,odePars,u0,tspan,s_s,sIndex,birthRates,M,u_s,evals)
 		# works even if both events happen in same timestep, since new clones are appended thus not affecting the index to be removed
 		max_birthRate = maximum(birthRates)
 		if append_state 
 			#println(size(s_new))
 			u0= ComponentArray(s=s_new,E=u0.E)
-			M=transition_matrix(sIndex,birthRates)
+			M=transition_matrix(sIndex,misRate)
 			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
 			#println(compartment_sizes)
 			#println(birthRates)
@@ -874,6 +893,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 				birthRates=0
 			end
 			compartment_sizes = map(x->sum(u0.s[x,:,:]),1:length(sIndex))
+			M=transition_matrix(sIndex,misRate)
 			#println(compartment_sizes)
 		end
 
@@ -903,7 +923,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		Nstoch=sum(u_s)
 		Npde=sum(u0.s)
 
-		println("time: $t, PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states)")
+		println("time: $t, PDE: $Npde ($Nstatespde states), Stochastic: $Nstoch ($Nstates states), evals: $evals")
 		
 		
 		if Nstatespde>0
