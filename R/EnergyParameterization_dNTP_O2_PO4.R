@@ -1,6 +1,7 @@
 EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
   options(java.parameters = "-Xmx7g")
   library(cloneid)
+  library(ggplot2)
   library(xlsx)
   library("RMySQL")
   devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
@@ -63,17 +64,22 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     O = PolymeraseExpression_Ploidy(cellLines, indir = indir, outF =  F_PLOIDYPOLYE)
     # O = read.table(  F_PLOIDYPOLYE, sep="\t", check.names = F, stringsAsFactors = F)
     O$cellLine = paste(match(O$cellLine, rownames(cellLineInfo)), O$cellLine); ## Enforce in order of doubling time
-    te=cor.test(O$ploidy,O$polymerase_epsilon_delta)
-    p <- ggplot(O, aes(x=ploidy, y =polymerase_epsilon_delta, col=cellLine, shape=state)) + ggtitle(paste(state,": r =", round(te$estimate,3),"; p =", round(te$p.value,10))) +
-      geom_point(size=3) + geom_smooth(method='lm', formula= y~x, se=FALSE) + labs(x="ploidy", y = "polymerase_epsilon_delta") 
-    ggsave(p, filename = paste0("~/Downloads/",state,"_gastricCLs_ploidy_vs_polymerase_epsilon_delta.png"), width = 5, height = 4.5) 
   }
+  
   
   ## Read ploidy and cell cycle duration info
   if(FLAG_SAMPLECOHORT == "Stomach Cell Lines"){
     # Cell lines
     tmp = read.table(  F_CCDURATION, sep="\t", check.names = F, stringsAsFactors = F)
     cpc = read.table(  F_PLOIDYPOLYE, sep="\t", check.names = F, stringsAsFactors = F)
+
+    # Visualize
+    te=sapply(unique(cpc$state), function(x) cor.test(cpc$ploidy[cpc$state==x],cpc$polymerase_epsilon_delta[cpc$state==x]))
+    p <- ggplot(cpc, aes(x=ploidy, y =polymerase_epsilon_delta, col=cellLine, shape=state)) + 
+      ggtitle(paste("r =", round(unlist(te["estimate",]),3),"; p =", round(unlist(te["p.value",]),10),collapse=";")) +
+      geom_point(size=3) + geom_smooth(method='lm', formula= y~x, se=FALSE) + labs(x="ploidy", y = "polymerase_epsilon_delta") 
+    ggsave(p, filename = paste0("~/Downloads/gastricCLs_ploidy_vs_polymerase_epsilon_delta.png"), width = 5, height = 4.5) 
+    
     cpc$Identity = sapply(strsplit(rownames(cpc),".", fixed = T),"[[",3)
     cpc = cpc[cpc$state=="G0G1" & cpc$Identity %in% tmp$Identity,]
     cpc$S_Duration_hours = tmp$S_Duration_hours[match(cpc$Identity, tmp$Identity)]
@@ -82,6 +88,8 @@ EnergyParameterization_dNTP_O2 <- function(cancer = "STAD"){
     cpc = cpc[cpc$cellLine %in% c("MKN-45","SNU-16"),]
     cpc = as.data.frame(grpstats(cpc[,c("ploidy", "S_Duration_hours")],cpc$cellLine, statscols = "mean")$mean)
     cpc$Sample = rownames(cpc)
+    print("Correlation between ploidy and S-phase duration:")
+    print(cor.test(cpc$ploidy,cpc$S_Duration_hours))
     
     doi = cc_params["S",]$dNTP_mMol; #dNTP_sPhase_mMol; 
     col = gg_color_hue(nrow(cellLineInfo));
