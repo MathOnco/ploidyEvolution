@@ -330,7 +330,7 @@ function getDaughters(stoch::stochasticCompartment, E0, s0, sIndex,birthRates)
                 if log(2)/stoch.max_cell_cycle_duration < energy_modified_birth_rate
                     pBirth = energy_modified_birth_rate*stoch.dt*s0[i,j,k] # expected number of births per site
                     pMis = pBirth*stoch.misrate # expected number of missegregations per site
-                    p = Poisson(max(0,pMis))
+                    p = Poisson(pMis)
                     Np=rand(p,1)[1]
                     if Np>0
                         for n in 1:Np 
@@ -830,7 +830,7 @@ function run_hybrid_step(i,odePars,u,tspan,s_s,sIndex,birthRates,M,u_s,evals)
 
 	odePars=(M=M,u_s=u_s,birthRates=birthRates,sIndex=sIndex,odePars...)
 	prob = ODEProblem(ploidy_hybrid_model,u,tspan,odePars)
-	sol = solve(prob,save_on=false)
+	sol = solve(prob,save_on=false,isoutofdomain = (u,p,t) -> any(x->x<0, u))
 	#println("Stochastic step...")
 	u.E=sol[length(sol)].E
 	u.s=sol[length(sol)].s

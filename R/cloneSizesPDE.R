@@ -1,7 +1,7 @@
 setwd("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia")
 ff <- list.files()
 ff <- ff[grepl("_population",ff)]
-ff <- ff[1:300]
+ff <- ff[1:190]
 #ff <- ff[round(1:300*(length(ff)/100))]
 
 proc <- function(fname,nchrom=5){

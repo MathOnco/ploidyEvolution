@@ -2,7 +2,7 @@
 stepsize = 1.0
 maxChrom = 5.0
 deathRate = 0.2
-misRate = 0.1
+misRate = 0.2
 finalDay = 60
 startPop = 5
 starting_copy_number = [2,2,2,2,2]
@@ -19,7 +19,7 @@ Lp = [2500.0,2500.0]
 Np = [121,121]
 k = 0.01
 E_vessel = 1.0
-stochasticThreshold=2000
+stochasticThreshold=1000
 
 [Options]
 debugging = 3
