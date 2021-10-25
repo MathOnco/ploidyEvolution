@@ -898,7 +898,7 @@ function simulate_hybrid(params,X::AbstractArray,Y::AbstractVector)
 		end
 
 			# Write results to multiple files by time points
-		if i%100 == 0
+		if i%5 == 0
 			open(string(i,pad=4)*"_pdestates"*".csv","w") do io
 				for i in 1:length(sIndex)
 					z = u0.s[i,:,:]

@@ -1,22 +1,40 @@
-setwd("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/00_full_tests/misrate_0_1/")
+setwd("C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia")
+library(stringr)
 fill_label <- "cells"
-ff <- list.files()
-ff <- ff[grepl("_states",ff)]
-ff <- ff[round(1:100*(length(ff)/100))] #downsample
 
-proc <- function(fname){
+ff <- sapply(seq(0,60,5), function(i) paste(str_pad(i,4,"left","0"),"_pdestates.csv",sep=""))
+
+
+proc_spat <- function(fname,dir){
   i <- as.numeric(unlist(strsplit(fname,split="_"))[1])
-  x <- read.table(fname,sep=",")
+  x <- read.table((paste(dir,fname,sep="")),sep=",")
+  if (grepl("pde",fname)&i>0){
+    t <- unlist(strsplit(fname,split="_"))[1]
+    y <- read.table((paste(dir,t,"_stochstates.csv",sep="")),sep=",")
+    y <- y[,c(ncol(y)-1,ncol(y))]
+    y <- ceiling(y)
+    for(j in 1:nrow(y)){
+      x[y[j,1],y[j,2]]<-x[y[j,1],y[j,2]]+1
+    }
+  }
   colnames(x) <- 1:ncol(x)
   x$y <- 1:nrow(x)
+  x$y <- x$y%%(ncol(x)-1)
+  x$y[x$y==0] <- (ncol(x)-1)
   
   x <- reshape2::melt(x,id.vars="y")
-  colnames(x) <- c("y","x","v")
-  x$t <- i/10
+  x <- aggregate(x$value,by=list(x=x$variable,y=x$y),sum)
+  colnames(x) <- c("x","y","v")
+  x$y <- as.numeric(x$y)
+  x$x <- as.numeric(x$x)
+  x$y <- max(x$y)-x$y
+  x$x <- max(x$x)-x$x
+  
+  x$i <- i/10
   return(x)
 }
 
-x <- do.call(rbind,lapply(ff,proc))
+x <- do.call(rbind,lapply(ff,proc_spat,dir="C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/"))
 
 library(gganimate)
 library(ggplot2)
@@ -30,7 +48,7 @@ p <- ggplot(x,aes(x=x,y=y,fill=v))+
         axis.text.y=element_blank(),axis.ticks=element_blank(),
         axis.title.x=element_blank(),
         axis.title.y=element_blank())+
-  transition_time(t)+
+  transition_time(i)+
   labs(title = 'day: {frame_time}')
 p
 

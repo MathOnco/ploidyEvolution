@@ -528,6 +528,57 @@ birth_ij = function(coord,s,s0,E,M,birthrates,ϕ,max_cell_cycle_duration)
     s0[:,coord].+=M*(s[:,coord].*br)
 end
 
+function taxis_bc(coord,Npi,E,s,s0,Ξ,dpi,χ)
+   #chemotaxis across boundary between (i,j) and (i+1,j)
+   dE = chemotaxis_form(E[wrap(coord[1]+1,Npi),coord[2]],Ξ)-chemotaxis_form(E[coord...],Ξ)
+   if dE>0
+       qi= χ*dE*map(si->Skplus(s[si,wrap(coord[1]-1,Npi),coord[2]],s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]]),1:size(s,1))/dpi^2
+       #s0[:,coord]-=qi
+       s0[:,wrap(coord[1]+1,Npi),coord[2]]-=qi
+   else
+       qi=χ*dE*map(si->Skminus(s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]],s[si,wrap(coord[1]+2,Npi),coord[2]]),1:size(s,1))/dpi^2
+       #s0[:,coord]-=qi
+       s0[:,wrap(coord[1]+1,Npi),coord[2]]-=qi
+   end
+   #chemotaxis across boundary between (i,j) and (i,j+1)
+   dE = chemotaxis_form(E[coord[1],wrap(coord[2]+1,Npi)],Ξ)-chemotaxis_form(E[coord...],Ξ)
+   if dE>0
+       qi= χ*dE*map(si->Skplus(s[si,coord[1],wrap(coord[2]-1,Npi)],s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)]),1:size(s,1))/dpi^2
+       #s0[:,coord]-=qi
+       s0[:,coord[1],wrap(coord[2]+1,Npi)]-=qi
+   else
+       qi=χ*dE*map(si->Skminus(s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)],s[si,coord[1],wrap(coord[2]+2,Npi)]),1:size(s,1))/dpi^2
+       #s0[:,coord]-=qi
+       s0[:,coord[1],wrap(coord[2]+1,Npi)]-=qi
+   end
+
+   coord = (wrap(coord[1]-1,Npi),coord[2])
+   #chemotaxis across boundary between (i,j) and (i+1,j)
+   dE = chemotaxis_form(E[wrap(coord[1]+1,Npi),coord[2]],Ξ)-chemotaxis_form(E[coord...],Ξ)
+   if dE>0
+       qi= χ*dE*map(si->Skplus(s[si,wrap(coord[1]-1,Npi),coord[2]],s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]]),1:size(s,1))/dpi^2
+       s0[:,coord...]+=qi
+       #s0[:,wrap(coord[1]+1,Npi),coord[2]]-=qi
+   else
+       qi=χ*dE*map(si->Skminus(s[si,coord...],s[si,wrap(coord[1]+1,Npi),coord[2]],s[si,wrap(coord[1]+2,Npi),coord[2]]),1:size(s,1))/dpi^2
+       s0[:,coord...]+=qi
+       #s0[:,wrap(coord[1]+1,Npi),coord[2]]-=qi
+   end
+
+   coord = (wrap(coord[1]+1,Npi),wrap(coord[2]-1,Npi))
+   dE = chemotaxis_form(E[coord[1],wrap(coord[2]+1,Npi)],Ξ)-chemotaxis_form(E[coord...],Ξ)
+   if dE>0
+       qi= χ*dE*map(si->Skplus(s[si,coord[1],wrap(coord[2]-1,Npi)],s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)]),1:size(s,1))/dpi^2
+       s0[:,coord...]+=qi
+       #s0[:,coord[1],wrap(coord[2]+1,Npi)]-=qi
+   else
+       qi=χ*dE*map(si->Skminus(s[si,coord...],s[si,coord[1],wrap(coord[2]+1,Npi)],s[si,coord[1],wrap(coord[2]+2,Npi)]),1:size(s,1))/dpi^2
+       s0[:,coord...]+=qi
+       #s0[:,coord[1],wrap(coord[2]+1,Npi)]-=qi
+   end
+
+end
+
 function ploidy_hybrid_model(du,u,pars,t)
     #println(t)
 	# Grab the parameters
@@ -601,7 +652,8 @@ function ploidy_hybrid_model(du,u,pars,t)
     ## vessel boundaries (should be a function)
     for coord in keys(domain_Dict)
         if domain_Dict[coord]==2
-            du.s[:,coord...].=0
+            taxis_bc(coord,Npi,E,s,du.s,Ξ,dpi,χ)
+            #du.s[:,coord...].=0
             neighbours = grid_neighbours(coord,Npi)
             for n in neighbours
                 if domain_Dict[n]==2
@@ -612,36 +664,42 @@ function ploidy_hybrid_model(du,u,pars,t)
                     du.s[:,n...]=du.s[:,n...]+Γ*s[:,n...]/dpi^2   
                     
                     ## for noflux in chemotaxis:
-                    for si in 1:length(sIndex)
-                        if sum(n)>sum(coord)
-                            #find the velocity through the interface
-                            v=(chemotaxis_form(E[n...],Ξ)-chemotaxis_form(E[coord...],Ξ))/dpi
-                            
-                            np1 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
-                            np2 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
+               #     for si in 1:length(sIndex)
+                     #   if sum(n)>sum(coord)
+                    #        #find the velocity through the interface
+                   #         v=(chemotaxis_form(E[n...],Ξ)-chemotaxis_form(E[coord...],Ξ))/dpi
+                  #          
+                 #           np1 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
+                            #np2 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
                    
-                            T = max(0,v)*Skplus(s[si,np1...],s[si,coord...],s[si,n...])+
-                            min(0,v)*Skminus(s[si,coord...],s[si,n...],s[si,np2...])
+                           # T = max(0,v)*Skplus(s[si,np1...],s[si,coord...],s[si,n...])+
+                          #  min(0,v)*Skminus(s[si,coord...],s[si,n...],s[si,np2...])
 
-                            du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
+                         #   du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
 
-                        else
-                            v=(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[n...],Ξ))/dpi
-                            np2 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
-                            np1 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
+                        #else
+                       #     v=(chemotaxis_form(E[coord...],Ξ)-chemotaxis_form(E[n...],Ξ))/dpi
+                      #      np2 = (wrap(coord[1]-n[1]+coord[1],Npi),wrap(coord[2]-n[2]+coord[2],Npi))
+                     #       np1 = (wrap(n[1]-coord[1]+n[1],Npi),wrap(n[2]-coord[2]+n[2],Npi))
                                                
-                            T = max(0,v)*Skplus(s[si,np1...],s[si,n...],s[si,coord...])+
-                            min(0,v)*Skminus(s[si,n...],s[si,coord...],s[si,np2...])
+                    #        T = max(0,v)*Skplus(s[si,np1...],s[si,n...],s[si,coord...])+
+                   #         min(0,v)*Skminus(s[si,n...],s[si,coord...],s[si,np2...])
 
-                            du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
-                        end
+                  #          du.s[si,n...]=du.s[si,n...]+χ*(T)/dpi
+                 #       end
                         
-                    end
+                #    end
                     
                 end
             end
         end
 
+    end
+
+    for coord in keys(domain_Dict)
+        if domain_Dict[coord]==2
+            du.s[:,coord...].=0
+        end
     end
 
 	# @show dflow,cflow

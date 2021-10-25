@@ -9,11 +9,11 @@ starting_copy_number = [2,2,2,2,2]
 max_cell_cycle_duration = 100
 
 [SpatialParameters]
-"Γ" = 2000
+"Γ" = 100
 "Γₑ" = 10000
 "ϕ" = 0.4
 "Ξ" = 0.02
-"χ" = 100
+"χ" = 1000
 "δ" = 0.01
 Lp = [2500.0,2500.0]
 Np = [121,121]

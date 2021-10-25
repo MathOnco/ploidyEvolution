@@ -6,7 +6,7 @@ output: html_document
 
 ```{r setup, echo=FALSE}
 
-knitr::opts_knit$set(root.dir = "C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/test_output/00_full_tests/")
+knitr::opts_knit$set(root.dir = "C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/")
 
 ```
 
@@ -58,7 +58,7 @@ plot_spat <- function(x,fill_label){
   p <- ggplot(x,aes(x=x,y=y,fill=v))+
     geom_raster()+
     theme_classic(base_size=16)+  
-    scale_fill_viridis_c(fill_label,trans="log")+
+    scale_fill_viridis_c(fill_label)+
     theme(axis.line=element_blank(),axis.text.x=element_blank(),
           axis.text.y=element_blank(),axis.ticks=element_blank(),
           axis.title.x=element_blank(),
@@ -66,14 +66,14 @@ plot_spat <- function(x,fill_label){
   p
 }
 
-ff <- list.files("000_parameterisation/")
-fE <- tail(ff[grepl("_Energy",ff)],1)
-fc <- tail(ff[grepl("_states",ff)],1)
+ff <- list.files()
+fE <- ff[grepl("_Energy",ff)][2]
+fc <- ff[grepl("_pdestates",ff)][4]
 
-xE <- proc_spat(fE,"000_parameterisation/")
+xE <- proc_spat(fE,"C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/")
 plot_spat(xE,"energy")
 
-xc <- proc_spat(fc,"000_parameterisation/")
+xc <- proc_spat(fc,"C:/Users/4473331/Documents/projects/ploidyEvolution-main/Julia/")
 plot_spat(xc,"cells/site")
 
 
@@ -174,8 +174,9 @@ library(ggplot2)
 #ff <- list.files("061_sample_output/")
 #fc <- ff[grepl("_pdestates",ff)]
 ff <- list.files()
-fc <- ff[grepl("states",ff)]
-fc <- fc[720]
+fc <- ff[grepl("pdestates",ff)]
+fc <- fc[21]
+time <- as.numeric(strsplit(fc,split="_")[[1]][1])/10
 
 #cn <- readLines(paste("061_sample_output/",fc,sep=""))
 cn <- readLines(fc)
@@ -206,7 +207,7 @@ xc <- do.call(rbind,lapply(1:length(cn), function(i){
           axis.text.y=element_blank(),axis.ticks=element_blank(),
           axis.title.x=element_blank(),
           axis.title.y=element_blank())+
-    ggtitle("day 10")
+    ggtitle(paste("day",time))
 
   p
 
