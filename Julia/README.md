@@ -25,14 +25,14 @@ On Mac, the following set of instructions will get all packages and correspondin
 ```
 
 ## Running tests
-Run the script from terminal by
+Run the script with default parameters from terminal:
 
 ```
 1. cd <path/to/repo>/Julia
 2. julia --project=. -L ploidyMovement.jl driver.jl
 ```
 
-for help on running and options type
+for help on running and options, type
 
 ```
 julia driver.jl -h
@@ -44,6 +44,7 @@ julia driver.jl -h
 * **Gregory Kimmel**
 * **Philipp Altrock**
 * **Noemi Andor**
+* **Richard Beck**
 
 ## License
 

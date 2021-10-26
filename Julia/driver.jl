@@ -1,7 +1,5 @@
 using TOML, CSV, DataFrames, ArgParse, JSON
 
-import Base.@kwdef
-
 # Used to search through command line for particular arguments
 function parse_commandline()
     s = ArgParseSettings()
@@ -12,116 +10,294 @@ function parse_commandline()
         "--verbosity", "-v"
             help = "Prints information to command line for debugging"
             action = :store_true
-		"--cnFile", "-c"
-			help = "Contains numeric array of copy numbers and header of which chromosomes"
-			default = "birthLandscapeBrainCancer.txt"
-		"--birthRateFile", "-b"
-			help = "Contains numeric vector of birth rates"
-			default = "GrowthRate_brain_cancer_CLs.txt"
+		"--spatial", "-s"
+			help = "Use the spatial ploidy model"
+			action = :store_true
 		"--outputfile","-o"
 			help = "Specifies the filename for saving data from the simulation"
-			default = "output_0.csv"
-		"--u0"
-			help = "Array that contains CN of initial condition"
-			default = "[1,1,1,1,1]"
+			default = "output"
     end
 	
     return parse_args(s)
 end
 
-# Struct containing input data needed for simulation with default values
-@kwdef struct Input
+# Convert string keys to symbols (needed for splatting dictionary into struct fields)
+string_to_symbol(d::Dict) = Dict(Symbol(k) => v for (k,v) in d)
 
-	debugging::Int = 0				# prints info from ploidyMovement
-	stepsize::Real = 1.0				# discretization of chromosome
-	minChrom::Real = 1.0				# minimum chromosome allowed
-	maxChrom::Real = 5.0				# maximum chromosome allowed
-	deathRate::Float64 = 0.1			# universal death rate
-	misRate::Float64 = 0.15				# universal missegregation rate
-	finalDay::Real = 30.0				# end of simulation
-	replating::Bool = false				# Whether we replate the cells
-	startPop::Real = 1e3		# Starting population size 
-	maxPop::Real = 1e6				# Max population before replating
-	compartmentMinimum::Bool = false	# Sets sizes < 1 to 0 if true
-	progress_check::Bool = false
-	interpolation_order::Int = 2
+# Modified get function to get struct from the dict file
+function get_structs_from_file(d::Dict,key::String,default::DataType,verbosity::Bool)
+
+	local s
+	try
+		s = default(string_to_symbol(d[key]))
+		if verbosity
+			println("Replaced $key with inputfile")
+		end
+	catch
+		s = default()
+		if verbosity 
+			println("Did not replace $key with inputfile")
+		end
+	end
+
+	return s
 
 end
 
-function Input(inputFile::String)
+struct Options
 
-	# Dictionary that contains info from the toml (INPUT) file
-	data = TOML.tryparsefile(inputFile)
+	debugging::Int
+	compartmentMinimum::Bool
+	replating::Bool
+	maxPop::Number
+	progress_check::Bool
+	saveat::Number
+	interpolation_order::Int
 
-	# Get the parameters for the struct.
-	debugging=get(data,"debugging",0)
-	stepsize=get(data,"stepsize",1.0)
-	# minChrom=get(data,"minChrom",1.0)
-	minChrom=1.0
-	maxChrom=get(data,"maxChrom",5.0)
-	deathRate=get(data,"deathRate",0.1)
-	misRate=get(data,"misRate",0.15)
-	finalDay=get(data,"finalDay",30.0)
-	replating=get(data,"replating",false)
-	startPop=get(data,"startPop",1e3)
-	maxPop=get(data,"maxPop",1e6)
-	compartmentMinimum=get(data,"compartmentMinimum",false)
-	progress_check=get(data,"progress_check",false)
-	interpolation_order = get(data,"interpolation_order",2)
+end
+
+struct Files
+	copy_number_file::String		# Contains numeric array of copy numbers and header of which chromosomes
+	birth_rate_file::String			# Contains numeric vector of birth rates
+	blood_vessel_file::String		# Blood vessel coordinate info
+end
+
+struct UniversalParameters
+	stepsize::Number
+	minChrom::Number
+	maxChrom::Number
+	deathRate::Number
+	misRate::Number
+	finalDay::Number
+	startPop::Number
+	starting_copy_number::Vector{Int}
+	max_cell_cycle_duration::Number
+end
+
+struct SpatialParameters
+	Γ::Number						# Random cell motion
+	Γₑ::Number						# Nutrient diffusion
+	ϕ::Number						# Nutrient level needed for half-maximal growth rate
+	Ξ::Number						# Energy needed for half maximal directional motion
+	χ::Number						# Directed motion magnitude
+	δ::Number						# Energy consumption
+	Lp::Vector{<:Number}
+	Np::Vector{Int}
+	k::Number
+	E_vessel::Number
 	
+end
 
-	Input(
-		debugging,
-		stepsize,
-		minChrom,
-		maxChrom,
-		deathRate,
-		misRate,
-		finalDay,
-		replating,
-		startPop,
-		maxPop,
-		compartmentMinimum,
-		progress_check,
-		interpolation_order
+# Struct containing input data needed for simulation with default values
+struct WellMixedInput
+
+	Options
+	Files
+	UniversalParameters
+
+end
+
+struct SpatialInput
+
+	Options
+	Files
+	UniversalParameters
+	SpatialParameters
+
+end
+
+struct WellMixedInputParameters
+
+	Options
+	UniversalParameters
+
+end
+
+struct SpatialInputParameters
+
+	Options
+	UniversalParameters
+	SpatialParameters
+	blood_vessel_file::String
+
+end
+
+function Files(;
+	copy_number_file ="birthLandscapeBrainCancer.txt",
+	birth_rate_file = "GrowthRate_brain_cancer_CLs.txt",
+	blood_vessel_file ="13496_2_Slides_and_Data_xy_test.txt")
+
+	Files(
+		copy_number_file,
+		birth_rate_file,
+		blood_vessel_file
 		)
+end
+
+Files(d::Dict) = Files(;d...)
+
+function UniversalParameters(;stepsize= 1.0, 
+	minChrom=1.0,
+	maxChrom=5.0,
+	deathRate=0.1,
+	misRate=0.15,
+	finalDay=30.0,
+	startPop=1e3,
+	starting_copy_number = [1,1,1,1,1],
+	max_cell_cycle_duration = 100)
+
+	UniversalParameters(
+					stepsize,
+					minChrom,
+					maxChrom,
+					deathRate,
+					misRate,
+					finalDay,
+					startPop,
+					starting_copy_number,
+					max_cell_cycle_duration
+					)
+
+end
+
+UniversalParameters(d::Dict) = UniversalParameters(;d...)
+
+function Options(;debugging = 3,
+	compartmentMinimum = false,
+	replating = true,
+	maxPop = 1e6,
+	progress_check = true,
+	saveat = 0.1,
+	interpolation_order = 2)
+
+	Options(
+			debugging,
+			compartmentMinimum,
+			replating,
+			maxPop,
+			progress_check,
+			saveat,
+			interpolation_order,
+			)
+
+end
+
+Options(d::Dict) = Options(;d...)
+
+
+
+function SpatialParameters(;
+	Γ = 0.1,
+	Γₑ = 1.0,
+	ϕ = 0.02,
+	Ξ = 0.02,
+	χ = 0.5,
+	δ = 0.05,
+	Lp = [1000.0,1000.0],
+	Np = [21,21],
+	k = 0.5,
+	E_vessel = 1.0)
+
+	SpatialParameters(
+					Γ,
+					Γₑ,	
+					ϕ,
+					Ξ,
+					χ,
+					δ,
+					Lp,
+					Np,
+					k,
+					E_vessel
+					)
+
+
+
+end
+
+SpatialParameters(d::Dict) = SpatialParameters(;d...)
+
+function WellMixedInput(;Options=Options(),
+	Files=Files(),
+	UniversalParameters=UniversalParameters())
+
+	WellMixedInput(
+					Options,
+					Files,
+					UniversalParameters
+					)
+
+end
+
+function WellMixedInput(inputfile::String,verbosity::Bool=false)
+
+	data = TOML.tryparsefile(inputfile)
+
+	WellMixedInput(
+					get_structs_from_file(data,"Options",Options,verbosity),
+					get_structs_from_file(data,"Files",Files,verbosity),
+					get_structs_from_file(data,"UniversalParameters",UniversalParameters,verbosity)
+					)
+
+
+end
+
+function SpatialInput(;Options=Options(),
+	Files=Files(),
+	UniversalParameters=UniversalParameters(),
+	SpatialParameters=SpatialParameters())
+
+	SpatialInput(
+					Options,
+					Files,
+					UniversalParameters,
+					SpatialParameters
+					)
+end
+
+function SpatialInput(inputfile::String,verbosity::Bool=false)
+
+	data = TOML.tryparsefile(inputfile)
+
+	SpatialInput(
+					get_structs_from_file(data,"Options",Options,verbosity),
+					get_structs_from_file(data,"Files",Files,verbosity),
+					get_structs_from_file(data,"UniversalParameters",UniversalParameters,verbosity),
+					get_structs_from_file(data,"SpatialParameters",SpatialParameters,verbosity)
+					)
+
 
 end
 
 function initialize()
 
-	# Default values to be fed into ploidyMovement
-	data = Input()
-
 	# Grab command line args
 	parsed_args = parse_commandline()
-
-	# Replaces default parameters if input file is given
-	if !isnothing(parsed_args["input"])
-		data = Input(parsed_args["input"])
-	end
 
 	# Prints info if set to true
 	verbosity = parsed_args["verbosity"]
 
-	# Grab file containing copy number variation
-	CNmatFilename = parsed_args["cnFile"]
-
-	# Grab file containing birth rates
-	birthFilename = parsed_args["birthRateFile"]
+	spatial = parsed_args["spatial"]
 
 	# Grab output file name
 	outputFile = parsed_args["outputfile"]
 
-	# Grab initial condition (it is a string so we parse and convert)
-	u0 = Int.(JSON.parse(parsed_args["u0"]))
+	# # Grab initial condition (it is a string so we parse and convert)
+	# starting_copy_number = Int.(JSON.parse(parsed_args["starting_copy_number"]))
 
-	# Error checking
-	if !isfile(CNmatFilename)
-		error("$CNmatFilename file cannot be found")
-	end
-	if !isfile(birthFilename)
-		error("$birthFilename file cannot be found")
+	# Default values to be fed into ploidyMovement
+	if spatial
+		input = SpatialInput()
+		# Replaces default parameters if input file is given
+		if !isnothing(parsed_args["input"])
+			input = SpatialInput(parsed_args["input"],verbosity)
+		end
+	else
+		input = WellMixedInput()
+		# Replaces default parameters if input file is given
+		if !isnothing(parsed_args["input"])
+			input = WellMixedInput(parsed_args["input"],verbosity)
+		end
 	end
 
 	# Check to see if input file is given
@@ -130,9 +306,10 @@ function initialize()
 		for (arg,val) in parsed_args
 			println("  $arg => $val")
 		end
+		println()
 	end
 
-	return data, CNmatFilename, birthFilename, u0, outputFile, verbosity
+	return input, outputFile, verbosity, spatial
 end
 
 function extract_XY(X_filename::String, Y_filename::String)
@@ -158,26 +335,35 @@ function extract_XY(X_filename::String, Y_filename::String)
 
 	return XY_df
 
-	# return X,Y
-
 end
 	
 
 function main()
 
 	# Grab input parameters and whether to print info to terminal
-	data, CNmatFilename, birthFilename, u0, outputFile, verbosity = initialize()
+	input, outputFile, verbosity, spatial = initialize()
 
 	# Printing stuff to terminal
 	if verbosity
-		println("Input:")
-		for name in fieldnames(typeof(data)) 
-			println("  $name => $(getfield(data,name))")
+		for name in fieldnames(typeof(input))
+			println("$(name):")
+			for var in fieldnames(typeof(getfield(input,name)))
+				println("  $var => $(getfield(getfield(input,name),var))")
+			end
+			println()
 		end
 	end
 
+	# Error checking
+	if !isfile(input.Files.copy_number_file)
+		error("$(input.Files.copy_number_file) file cannot be found")
+	end
+	if !isfile(input.Files.birth_rate_file)
+		error("$(input.Files.birth_rate_file) file cannot be found")
+	end
+
 	# Extract copy number (X) and birth rate (Y) to be used in the interpolation in ploidyMovement.jl
-	CN_birthrate_df = extract_XY(CNmatFilename,birthFilename)
+	CN_birthrate_df = extract_XY(input.Files.copy_number_file,input.Files.birth_rate_file)
 
 	# Get copy number and birth rates
 	local copy_number,birth_rate,chromosome_header
@@ -191,25 +377,55 @@ function main()
 	# Drop dims is required to convert to a vector (from mat, required for polyharmonic)
 	birth_rate = dropdims(birth_rate,dims=2)
 
-	# Run ploidy movement
-	results, time = runPloidyMovement(data,copy_number,birth_rate,u0)
+	# Run ploidy movement and grab params from the input
+	### FIX ME: We want to replace input file with dictionaries that we can grab the param chunk without deleting
 
-	outputHeader = permutedims(vcat(chromosome_header,time))
+	if spatial
 
-	# create header for the solution output
-	# outputHeader = permutedims(
-	# 	vcat(
-	# 		["Chr$chr" for chr in header if typeof(chr) == Int],
-	# 		time
-	# 		)
-	# 		)
+		params = SpatialInputParameters(input.Options,
+										input.UniversalParameters,
+										input.SpatialParameters,
+										input.Files.blood_vessel_file)
 
-	# concatnate the header with the results array
-	output = vcat(outputHeader,results)
+		sol, cnArray = runPloidyMovement(params,copy_number,birth_rate,spatial)
 
-	# save to file
-	writedlm( outputFile,  output, ',')
+		# Write results to multiple files by time points
+		for (index,t) in enumerate(sol.t)
+			open(outputFile*"_states_time_"*replace(string(t),"." => "_")*".csv","w") do io
+				for (i,cnstate) in enumerate(eachrow(cnArray))
+					z = sol[index].s[cnstate...,:,:]
+					cnstate = "#"*join(string(cnArray[i,:]...),":")
+					writedlm(io,[cnstate])
+					writedlm(io,z,',')
+				end
+			end
+			open(outputFile*"_Energy_time_"*replace(string(t),"." => "_")*".csv","w") do io
+				writedlm(io,sol[index].E,',')
+			end
+		end
+
+		# Save discretized domain
+		writedlm(outputFile*"_x.csv",range(0,1,length=params.SpatialParameters.Np[1]))
+		writedlm(outputFile*"_y.csv",range(0,1,length=params.SpatialParameters.Np[2]))
+
+	else
+
+		params = WellMixedInputParameters(input.Options,input.UniversalParameters)
+
+		sol, cnArray,time = runPloidyMovement(params,copy_number,birth_rate,spatial)
+
+		# convert to array for output
+		results = hcat(cnArray,sol)
+		outputHeader = permutedims(vcat(chromosome_header,time))
+
+		# concatnate the header with the results array
+		output = vcat(outputHeader,results)
 	
+		# save to file
+		writedlm( outputFile*".csv",  output, ',')
+
+	end
+
 end
 
 @time main()

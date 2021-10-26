@@ -18,12 +18,12 @@ Plot_ConcaveHull <- function(xx, yy,lcolor="black", alpha=0.4, add=T, level=55) 
 minmax_x=c(200,840)
 minmax_y=c(200,850)
 OUTD="~/Projects/PMO/HighPloidy_DoubleEdgedSword/data/Konstantin_GBM/VesselCoordinates"
+d=list.dirs("~/Projects/PMO/HighPloidy_DoubleEdgedSword/data/Konstantin_GBM/", full.names = T,recursive = F)
+d=d[grep("Slides",d)]
 ## Statistic to evaluate vessel thickness
-for(STAT in c("Nucleus: Area","Nucleus: Perimeter","Nucleus: Eosin OD mean","Nucleus: Hematoxylin OD mean")){
+for(STAT in c("Nucleus: 6069-20-H 2 mean")){ #},"Nucleus: Area","Nucleus: Perimeter","Nucleus: Eosin OD mean","Nucleus: Hematoxylin OD mean")){
   
   ## Stats objects
-  d=list.dirs("~/Projects/PMO/HighPloidy_DoubleEdgedSword/data/Konstantin_GBM/", full.names = T,recursive = F)
-  d=d[grep("Slides",d)]
   stats=matrix(0,length(d),3+5)
   rownames(stats) = sapply(d, function(x) fileparts(x)$name)
   colnames(stats) =  c("width","height","nCells",paste("vessels",c("0%","25%","50%","75%","100%")))
@@ -33,25 +33,31 @@ for(STAT in c("Nucleus: Area","Nucleus: Perimeter","Nucleus: Eosin OD mean","Nuc
     vtest = grep("vesselMember",f,value=T)
     v = grep("vessels",f,value=T)
     f = grep("H_E",f,value=T)
-    nuclei = read.table(f,header = T,check.names = F,stringsAsFactors = F,sep="\t")
+    cells = read.table(f,header = T,check.names = F,stringsAsFactors = F,sep="\t")
     
-    size_xy = apply(nuclei[,c("Centroid X µm","Centroid Y µm")], 2,quantile, c(0,1))
+    size_xy = apply(cells[,c("Centroid X µm","Centroid Y µm")], 2,quantile, c(0,1))
     stats[fileparts(d_)$name,c("width","height")] = size_xy[2,]-size_xy[1,]
-    stats[fileparts(d_)$name,"nCells"]=nrow(nuclei)
+    stats[fileparts(d_)$name,"nCells"]=nrow(cells)
     
     if(isempty(v)){
       next;
     }
-    cells_vessels = read.table(v,header = T,check.names = F,stringsAsFactors = F,sep="\t")
+    vessels = read.table(v,header = T,check.names = F,stringsAsFactors = F,sep="\t")
+    vessels$Class="Positive"
+    cells$Class="Negative"
+    cells$`Nucleus: 6069-20-H 2 mean`=NA
+    jj=intersect(colnames(cells),colnames(vessels))
+    cells_vessels=rbind(vessels[,jj],cells[,jj])
     cells_vessels[,c("Centroid X µm","Centroid Y µm")]=apply(cells_vessels[,c("Centroid X µm","Centroid Y µm")],2,function(x) x-min(x))
     # rect(-minmax_x[2],minmax_y[1],-minmax_x[1],minmax_y[2],col="purple",density = 0,lwd = 5)
-    cells_vessels = cells_vessels[cells_vessels$`Centroid X µm`>minmax_x[1] & 
-                                    cells_vessels$`Centroid X µm`<minmax_x[2] & 
-                                    cells_vessels$`Centroid Y µm`>minmax_y[1] & 
-                                    cells_vessels$`Centroid Y µm`<minmax_y[2],]
-    plot(-cells_vessels$`Centroid X µm`,cells_vessels$`Centroid Y µm`,pch=20,main=fileparts(v)$name)
+    # cells_vessels = cells_vessels[cells_vessels$`Centroid X µm`>minmax_x[1] & 
+    #                                 cells_vessels$`Centroid X µm`<minmax_x[2] & 
+    #                                 cells_vessels$`Centroid Y µm`>minmax_y[1] & 
+    #                                 cells_vessels$`Centroid Y µm`<minmax_y[2],]
     vessels=cells_vessels[cells_vessels$Class=="Positive",]
-    points(-vessels$`Centroid X µm`,vessels$`Centroid Y µm`,pch=20,col="red")
+    cells=cells_vessels[cells_vessels$Class!="Positive",]
+    plot(cells_vessels$`Centroid X µm`,-cells_vessels$`Centroid Y µm`,pch=20,main=fileparts(v)$name,cex=0.2)
+    points(vessels$`Centroid X µm`,-vessels$`Centroid Y µm`,pch=20,col="red")
     stats[fileparts(d_)$name,grep("vessel",colnames(stats))] = quantile(vessels$`Nucleus: Perimeter`)
     
     ## @TODO: use to test clustering below
@@ -64,20 +70,24 @@ for(STAT in c("Nucleus: Area","Nucleus: Perimeter","Nucleus: Eosin OD mean","Nuc
     
     ## Output file format: every row is a coordinate within your grid occupied by blood vesseld
     ## (i.e. all coordinates not listed in the file are to be considered negative for blood vessel)
-    o=dbscan::dbscan(vessels[,c("Centroid X µm","Centroid Y µm")],eps = 20,minPts = 1)
+    # o=dbscan::dbscan(vessels[,c("Centroid X µm","Centroid Y µm")],eps = 20,minPts = 1)
+    o=dbscan::dbscan(vessels[,c("Centroid X µm","Centroid Y µm")],eps = 40,minPts = 1)
     vessels$VesselID = o$cluster
     fr=plyr::count(o$cluster)
-    fr=fr[fr$freq>=6,]
+    # fr=fr[fr$freq>=5,]
+    fr=fr[fr$freq>=10,]
     vessels=vessels[vessels$VesselID %in% fr$x,]
     # points(-vessels$`Centroid X µm`,vessels$`Centroid Y µm`,pch=20,col=o$cluster+1)
     coord=list()
     for(i in unique(vessels$VesselID)){
       ii=which(vessels$VesselID==i)
-      onevessel=Plot_ConcaveHull(-vessels$`Centroid X µm`[ii],vessels$`Centroid Y µm`[ii],lcolor = i+1)
-        
+      onevessel=try(Plot_ConcaveHull(-vessels$`Centroid X µm`[ii],vessels$`Centroid Y µm`[ii],lcolor = i+1))
+      if(class(onevessel)=="try-error"){
+        next;
+      }
       q=quantile(onevessel$z,(1:20)/20)
-      xy=which(onevessel$z>q["75%"], arr.ind=TRUE)
-      edge_xy=which(onevessel$z<=q["75%"] & onevessel$z>q["65%"], arr.ind=TRUE)
+      xy=which(onevessel$z>q["85%"], arr.ind=TRUE)
+      edge_xy=which(onevessel$z<=q["85%"] & onevessel$z>q["75%"], arr.ind=TRUE)
         
       coord_=as.data.frame(t(apply(xy, 1, function(kl) c(onevessel$x[kl[1]],onevessel$y[kl[2]]))))
       edge_coord=as.data.frame(t(apply(edge_xy, 1, function(kl) c(onevessel$x[kl[1]],onevessel$y[kl[2]]))))
@@ -106,16 +116,30 @@ for(STAT in c("Nucleus: Area","Nucleus: Perimeter","Nucleus: Eosin OD mean","Nuc
     names(col)=as.character(vesselstats$VesselID)
     pdf(paste0(OUTD,filesep,fileparts(d_)$name,"_xy_",STAT,".pdf"),width = 10,height = 5)
     par(mfrow=c(1,2))
-    plot(-cells_vessels$`Centroid X µm`,cells_vessels$`Centroid Y µm`,pch=20,main=fileparts(v)$name)
-    points(allcoord$`Centroid X µm`,allcoord$`Centroid Y µm`,pch=20,cex=0.4,col=col[as.character(allcoord$VesselID)]+allcoord$Boundary)
+    plot(cells$`Centroid X µm`,cells$`Centroid Y µm`,pch=20,main=fileparts(v)$name,cex=0.1)
+    points(-allcoord$`Centroid X µm`,allcoord$`Centroid Y µm`,pch=20,cex=0.4,col=col[as.character(allcoord$VesselID)]+allcoord$Boundary)
     plot(1,main="vessel thickness",xaxt = "n",yaxt = "n",axes=F,xlab="",ylab="",col="white"); 
     legend("topleft",as.character(unique(vesselstats[,STAT])),fill=unique(col),cex=0.75)
     dev.off()
     
+    
     ## Save output
     allcoord$`Centroid X µm`=-allcoord$`Centroid X µm`
-    write.table(allcoord,file=paste0(OUTD,filesep,fileparts(d_)$name,"_xy.txt"),sep="\t",quote = F,row.names = F)
+    cellscoord=cells[,intersect(colnames(allcoord),colnames(cells))]
+    write.table(allcoord,file=paste0(OUTD,filesep,fileparts(d_)$name,"_vessels_xy.txt"),sep="\t",quote = F,row.names = F)
+    cellscoord$karyotype=paste(rep(2,3),collapse=",")
+    cellscoord$concentration=1
     
+    ## Exclude negative cells overlapping blood vessels
+    dtc=flexclust::dist2(cellscoord[,1:2],allcoord[allcoord$Boundary==0,1:2])
+    dbv=flexclust::dist2(allcoord[allcoord$Boundary==1,1:2],allcoord[allcoord$Boundary==0,1:2])
+    threshold = apply(dbv,2,min)
+    dst=apply(dtc,2,min)
+    dtc=dtc[,dst<threshold]
+    threshold=threshold[dst<threshold]
+    exclude=apply(dtc, 1, function(x) any(x<threshold))
+    cellscoord = cellscoord[!exclude,]
+    write.table(cellscoord,file=paste0(OUTD,filesep,fileparts(d_)$name,"_cells_xy.txt"),sep="\t",quote = F,row.names = F)
   }
   
   print(apply(stats,2,quantile,c(0,1)))
