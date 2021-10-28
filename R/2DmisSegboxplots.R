@@ -3,7 +3,7 @@
 ### However, it was originally intended to be used for Chromosomal Mis-segregation over 1-death/birth
 ### It owes a lot to the walk-through here: https://stackoverflow.com/questions/46068074/double-box-plots-in-ggplot2
 
-library(ggplot2); library(gridExtra)
+library(ggplot2); library(gridExtra); library(matlab)
 
 ### Read in birth rate medians and sdNorms to generate log norm distribution
 birthRates = as.data.frame(
@@ -125,48 +125,53 @@ inp <- inp[inp$group != "met",]
 
 
 ### read in crit curves
-critcurve3 = read.csv("~/Downloads/1criticalcurve_n_3.csv", header = F)
-critcurve20 = read.csv("~/Downloads/1criticalcurve_n_20.csv", header = F)
-critcurve10 = read.csv("~/Downloads/1criticalcurve_n_10.csv", header = F)
-critcurve5 = read.csv("~/Downloads/1criticalcurve_n_5.csv", header = F)
+# critcurve2 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_5.csv", header = F)
+# critcurve3 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_8.csv", header = F)
+# critcurve4 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_20.csv", header = F)
+# critcurve40 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_40.csv", header = F)
+critcurve2 = read.csv("~/Downloads/criticalcurve_k2.csv", header = F)
+critcurve3 = read.csv("~/Downloads/criticalcurve_k3.csv", header = F)
+critcurve4 = read.csv("~/Downloads/criticalcurve_k4.csv", header = F)
 ### set names
+names(critcurve2) <- c("x1", "y1")
 names(critcurve3) <- c("x1", "y1")
-names(critcurve20) <- c("x1", "y1")
-names(critcurve10) <- c("x1", "y1")
-names(critcurve5) <- c("x1", "y1")
+names(critcurve4) <- c("x1", "y1")
+names(critcurve40) <- c("x1", "y1")
 ### replace last crit curve values with other values
-# critcurve5[500, 1:2] <- c(49999 / 50000, 0.0000324124)
-# critcurve10[500, 1:2] <- c(49999 / 50000, 0.0000597771)
-# critcurve20[500, 1:2] <- c(49999 / 50000, 0.000114273)
-# critcurve3[500, 1:2] <- c(49999 / 50000, 0.000222757)
+# critcurve2[11, 1:2] <- c(49999 / 50000, 0.0000324124)
+# critcurve3[11, 1:2] <- c(49999 / 50000, 0.0000597771)
+# critcurve4[11, 1:2] <- c(49999 / 50000, 0.000114273)
+# critcurve40[10000, 1:2] <- c(49999 / 50000, 0.000222757)
 ### change x-values to 1-x for visualization later
+critcurve2$x1 <- (1 - critcurve2$x1)
 critcurve3$x1 <- (1 - critcurve3$x1)
-critcurve20$x1 <- (1 - critcurve20$x1)
-critcurve10$x1 <- (1 - critcurve10$x1)
-critcurve5$x1 <- (1 - critcurve5$x1)
+critcurve4$x1 <- (1 - critcurve4$x1)
+critcurve40$x1 <- (1 - critcurve40$x1)
 ### set any zero values to 10^-3
 # critcurve3$x1[critcurve3$x1 == 0] <- 10 ^ (-5)
-# critcurve20$x1[critcurve20$x1 == 0] <- 10 ^ (-5)
-# critcurve10$x1[critcurve10$x1 == 0] <- 10 ^ (-5)
-# critcurve5$x1[critcurve5$x1 == 0] <- 10 ^ (-5)
+# critcurve2$x1[critcurve2$x1 == 0] <- 10 ^ (-5)
+# critcurve4$x1[critcurve4$x1 == 0] <- 10 ^ (-5)
+# critcurve40$x1[critcurve40$x1 == 0] <- 10 ^ (-5)
 ### have to add a category to the crit curves so it will work with ggplot down later
-critcurve5$category <- "Head and neck"
-critcurve10$category = "Head and neck"
-critcurve20$category = "Head and neck"
+critcurve40$category <- "Head and neck"
+critcurve4$category = "Head and neck"
+critcurve2$category = "Head and neck"
 critcurve3$category = "Head and neck"
 
 ### Add 1-d/b to dOVERb dataframe (Again, for visualization)
 dOVERbUNLIST$one_minus_d_over_b <- (1 - dOVERbUNLIST$db)
 
 ### choose whether you want to plot 1-d/b(T) or d/b(F)
-adjVal<-F
+adjVal<-T
 
 ### set x-label for ggplot object below
 if (adjVal==T) {
-  xlab = "1-d/b"
+  xlab = expression(paste("Departure from Homeostasis (1-",mu,"/",lambda, ")"))
 } else{
-  xlab = "d/b"
+  xlab = expression(paste(mu,"/",lambda))
 } 
+
+ylab = expression(paste("Critical Mis-segregation Rate (", beta, ")"))
 
 ##########################
 ### VISUALIZATION TIME ###
@@ -179,7 +184,6 @@ if (adjVal==T){plot.x <-
   }
 plot.y <-
   ggplot(inp) + geom_boxplot(aes(group, Lagging.Chromosome))  + coord_flip()
-#plot.z <- ggplot(dOVERbUNLIST) + geom_boxplot(aes(type, db)) + coord_flip()#
 
 ### Now take a look at the two boxplots together (good for checking that your 2D output is right later)
 # pdf("2D_boxplots_499critpoints.pdf", width = 7,height = 7)
@@ -205,34 +209,30 @@ df.outliers <-
               by = list(category, x.middle, y.middle)]
 
 
-### And here the magic happens
-pdf("2D_boxplots_newBetafunc_correct_x_axis_2_noLogY.pdf", width = 7,height = 7)
-par(mfrow=c(1,2))
+### And here the magic happens - please set your legend on ine 308 before running
+pdf("../Results/2D_boxplots_3Beta_nologY.pdf", width = 7,height = 5)
 ggplot(df, aes(fill = category, color = category)) +
-  geom_line(data = critcurve5,
-            aes(x = x1, y = y1),
-            size = 1,
-            color = "black", linetype="dashed") + geom_line(
-              data = critcurve10,
-              aes(x = x1, y = y1),
-              size = 1,
-              color = "black",
-              linetype = "dotdash"
-            ) + geom_line(
-              data = critcurve20,
-              aes(x = x1, y = y1),
-              size = 1,
-              color = "black",
-              linetype = "dotted"
-            ) + geom_line(
-              data = critcurve3,
-              aes(x = x1, y = y1),
-              size =
-                1,
-              color = "black",
-              linetype = "solid"
-            )  +
-
+  geom_line(
+    data = critcurve4,
+    aes(x = x1, y = y1),
+    size = 1,
+    color = "black",
+    linetype = "dotted"
+  ) + geom_line(
+    data = critcurve2,
+    aes(x = x1, y = y1),
+    size = 1,
+    color = "black",
+    linetype = "solid"
+  ) + geom_line(
+    data = critcurve3,
+    aes(x = x1, y = y1),
+    size =
+      1,
+    color = "black",
+    linetype = "dashed"
+  )  +
+  
   
   # 2D box defined by the Q1 & Q3 values in each dimension, with outline
   geom_rect(aes(
@@ -296,11 +296,8 @@ ggplot(df, aes(fill = category, color = category)) +
   # outliers
   # geom_point(data = df.outliers, aes(x = x.outliers, y = y.middle), size = 3, shape = 1) + # x-direction
   # geom_point(data = df.outliers, aes(x = x.middle, y = y.outliers), size = 3, shape = 1) + # y-direction
-  ylab("misSeg") + xlab(xlab)+
-  # scale_x_continuous(trans = "log", limits = c(0.00001, 1.05*max(df$x.max))) + scale_y_continuous(trans = "log", limits=c(0.95*min(df$y.min),1.05*max(df$y.max))) +
+  ylab(ylab) + xlab(xlab)+
   scale_x_continuous(trans = "log", breaks=c(0, 0.002, 0.05, 1)) + #scale_y_continuous(trans = "log", breaks=c(0, 0.007, 0.135, 1)) +
-  # scale_x_continuous(limits=c(0, 1)) + scale_y_continuous(limits=c(0,1))+
-  # coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
   theme_classic() +
   theme(
     panel.grid.major = element_blank(),
@@ -308,6 +305,7 @@ ggplot(df, aes(fill = category, color = category)) +
     panel.background = element_rect(colour = "black", size = 4)
   )
 plot(0, type = 'n', axes = FALSE, ann = FALSE)
-legend("center",c("K=3", "K=5", "K=10", "K=20"), lty = c("solid", "dashed", "dotdash", "dotted"), lwd = 3)
+legend("center",c(expression(paste(beta, "(4)")), expression(paste(beta, "(3)")), expression(paste(beta, "(2)"))), lty = c("dotted", "dashed", "solid"), lwd = 3)
+# legend("center",c("K=5","K=8","K=20","K=40"), lty = c("solid","dashed","dotdash", "dotted"), lwd = 3)
 dev.off()
 
