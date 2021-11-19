@@ -42,8 +42,7 @@
 (* ::Input:: *)
 (*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
 (*(*critTable4=Table[{\[Delta],beta[#,critDelta[\[Delta],8]]},{\[Delta],0.0,1,0.1}]&/@ploidies;*)*)
-(*critTableeta=Table[{\[Delta],critDelta[\[Delta],8]},{\[Delta],0.0001,1,0.1}];*)
-(*Export[NotebookDirectory[]<>"criticalcurve_EtaVsTurnover"<>".csv",critTableeta[[#]],"CSV"]&/@Range[10]*)
+(*critTableeta=Table[{\[Delta],critDelta[\[Delta],8]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
 
 
 (* ::Input:: *)
@@ -313,11 +312,12 @@
 
 (* ::Input:: *)
 (*(*Export[NotebookDirectory[]<>"criticalcurve_newBetafunc_betaconstant_4Ks.csv",critTable[[#]],"CSV"]&/@Range[1]*)*)
-(*Export[NotebookDirectory[]<>"criticalcurve_"<>ToString[leg2[[#]]]<>".csv",critTable[[#]],"CSV"]&/@Range[4]*)
+(*Export[NotebookDirectory[]<>"criticalcurve_"<>ToString[nvals[[#]]]<>".csv",critTableeta[[#]],"CSV","TableHeadings"->{\[Delta]/\[Lambda],\[Eta]}]&/@Range[4]*)
+(*Export[NotebookDirectory[]<>"betafunction.txt",{beta[x,\[Eta]]}]*)
 
 
 (* ::Input:: *)
-(*leg2*)
+(**)
 
 
 (* ::Input:: *)
