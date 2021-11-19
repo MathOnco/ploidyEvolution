@@ -28,11 +28,11 @@
 
 
 (* ::Input:: *)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0,1}];*)
+(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0,100}];*)
 
 
 (* ::Input:: *)
-(*nvals={5,8,20,40};*)
+(*nvals={3, 5,8,20};*)
 (*ploidies={2};*)
 (*leg="n = "<>ToString[#]&/@nvals;*)
 (*leg2="p = "<>ToString[#]&/@ploidies;*)
@@ -40,13 +40,14 @@
 
 
 (* ::Input:: *)
-(*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.0001}]&/@nvals;*)
+(*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
 (*(*critTable4=Table[{\[Delta],beta[#,critDelta[\[Delta],8]]},{\[Delta],0.0,1,0.1}]&/@ploidies;*)*)
-(*(*critTableJoin = Join[critTable, critTable4];*)*)
+(*critTableeta=Table[{\[Delta],critDelta[\[Delta],8]},{\[Delta],0.0001,1,0.1}];*)
+(*Export[NotebookDirectory[]<>"criticalcurve_EtaVsTurnover"<>".csv",critTableeta[[#]],"CSV"]&/@Range[10]*)
 
 
 (* ::Input:: *)
-(*critTable*)
+(*critTableeta*)
 
 
 (* ::Input:: *)
@@ -81,17 +82,17 @@
 
 
 (* ::Input:: *)
-(*ListPlot[#&/@critTableJoin,*)
+(*ListPlot[#&/@critTableeta,*)
 (*Joined->True,*)
 (*Frame->True,*)
 (*Axes->False,*)
 (*PlotRange->{All,All},*)
 (*(*Epilog\[Rule]points,*)*)
 (*PlotStyle->{{Red},{Blue}, {Blue, Dashed}, {Black, Dotted}},*)
-(*FrameLabel->{"\[Mu]/\[Lambda]","Critical Mis-segregation Rate (\[Beta])"},*)
+(*FrameLabel->{"\[Mu]/\[Lambda]","Mis-segregation functional form (\[Eta])"},*)
 (*FrameStyle->Directive[Thickness[0.0035],Black],*)
 (*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->{"\[Beta](0\[LessEqual]x\[LessEqual]8)","\[Beta](2)","\[Beta](3)"},*)
+(*PlotLegends->nvals,*)
 (*ImageSize->500,*)
 (*AspectRatio->1*)
 (*]*)
@@ -312,7 +313,7 @@
 
 (* ::Input:: *)
 (*(*Export[NotebookDirectory[]<>"criticalcurve_newBetafunc_betaconstant_4Ks.csv",critTable[[#]],"CSV"]&/@Range[1]*)*)
-(*Export[NotebookDirectory[]<>"criticalcurve_newBetaFunc_Betaconstant_"<>ToString[leg2[[#]]]<>".csv",critTable[[#]],"CSV"]&/@Range[4]*)
+(*Export[NotebookDirectory[]<>"criticalcurve_"<>ToString[leg2[[#]]]<>".csv",critTable[[#]],"CSV"]&/@Range[4]*)
 
 
 (* ::Input:: *)
