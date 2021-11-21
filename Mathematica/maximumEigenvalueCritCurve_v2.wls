@@ -10,16 +10,20 @@
 
 
 (* ::Input:: *)
-(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5))*)
+(*(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5))*)*)
 (*(*beta[x_, \[Eta]_] := \[Eta]*)*)
+(*height=0.8;*)
+(*height=Max[0.6,height];*)
+(*beta[x_, \[Eta]_] := ((Sin[x*3.2-1.7]+height*x)/6)^(\[Eta]/x)*)
+(**)
 
 
 (* ::Input:: *)
-(*beta[2,99.001]*)
+(*Plot[{beta[x,0.25],beta[x,2.5]},{x,1,8}, PlotStyle->{Blue,Red},Method->"DefaultPlotStyle"->Thick,Frame->True,FrameLabel->{"Ploidy", "Mis-segregration Rate (\[Beta])"},LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},PlotRange->{{1,8},Automatic}]'*)
 
 
 (* ::Input:: *)
-(*Plot[{beta[x,0.01],beta[x,0.5], beta2[x, 0.4],beta2[x, 0.2]},{x,1,8}, PlotStyle->{Blue,Darker[Blue],Red,Darker[Red]},Method->"DefaultPlotStyle"->Thick,Frame->True,FrameStyle->Directive[Thickness[0.0035],Black],FrameLabel->{"Ploidy", "Mis-segregration Rate (\[Beta])"},LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},PlotRange->{{1,8},Automatic}, AspectRatio->1]*)
+(**)
 
 
 (* ::Input:: *)
@@ -28,7 +32,7 @@
 
 
 (* ::Input:: *)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0,100}];*)
+(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0.000005,100}];*)
 
 
 (* ::Input:: *)
