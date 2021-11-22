@@ -6,20 +6,52 @@
 
 
 (* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
 (*(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5))*)*)
 (*(*beta[x_, \[Eta]_] := \[Eta]*)*)
-(*height=0.8;*)
-(*height=Max[0.6,height];*)
-(*beta[x_, \[Eta]_] := ((Sin[x*3.2-1.7]+height*x)/6)^(\[Eta]/x)*)
+(*(*vary eta -- linear form*)*)
+(*var="\[Eta]";*)
+(*model="linear";*)
+(*c=0.0000001;*)
+(*beta[x_, \[Eta]_] :=Min[0.6, \[Eta]* x+c];*)
+(*vars=Table[\[Eta],{\[Eta],0.0001,0.12,0.005}];*)
+
+
+(* ::Input:: *)
+(*(*vary eta*)*)
+(*var="\[Eta]";*)
+(*model="sin";*)
+(*\[Theta]=0.8;*)
+(*beta[x_, \[Eta]_] := ((Sin[x*3.2*)
+(*-1.7]+Max[0.6,\[Theta]]*x)/6)^(\[Eta]/x)*)
+(*vars=Table[\[Eta],{\[Eta],0.05,5,0.5}];*)
+
+
+(* ::Input:: *)
+(*(*vary theta*)*)
+(*var="\[Theta]";*)
+(*model="sin";*)
+(*\[Eta] =2;*)
+(*beta[x_, \[Theta]_] := 0.25*((Sin[x*3.2-1.7]+Max[0.6,\[Theta]]*x)/6)^(\[Eta]/x)*)
+(*vars=Table[\[Theta],{\[Theta],0.6,2,0.1}];*)
 (**)
 
 
 (* ::Input:: *)
-(*Plot[{beta[x,0.25],beta[x,2.5]},{x,1,8}, PlotStyle->{Blue,Red},Method->"DefaultPlotStyle"->Thick,Frame->True,FrameLabel->{"Ploidy", "Mis-segregration Rate (\[Beta])"},LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},PlotRange->{{1,8},Automatic}]'*)
+(*xy=Table[{x,beta[x,#]},{x,1,8,0.05}]&/@vars;*)
+(*betaplot=ListPlot[#&/@xy,*)
+(*Joined->True,*)
+(*Frame->True,*)
+(*Axes->False,*)
+(*PlotRange->{All,All},*)
+(*FrameLabel->{"ploidy","Mis-segregation rate (\[Beta])"},*)
+(*FrameStyle->Directive[Thickness[0.0035],Black],*)
+(*PlotStyle->ColorData[10,"ColorList"],*)
+(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
+(*PlotLegends->vars,*)
+(*ImageSize->500,*)
+(*AspectRatio->1*)
+(*]*)
+(*Export[NotebookDirectory[]<>"betaplot_"<>model<>"_"<>var<>".jpg",betaplot]*)
 
 
 (* ::Input:: *)
@@ -32,41 +64,47 @@
 
 
 (* ::Input:: *)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0.000005,100}];*)
-
-
-(* ::Input:: *)
-(*nvals={3, 5,8,20};*)
+(*nvals={3, 5,8};*)
 (*ploidies={2};*)
 (*leg="n = "<>ToString[#]&/@nvals;*)
 (*leg2="p = "<>ToString[#]&/@ploidies;*)
 (*colorList=ColorData[37,"ColorList"];*)
-
-
-(* ::Input:: *)
-(*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
+(*(*vary beta:*)*)
+(*(*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)*)
 (*(*critTable4=Table[{\[Delta],beta[#,critDelta[\[Delta],8]]},{\[Delta],0.0,1,0.1}]&/@ploidies;*)*)
-(*critTableeta=Table[{\[Delta],critDelta[\[Delta],8]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
 
 
 (* ::Input:: *)
-(*critTableeta*)
+(*(*vary eta*)*)
+(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0.000005,100}];*)
 
 
 (* ::Input:: *)
-(*ListPlot[#&/@critTable,*)
+(*(*vary theta*)*)
+(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Theta]/.FindRoot[myfun[1,\[Delta],n,\[Theta]]==0,{\[Theta],0.6,0.2,100}];*)
+
+
+(* ::Input:: *)
+(*(*vary eta LINEAR*)*)
+(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.01,0.000000000001,1.1}];*)
+
+
+(* ::Input:: *)
+(*critTablevar=Table[{\[Delta],critDelta[\[Delta],#]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
+(*critCurve=ListPlot[#&/@critTablevar,*)
 (*Joined->True,*)
 (*Frame->True,*)
 (*Axes->False,*)
 (*PlotRange->{All,All},*)
 (*(*Epilog\[Rule]points,*)*)
 (*PlotStyle->{{Black},{Black, Dashed}, {Black, DotDashed}, {Black, Dotted}},*)
-(*FrameLabel->{"\[Mu]/\[Lambda]","Missegregation rate"},*)
+(*FrameLabel->{"\[Mu]/\[Lambda]",var},*)
 (*FrameStyle->Directive[Thickness[0.0035],Black],*)
 (*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
 (*PlotLegends->leg,*)
-(*ImageSize->500*)
+(*ImageSize->300,AspectRatio->1*)
 (*]*)
+(*Export[NotebookDirectory[]<>"critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
 
 
 (* ::Input:: *)
