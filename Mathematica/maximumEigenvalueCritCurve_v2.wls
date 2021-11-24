@@ -131,6 +131,7 @@
 (* ::Input:: *)
 (*(*vary eta*)*)
 (*var="\[Eta]";*)
+(*model="poly";*)
 (*(*delta[x_, \[Eta]_] = \[Eta];*)*)
 (*delta[x_,\[Eta]_, n_]:=1-\[Eta]*(Abs[Log[x]-Log[2]]/Abs[Log[n]-Log[2]]) ;*)
 (*vars=Table[\[Eta],{\[Eta],0.0001,1,0.1}];*)
@@ -157,10 +158,11 @@
 (*FrameStyle->Directive[Thickness[0.0035],Black],*)
 (*PlotStyle->ColorData[10,"ColorList"],*)
 (*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->vars*)
+(*PlotLegends->vars,*)
 (*ImageSize->500,*)
 (*AspectRatio->1*)
 (*]*)
+(**)
 (*Export[NotebookDirectory[]<>"deltaplot_"<>model<>"_"<>var<>".jpg",deltaplot]*)
 
 
