@@ -5,6 +5,11 @@
 (*Solve[{r==b-d,AI/PI==d/b},{b,d}]//FullSimplify*)
 
 
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
+## ## ## #VariableMSRates ## ## ## ##;
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
+
+
 (* ::Input:: *)
 (*(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5))*)*)
 (*(*beta[x_, \[Eta]_] := \[Eta]*)*)
@@ -90,6 +95,7 @@
 
 
 (* ::Input:: *)
+(*(*Plot*)*)
 (*critTablevar=Table[{\[Delta],critDelta[\[Delta],#]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)
 (*critCurve=ListPlot[#&/@critTablevar,*)
 (*Joined->True,*)
@@ -104,252 +110,7 @@
 (*PlotLegends->leg,*)
 (*ImageSize->300,AspectRatio->1*)
 (*]*)
-(*Export[NotebookDirectory[]<>"critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
-
-
-(* ::Input:: *)
-(*ListPlot[#&/@critTable4,*)
-(*Joined->True,*)
-(*Frame->True,*)
-(*Axes->False,*)
-(*PlotRange->{All,All},*)
-(*PlotStyle->{{Black},{Black, Dashed}, {Black, DotDashed}},*)
-(*FrameLabel->{"\[Mu]/\[Lambda]","Missegregation rate"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->{"\[Beta](2)","\[Beta](3)","\[Beta](4)"},*)
-(*ImageSize->500*)
-(*]*)
-
-
-(* ::Input:: *)
-(*ListPlot[#&/@critTableeta,*)
-(*Joined->True,*)
-(*Frame->True,*)
-(*Axes->False,*)
-(*PlotRange->{All,All},*)
-(*(*Epilog\[Rule]points,*)*)
-(*PlotStyle->{{Red},{Blue}, {Blue, Dashed}, {Black, Dotted}},*)
-(*FrameLabel->{"\[Mu]/\[Lambda]","Mis-segregation functional form (\[Eta])"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->nvals,*)
-(*ImageSize->500,*)
-(*AspectRatio->1*)
-(*]*)
-
-
-(* ::Input:: *)
-(*ListPlot[nvals,Joined->True,Frame->True,Axes->False,PlotRange->{All,All},PlotStyle->{{GrayLevel[0]},{GrayLevel[0],Dashing[{Small,Small}]},{GrayLevel[0],Dashing[{0,Small}]},{GrayLevel[0],Dashing[{0,Small,Small,Small}]}},FrameLabel->{"\[Mu]/\[Lambda]","Missegregation rate"},FrameStyle->Directive[Thickness[0.0035`],GrayLevel[0]],LabelStyle->{FontSize->18,GrayLevel[0],FontFamily->"Arial"},PlotLegends->leg,ImageSize->500]*)
-
-
-(* ::Input:: *)
-(*With[{n=5},Table[If[i==j, \[Lambda](1-2\[Mu])-\[Delta],If[Abs[i-j]==1,\[Lambda] \[Mu],0]],{i,n},{j,n}]]//MatrixForm*)
-
-
-(* ::Input:: *)
-(*list={{0.96354,0.01},{0.256,0.01},{0.9874,0.01},{0.9834,0.01},{0.9754,0.01},{0.992,0.01},{0.9496,0.01},{0.9344,0.01},{0.6349,0.01}};*)
-
-
-(* ::Input:: *)
-(*points=Flatten[{PointSize[0.015],colorList[[#]],Point[{list[[#,1]],list[[#,2]]}]}&/@Range[Length[list]],1]*)
-
-
-(* ::Input:: *)
-(*ListLogLinearPlot[critTable,*)
-(*Joined->True,*)
-(*Frame->True,*)
-(*Axes->False,*)
-(*PlotRange->All,*)
-(*Epilog->points,*)
-(*FrameLabel->{"\[Mu]/\[Lambda]","Missegregation rate"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*ImageSize->500*)
-(*]*)
-
-
-(* ::Input:: *)
-(*makeErrors[med_,low_,high_]:=Around[med,{med-low,high-med}];*)
-(*makeErrorsReverse[med_,low_,high_]:=Around[med,{high-med,med-low}];*)
-
-
-(* ::Input:: *)
-(*birthList={{0.192,0.015,1.667},{0.207,0.018,0.625},{0.239,0.019,1.111},{0.303,0.179,0.417},{0.122,0.021,0.556},{0.25,0.159,0.323},{0.139,0.024,0.286},{0.122,0.036,0.667},{0.063,0.043,0.4}};*)
-(*growthList={{0.007,0.003,0.033},{0.154,0.035,0.347},{0.003,0.0003,0.038},{0.005,0.0004,0.013},{0.003,0.0003,0.016},{0.002,0.0004,0.012},{0.007,0.002,0.014},{0.008,0.005,0.013},{0.023,0.01,0.5}};*)
-
-
-(* ::Input:: *)
-(*ListLogPlot[makeErrors@@#&/@birthList,*)
-(*Ticks->{{},Automatic},*)
-(*PlotRange->All,*)
-(*ImageSize->500]*)
-
-
-(* ::Input:: *)
-(*makeErrors@@#&/@birthList*)
-
-
-(* ::Input:: *)
-(*labels={"Head and neck","Esophogaeal","Colorectal","Rectal","Breast","Cervix","Melanoma","SC Lung","D-LBCL"};*)
-
-
-(* ::Input:: *)
-(*Legended[PairedBarChart[makeErrors@@#&/@birthList,makeErrors@@#&/@growthList,*)
-(*ChartStyle->ColorData[11,"ColorList"],*)
-(*FrameLabel->{"A","B"},*)
-(*PlotRange->All]*)
-(*,Placed[*)
-(*SwatchLegend[*)
-(*colorList,*)
-(*labels,*)
-(*LabelStyle->{Black,FontSize->16,FontFamily->"Arial"},*)
-(*LegendMarkers->"Bubble",*)
-(*LegendLayout->"Row"*)
-(*]*)
-(*,*)
-(*Top]*)
-(*]*)
-
-
-(* ::Input:: *)
-(*PairedBarChart[makeErrors@@#&/@birthList,makeErrors@@#&/@growthList,*)
-(*ChartStyle->colorList,*)
-(*BarSpacing->{5,0,0.5},*)
-(*ChartLabels->labels,*)
-(*PlotRange->All,*)
-(*ImageSize->500,*)
-(*ScalingFunctions->"Log",*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*Ticks->{{0.001,0.01,0.1},{}}]*)
-(**)
-
-
-(* ::Input:: *)
-(*ColorData[37,"ColorList"]*)
-
-
-(* ::Input:: *)
-(*myleg=SwatchLegend[*)
-(*colorList,*)
-(*labels,*)
-(*LabelStyle->{Black,FontSize->16,FontFamily->"Arial"},*)
-(*LegendMarkers->"Bubble",*)
-(*LegendLayout->{"Row",3},*)
-(*LegendFunction->"Frame"*)
-(*]*)
-
-
-(* ::Input:: *)
-(*Export[NotebookDirectory[]<>"../../legend_3Rows.pdf",myleg];*)
-
-
-(* ::Input:: *)
-(*{\[Mu]x,\[Sigma]x} ={0.192, (1.667-0.015)/4};*)
-(*{\[Mu]y,\[Sigma]y} ={0.007, (0.033-0.003)/4};*)
-(*{\[Mu],\[Sigma]}={Log[\[Mu]x^2/Sqrt[\[Mu]x^2+\[Sigma]x^2]],Log[1+\[Sigma]x^2/\[Mu]x^2]}*)
-
-
-(* ::Input:: *)
-(*Plot[PDF[LogNormalDistribution[-2.514,1.314],x],{x,0,0.5},PlotRange->All]*)
-
-
-(* ::Input:: *)
-(*Mean[LogNormalDistribution[a,b]]*)
-(*StandardDeviation[LogNormalDistribution[a,b]]*)
-
-
-(* ::Input:: *)
-(*NSolve[{a+b^2/2==Log[\[Mu]y],(2a+b^2)+Log[-1+E^b^2]==2Log[\[Sigma]y],b>0},{a,b}][[1]]*)
-
-
-(* ::Input:: *)
-(*lognormal[\[Mu]_,min_,max_]:=Module[*)
-(*{soln,\[Sigma]},*)
-(*\[Sigma]=(max-min)/4;*)
-(*soln =Quiet@ NSolve[{a+b^2/2==Log[\[Mu]],(2a+b^2)+Log[-1+E^b^2]==2Log[\[Sigma]],b>0},{a,b}][[1]];*)
-(*{a,b}/.soln*)
-(*]*)
-
-
-(* ::Input:: *)
-(*birth=lognormal@@#&/@birthList*)
-(*netgrowth=lognormal@@#&/@growthList*)
-
-
-(* ::Input:: *)
-(*Plot[Evaluate[PDF[LogNormalDistribution@@#,x]&/@netgrowth],{x,0,0.5},PlotRange->{All,{0,10}}]*)
-
-
-(* ::Input:: *)
-(*drawRatio[bparams_,rparams_]:=Module[*)
-(*{},*)
-(*Max[0,1-RandomVariate[LogNormalDistribution@@rparams]/RandomVariate[LogNormalDistribution@@bparams]]*)
-(*]*)
-
-
-(* ::Input:: *)
-(*randData=Table[drawRatio[birth[[n]],netgrowth[[n]]]&/@Range[200],{n,1,Length[birth]}];*)
-
-
-(* ::Input:: *)
-(*BoxWhiskerChart[randData,"Outliers",*)
-(*ChartStyle->colorList,*)
-(*BarSpacing->Large,*)
-(*ChartLabels->Placed[labels,Axis,Rotate[#,\[Pi]/4]&],*)
-(*FrameLabel->{"","\[Mu]/\[Lambda]"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->14,Black,FontFamily->"Arial"},*)
-(*ImageSize->500]*)
-
-
-(* ::Input:: *)
-(*data = Import[NotebookDirectory[]<>"Predicted_LaggingChrPct_TCGA.txt","Data"]*)
-
-
-(* ::Input:: *)
-(*header=data[[1]];*)
-(*rawdata=data[[2;;,All]];*)
-
-
-(* ::Input:: *)
-(*Position[rawdata[[All,1]],s_String/;StringMatchQ[s,"brca*",IgnoreCase->True]]//Flatten;*)
-
-
-(* ::Input:: *)
-(*rawdata[[1101,1]]*)
-
-
-(* ::Input:: *)
-(*cancerTypes =DeleteDuplicates[StringTake[rawdata[[All,1]],4]]*)
-
-
-(* ::Input:: *)
-(*locations=Flatten[Position[rawdata[[All,1]],s_String/;StringMatchQ[s,#<>"*",IgnoreCase->True]]]&/@cancerTypes;*)
-
-
-(* ::Input:: *)
-(*BoxWhiskerChart[rawdata[[#,3]]/100&/@locations,"Outliers",*)
-(*ChartStyle->colorList,*)
-(*BarSpacing->Large,*)
-(*ChartLabels->Placed[cancerTypes,Axis,Rotate[#,\[Pi]/4]&],*)
-(*FrameLabel->{"","\[Beta]"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->14,Black,FontFamily->"Arial"},*)
-(*ImageSize->500]*)
-
-
-(* ::Input:: *)
-(*labels*)
-
-
-(* ::Input:: *)
-(*DiscretePlot[rawdata[[#,3]]/100&/@locations]*)
-
-
-(* ::Input:: *)
-(*leg2="n_"<>ToString[#]&/@nvals;*)
+(*Export[NotebookDirectory[]<>"varBeta_critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
 
 
 (* ::Input:: *)
@@ -362,12 +123,45 @@
 (**)
 
 
-(* ::Input:: *)
-(*critTable2=Table[{\[Delta],critDelta[\[Delta],#]},{\[Delta],1-1*^-3,1-1*^-5,2*^-5}]&/@nvals;*)
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
+## ## ## #VariableBirthRates ## ## ## ##;
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
 
 
 (* ::Input:: *)
-(*critTable2;*)
+(*(*vary eta*)*)
+(*var="\[Eta]";*)
+(*(*delta[x_, \[Eta]_] = \[Eta];*)*)
+(*delta[x_,\[Eta]_, n_]:=1-\[Eta]*(Abs[Log[x]-Log[2]]/Abs[Log[n]-Log[2]]) ;*)
+(*vars=Table[\[Eta],{\[Eta],0.0001,1,0.1}];*)
+
+
+(* ::Input:: *)
+(*(*vary theta*)*)
+(*var="\[Theta]";*)
+(*model="sin";*)
+(*\[Eta] =0.8;*)
+(*delta[x_, \[Theta]_, n_] := (1/n)*((Sin[x*3.2-1.7]+Max[0.6,\[Theta]]*x)/6)^(\[Eta]/x)*)
+(*vars=Table[\[Theta],{\[Theta],0.6,120,10}];*)
+(**)
+
+
+(* ::Input:: *)
+(*xy=Table[{x,delta[x,#,10]},{x,1,10,0.05}]&/@vars;*)
+(*deltaplot=ListPlot[#&/@xy,*)
+(*Joined->True,*)
+(*Frame->True,*)
+(*Axes->False,*)
+(*PlotRange->{All,All},*)
+(*FrameLabel->{"ploidy","Death rate (\[Delta])"},*)
+(*FrameStyle->Directive[Thickness[0.0035],Black],*)
+(*PlotStyle->ColorData[10,"ColorList"],*)
+(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
+(*PlotLegends->vars*)
+(*ImageSize->500,*)
+(*AspectRatio->1*)
+(*]*)
+(*Export[NotebookDirectory[]<>"deltaplot_"<>model<>"_"<>var<>".jpg",deltaplot]*)
 
 
 (* ::Input:: *)
@@ -375,8 +169,45 @@
 
 
 (* ::Input:: *)
-(*Log[critTable2[[All,-1]]]*)
+(*myfun[\[Lambda]_,\[Beta]_?NumberQ,n_?NumberQ, \[Eta]_ ?NumberQ]:=Eigenvalues[Table[If[i==j, \[Lambda](2(1-\[Beta])^i-1)-delta[j, \[Eta],n],If[2j>=i>j,\[Lambda] Binomial[j,i-j]\[Beta]^(i-j) (1-\[Beta])^(2j-i),If[j>i,\[Lambda] Binomial[j,j-i]\[Beta]^(j-i) (1-\[Beta])^i,0]]],{i,n},{j,n}],*)
+(*1,Method->{"Arnoldi","Criteria"->"RealPart"}][[1]]*)
 
 
 (* ::Input:: *)
-(*ListLogLogPlot[critTable2]*)
+(*nvals={3, 8, 10};*)
+(*ploidies={2};*)
+(*leg="n = "<>ToString[#]&/@nvals;*)
+(*leg2="p = "<>ToString[#]&/@ploidies;*)
+(*colorList=ColorData[37,"ColorList"];*)
+
+
+(* ::Input:: *)
+(*(*vary eta*)*)
+(*critBeta[\[Beta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Beta],n,\[Eta]]==0,{\[Eta],0.9,0,2.5}];*)
+
+
+(* ::Input:: *)
+(*(*vary theta*)*)
+(*critBeta[\[Beta]_?NumberQ, n_?NumberQ]:=\[Theta]/.FindRoot[myfun[1,\[Beta],n,\[Theta]]==0,{\[Theta],0.6,0.2,1200}];*)
+
+
+(* ::Input:: *)
+(*(*Plot*)*)
+(*critTablevar=Table[{\[Beta],critBeta[\[Beta],#]},{\[Beta],0.1,0.9,0.01}]&/@nvals;*)
+(*critCurve=ListPlot[#&/@critTablevar,*)
+(*Joined->True,*)
+(*Frame->True,*)
+(*Axes->False,*)
+(*PlotRange->{All,All},*)
+(*(*Epilog\[Rule]points,*)*)
+(*PlotStyle->{{Black},{Black, Dashed}, {Black, DotDashed}, {Black, Dotted}},*)
+(*FrameLabel->{"\[Beta]",var},*)
+(*FrameStyle->Directive[Thickness[0.0035],Black],*)
+(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
+(*PlotLegends->leg,*)
+(*ImageSize->300,AspectRatio->1*)
+(*]*)
+(*Export[NotebookDirectory[]<>"varDelta_critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
+
+
+
