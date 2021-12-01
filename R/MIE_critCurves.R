@@ -1,6 +1,32 @@
+############################################################
+### Critical curves as a function of population-average ###
+### mis-segregations obtained from simulations ############
+X=read.csv("~/Desktop/final_distribution.csv")
+## parameters
+lambda <- 1
+model <- 2
+maxchrom <- 8
+## function for the missegregation rate
+B <- function(eta,i,model=2){
+  if(model==1) return(eta)
+  Bi <- 1-1/(eta+exp(sqrt(abs(i-2))))
+  return(Bi)
+}
+avg_MS=c()
+for(i in 1:nrow(X)){
+  eta <- X$eta[i]
+  beta=sapply(1:maxchrom, function(x) B(eta,x))
+  avg_MS[i]=sum(beta*X[i,1:maxchrom])
+}
+plot(X$delta,avg_MS, type="l",xlab=expression(mu),ylab = expression(beta))
+
+
+
+
 ### 2DmisSegboxplots.R by Thomas Veith
-### This script will produce 2D boxplots for any two sets of data you read into it
-### However, it was originally intended to be used for Chromosomal Mis-segregation over 1-death/birth
+####################################################
+### produce 2D boxplots for any two sets of data ###
+### Originally intended to be used for Chromosomal Mis-segregation over 1-death/birth
 ### It owes a lot to the walk-through here: https://stackoverflow.com/questions/46068074/double-box-plots-in-ggplot2
 
 library(ggplot2); library(gridExtra); library(matlab)
