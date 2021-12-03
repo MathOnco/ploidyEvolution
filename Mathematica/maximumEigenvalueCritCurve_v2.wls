@@ -2,81 +2,123 @@
 (* ::Package:: *)
 
 (* ::Input:: *)
-(*(*Solve[{r==b-d,AI/PI==d/b},{b,d}]//FullSimplify*)*)
-(*(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5));*)*)
-(*beta[x_, \[Eta]_] := \[Eta];*)
-(*model="1";*)
-(*n=8;*)
+(*(*beta[i_, \[Eta]_] := \[Eta];*)
+(*model="constant";*)
+(*K=8;*)
 (*\[Eta]=0.5;*)
 (*\[Lambda]=1;*)
-(*\[Delta]=0.375;*)
-(*beta[2, \[Eta]]*)
-(*test=Table[If[i==j, \[Lambda](2(1-beta[j, \[Eta]])^i-1)-\[Delta],*)
-(*		If[2j>=i>j,\[Lambda] Binomial[j,i-j]beta[j, \[Eta]]^(i-j) (1-beta[j, \[Eta]])^(2j-i),If[j>i,\[Lambda] Binomial[j,j-i]beta[j, \[Eta]]^(j-i) (1-beta[j, \[Eta]])^i,0]]],{i,n},{j,n}];*)
-(*Export[NotebookDirectory[]<>"test_model" <>model<>".txt",test];*)
-(*test*)
+(*\[Mu]=0.375;*)
+(*test=Table[If[i==j, \[Lambda](2(1-beta[j, \[Eta]])^i-1)-\[Mu],*)
+(*		If[2j>=i>j,\[Lambda] Binomial[j,i-j]beta[j, \[Eta]]^(i-j) (1-beta[j, \[Eta]])^(2j-i),If[j>i,\[Lambda] Binomial[j,j-i]beta[j, \[Eta]]^(j-i) (1-beta[j, \[Eta]])^i,0]]],{i,K},{j,K}];*)
+(*Export[NotebookDirectory[]<>"test_model" <>model<>".txt",test];*)*)
+(**)
 
 
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
-## ## ## #VariableMSRates ## ## ## ##;
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
+## ## ## Heterogeneous MSRates or Death Rates ## ## ## ##;
+## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
 
 
 (* ::Input:: *)
-(*(*constant beta*)*)
-(*beta[x_, \[Eta]_] := \[Eta]*)
+(*params={"\[Mu]","\[Beta]"};*)
+(**)
+(*\[Theta]1=2;*)
+(*Clear[\[Beta]]*)
+(*beta[i_, \[Beta]_,MSmode_]:=If[MSmode=="constant",\[Beta], *)
+(*				If[MSmode=="sigmoid",1-1/(\[Beta] + E^(Abs[i-2]^0.5)),*)
+(*			              0.25*((Sin[i*3.2-1.7]+\[Beta]*i)/6)^(\[Theta]1/i)]];*)
+(*\[Theta]2 =0.8;*)
+(*Clear[\[Mu]]*)
+(*mu[i_, \[Mu]_,K_,Deadmode_]:=If[Deadmode=="constant",\[Mu], *)
+(*				If[Deadmode=="sin",(1/K)*((Sin[i*3.2-1.7]+\[Mu]*i)/6)^(\[Theta]2/i),*)
+(*			              1-\[Mu]*(Abs[Log[i]-Log[2]]/Abs[Log[K]-Log[2]])]];*)
+
+
+(* ::Input:: *)
+(*(*MSmodel 1*)*)
 (*var="\[Beta]";*)
-(*model="constant";*)
-(*vars=Table[\[Eta],{\[Eta],0.001,1,0.05}];*)
-
-
-(* ::Input:: *)
-(*(*vary eta -- linear form*)*)
-(*var="\[Eta]";*)
+(*MSmode="constant"; *)
+(*Deadmode="constant";*)
+(*MSvars=Table[\[Beta],{\[Beta],0.001,1,0.05}];*)
+(*Deadvars=Table[\[Beta],{\[Beta],0.001,1,0.05}];*)
+(*(*var="\[Beta]";*)
 (*model="linear";*)
-(*c=0.0000001;*)
-(*beta[x_, \[Eta]_] :=Min[0.6, \[Eta]* x+c];*)
-(*vars=Table[\[Eta],{\[Eta],0.0001,0.12,0.005}];*)
-
-
-(* ::Input:: *)
-(*(*vary eta*)*)
-(*var="\[Eta]";*)
-(*model="sigmoid";*)
-(*\[Theta]=0.8;*)
-(*Clear[\[Eta]]*)
-(*(*beta[x_, \[Eta]_] := ((Sin[x*3.2-1.7]+\[Theta]*x)/6)^(\[Eta]/x)*)*)
-(*beta[x_, \[Eta]_] := 1-1/(\[Eta] + E^(Abs[x-2]^0.5))*)
-(*vars=Table[\[Eta],{\[Eta],0.05,5,0.5}];*)
-
-
-(* ::Input:: *)
-(*(*vary theta*)*)
-(*var="\[Theta]";*)
-(*Clear[\[Theta]];*)
-(*model="sin";*)
-(*\[Eta] =2;*)
-(*beta[x_, \[Theta]_] := 0.25*((Sin[x*3.2-1.7]+\[Theta]*x)/6)^(\[Eta]/x)*)
-(*vars=Table[\[Theta],{\[Theta],0.6,2,0.1}];*)
+(*vars=Table[\[Beta],{\[Beta],0.0001,0.12,0.005}];*)*)
 (**)
 
 
 (* ::Input:: *)
-(*xy=Table[{x,beta[x,#]},{x,1,8,0.05}]&/@vars;*)
+(*(*MSmodel 2*)*)
+(*MSmode="sigmoid"; *)
+(*Deadmode="constant";*)
+(*var="\[Beta]";*)
+(*MSvars=Table[\[Beta],{\[Beta],0.05,5,0.5}];*)
+(*Deadvars=Table[\[Mu],{\[Mu],0.001,1,0.05}];*)
+
+
+(* ::Input:: *)
+(*(*MSmodel 3*)*)
+(*MSmode="sin";*)
+(*Deadmode="constant";*)
+(*var="\[Beta]";*)
+(*MSvars=Table[\[Beta],{\[Beta],0.6,2,0.1}];*)
+(*Deadvars=Table[\[Mu],{\[Mu],0.001,1,0.05}];*)
+(**)
+
+
+(* ::Input:: *)
+(*(*Death model 2*)*)
+(*var="\[Mu]";*)
+(*Deadmode="sin";*)
+(*MSmode="constant";*)
+(*Deadvars=Table[\[Mu],{\[Mu],0.6,120,10}];*)
+(*MSvars=Table[\[Beta],{\[Beta],0.001,1,0.05}];*)
+(**)
+
+
+(* ::Input:: *)
+(*(*Death model 3*)*)
+(*var="\[Mu]";*)
+(*Deadmode="poly";*)
+(*MSmode="constant";*)
+(*Deadvars=Table[\[Mu],{\[Mu],0.0001,1,0.1}];*)
+(*MSvars=Table[\[Beta],{\[Beta],0.001,1,0.05}];*)
+(**)
+
+
+(* ::Input:: *)
+(*(*plot functions*)*)
+(*xy=Table[{i,beta[i,#,MSmode]},{i,1,8,0.05}]&/@MSvars;*)
 (*betaplot=ListPlot[#&/@xy,*)
 (*Joined->True,*)
 (*Frame->True,*)
 (*Axes->False,*)
 (*PlotRange->{All,All},*)
-(*FrameLabel->{"ploidy","Mis-segregation rate (\[Beta])"},*)
+(*FrameLabel->{"ploidy","Mis-segregation rate ("<>Capitalize["\[Beta]"]<>")"},*)
 (*FrameStyle->Directive[Thickness[0.0035],Black],*)
 (*PlotStyle->ColorData[10,"ColorList"],*)
 (*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->vars,*)
+(*PlotLegends->MSvars,*)
 (*ImageSize->500,*)
-(*AspectRatio->1,Epilog->Text[Style[beta[x,\[Eta]],FontSize->16],{5.5,0.1}]*)
-(*]*)
-(*Export[NotebookDirectory[]<>"betaplot_"<>model<>"_"<>var<>".jpg",betaplot]*)
+(*AspectRatio->1,Epilog->Text[Style[beta[i,\[Beta],MSmode],FontSize->16],{5.5,0.1}]*)
+(*];*)
+(*If[Deadmode=="constant",Export[NotebookDirectory[]<>"betaplot_"<>MSmode<>"_"<>var<>".jpg",betaplot]];*)
+(**)
+(*xy=Table[{i,mu[i,#,10,Deadmode]},{i,1,10,0.05}]&/@Deadvars;*)
+(*muplot=ListPlot[#&/@xy,*)
+(*Joined->True,*)
+(*Frame->True,*)
+(*Axes->False,*)
+(*PlotRange->{All,All},*)
+(*FrameLabel->{"ploidy","Death rate ("<>Capitalize["\[Mu]"]<>")"},*)
+(*FrameStyle->Directive[Thickness[0.0035],Black],*)
+(*PlotStyle->ColorData[10,"ColorList"],*)
+(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
+(*PlotLegends->Deadvars,*)
+(*ImageSize->500,*)
+(*AspectRatio->1,Epilog->Text[Style[mu[i, \[Mu], K,Deadmode],FontSize->22],{4.5,0.4}]*)
+(*];*)
+(*If[MSmode=="constant",Export[NotebookDirectory[]<>"muplot_"<>Deadmode<>"_"<>var<>".jpg",muplot]];*)
 
 
 (* ::Input:: *)
@@ -84,39 +126,48 @@
 
 
 (* ::Input:: *)
-(*myfun[\[Lambda]_,\[Delta]_?NumberQ,n_?NumberQ, \[Eta]_ ?NumberQ]:=Eigenvalues[Table[If[i==j, \[Lambda](2(1-beta[j, \[Eta]])^i-1)-\[Delta],If[2j>=i>j,\[Lambda] Binomial[j,i-j]beta[j, \[Eta]]^(i-j) (1-beta[j, \[Eta]])^(2j-i),If[j>i,\[Lambda] Binomial[j,j-i]beta[j, \[Eta]]^(j-i) (1-beta[j, \[Eta]])^i,0]]],{i,n},{j,n}],*)
+(*myfun[\[Lambda]_,\[Mu]_?NumberQ,K_?NumberQ, \[Beta]_ ?NumberQ]:=Eigenvalues[ *)
+(*	Table[If[i==j, \[Lambda](2(1-beta[j, \[Beta], MSmode])^i-1)-mu[j, \[Mu],K,Deadmode],*)
+(*	     If[2j>=i>j,\[Lambda] Binomial[j,i-j]beta[j, \[Beta], MSmode]^(i-j) (1-beta[j, \[Beta], MSmode])^(2j-i),*)
+(*	      If[j>i,\[Lambda] Binomial[j,j-i]beta[j, \[Beta], MSmode]^(j-i) (1-beta[j, \[Beta], MSmode])^i,0]]],{i,K},{j,K}],*)
 (*1,Method->{"Arnoldi","Criteria"->"RealPart"}][[1]]*)
-
-
-(* ::Input:: *)
-(*nvals={8};*)
+(**)
+(*Kvals={8};*)
 (*ploidies={2};*)
-(*leg="K = "<>ToString[#]&/@nvals;*)
+(*leg="K = "<>ToString[#]&/@Kvals;*)
 (*leg2="p = "<>ToString[#]&/@ploidies;*)
 (*colorList=ColorData[37,"ColorList"];*)
-(*(*vary beta:*)*)
-(*(*critTable=Table[{\[Delta],beta[2,critDelta[\[Delta],#]]},{\[Delta],0.0001,1,0.1}]&/@nvals;*)*)
-(*(*critTable4=Table[{\[Delta],beta[#,critDelta[\[Delta],8]]},{\[Delta],0.0,1,0.1}]&/@ploidies;*)*)
+(*(*critTable=Table[{\[Mu],beta[2,critMu[\[Mu],#]]},{\[Mu],0.0001,1,0.1}]&/@Kvals;*)*)
+(*(*critTable4=Table[{\[Mu],beta[#,critMu[\[Mu],8]]},{\[Mu],0.0,1,0.1}]&/@ploidies;*)*)
 
 
 (* ::Input:: *)
-(*(*vary eta*)*)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.9999,0.000005,100}];*)
+(*(*vary Death*)*)
+(*critBeta[\[Beta]_?NumberQ, K_?NumberQ]:=If[Deadmode=="sin",*)
+(*									 \[Mu]/.FindRoot[myfun[1,\[Mu],K,\[Beta]]==0,{\[Mu],0.6,0.2,1200}],*)
+(*										If[Deadmode=="poly",*)
+(*										\[Mu]/.FindRoot[myfun[1,\[Mu],K,\[Beta]]==0,{\[Mu],0.9,0,2.5}]]];*)
+(**)
 
 
 (* ::Input:: *)
-(*(*vary theta*)*)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Theta]/.FindRoot[myfun[1,\[Delta],n,\[Theta]]==0,{\[Theta],0.6,0.2,100}];*)
+(*(*vary MS*)*)
+(*critMu[\[Mu]_?NumberQ, K_?NumberQ]:=If[MSmode=="constant",*)
+(*									\[Beta]/.FindRoot[myfun[1,\[Mu],K,\[Beta]]==0,{\[Beta],0.01,0.0000000001,1}],*)
+(*										If[MSmode=="sigmoid",*)
+(*										\[Beta]/.FindRoot[myfun[1,\[Mu],K,\[Beta]]==0,{\[Beta],0.9999,0.000005,100}],*)
+(*												If[MSmode=="sin", *)
+(*												\[Beta]/.FindRoot[myfun[1,\[Mu],K,\[Beta]]==0,{\[Beta],0.6,0.2,100}]]]];*)
+(*										*)
 
 
 (* ::Input:: *)
-(*(*vary eta LINEAR*)*)
-(*critDelta[\[Delta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Delta],n,\[Eta]]==0,{\[Eta],0.01,0.000000000001,1}];*)
+(*If[MSmode=="constant",critTablevar=Table[{\[Beta],critBeta[\[Beta],#]},{\[Beta],0.1,0.939,0.01}]&/@Kvals];*)
+(*If[Deadmode=="constant",critTablevar=Table[{\[Mu],critMu[\[Mu],#]},{\[Mu],0.1,0.999,0.1}]&/@Kvals];*)
 
 
 (* ::Input:: *)
 (*(*Plot*)*)
-(*critTablevar=Table[{\[Delta],critDelta[\[Delta],#]},{\[Delta],0.1,0.999,0.1}]&/@nvals;*)
 (*critCurve=ListPlot[#&/@critTablevar,*)
 (*Joined->True,*)
 (*Frame->True,*)
@@ -124,120 +175,17 @@
 (*PlotRange->{All,All},*)
 (*(*Epilog\[Rule]points,*)*)
 (*PlotStyle->{{Black},{Red}, {Purple}},*)
-(*FrameLabel->{"\[Mu]/\[Lambda]",var},*)
+(*FrameLabel->{Complement[params,{var}][[1]],var},*)
 (*FrameStyle->Directive[Thickness[0.0035],Black],*)
 (*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
 (*PlotLegends->leg,*)
 (*ImageSize->300,AspectRatio->1*)
 (*]*)
-(*Export[NotebookDirectory[]<>"varBeta_critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
+(*Export[NotebookDirectory[]<>"critcurve_MS" <>MSmode<>"Death"<>Deadmode<>"_var"<>var<>".jpg",critCurve];*)
 
 
 (* ::Input:: *)
 (*(*Export[NotebookDirectory[]<>"criticalcurve_newBetafunc_betaconstant_4Ks.csv",critTable[[#]],"CSV"]&/@Range[1]*)*)
-(*Export[NotebookDirectory[]<>"beta_criticalcurve_" <>model<>"_"<>var<>ToString[nvals[[#]]]<>".csv",critTablevar[[#]],"CSV","TableHeadings"->{\[Delta]/\[Lambda],\[Eta]}]&/@Range[Length[nvals]];*)
-(*Export[NotebookDirectory[]<>"betafunction" <>model<>"_"<>var<>".txt",{beta[x,\[Eta]]}];*)
-
-
-(* ::Input:: *)
-(**)
-
-
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
-## ## ## #VariableBirthRates ## ## ## ##;
-## ## ## ## ## ## ## ## ## ## ## ## ## ## ## ##;
-
-
-(* ::Input:: *)
-(*(*vary eta*)*)
-(*var="\[Eta]";*)
-(*model="poly";*)
-(*(*delta[x_, \[Eta]_] = \[Eta];*)*)
-(*Clear[\[Eta]]*)
-(*delta[x_,\[Eta]_, n_]:=1-\[Eta]*(Abs[Log[x]-Log[2]]/Abs[Log[n]-Log[2]]) ;*)
-(*vars=Table[\[Eta],{\[Eta],0.0001,1,0.1}];*)
-
-
-(* ::Input:: *)
-(*(*vary eta*)*)
-(*var="\[Eta]";*)
-(*model="sin";*)
-(*\[Theta] =0.8;*)
-(*Clear[\[Eta]]*)
-(*delta[x_, \[Eta]_, n_] := (1/n)*((Sin[x*3.2-1.7]+\[Eta]*x)/6)^(\[Theta]/x)*)
-(*vars=Table[\[Eta],{\[Eta],0.6,120,10}];*)
-(**)
-
-
-(* ::Input:: *)
-(*xy=Table[{x,delta[x,#,10]},{x,1,10,0.05}]&/@vars;*)
-(*deltaplot=ListPlot[#&/@xy,*)
-(*Joined->True,*)
-(*Frame->True,*)
-(*Axes->False,*)
-(*PlotRange->{All,All},*)
-(*FrameLabel->{"ploidy","Death rate (\[Delta])"},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*PlotStyle->ColorData[10,"ColorList"],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->vars,*)
-(*ImageSize->500,*)
-(*AspectRatio->1,Epilog->Text[Style[delta[x, \[Eta], n],FontSize->22],{4.5,0.4}]*)
-(*]*)
-(**)
-(*Export[NotebookDirectory[]<>"deltaplot_"<>model<>"_"<>var<>".jpg",deltaplot]*)
-
-
-(* ::Input:: *)
-(**)
-
-
-(* ::Input:: *)
-(*myfun[\[Lambda]_,\[Beta]_?NumberQ,n_?NumberQ, \[Eta]_ ?NumberQ]:=Eigenvalues[Table[If[i==j, \[Lambda](2(1-\[Beta])^i-1)-delta[j, \[Eta],n],If[2j>=i>j,\[Lambda] Binomial[j,i-j]\[Beta]^(i-j) (1-\[Beta])^(2j-i),If[j>i,\[Lambda] Binomial[j,j-i]\[Beta]^(j-i) (1-\[Beta])^i,0]]],{i,n},{j,n}],*)
-(*1,Method->{"Arnoldi","Criteria"->"RealPart"}][[1]]*)
-
-
-(* ::Input:: *)
-(*nvals={8};*)
-(*ploidies={2};*)
-(*leg="K = "<>ToString[#]&/@nvals;*)
-(*leg2="p = "<>ToString[#]&/@ploidies;*)
-(*colorList=ColorData[37,"ColorList"];*)
-
-
-(* ::Input:: *)
-(*(*vary eta poly*)*)
-(*critBeta[\[Beta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Beta],n,\[Eta]]==0,{\[Eta],0.9,0,2.5}];*)
-
-
-(* ::Input:: *)
-(*(*vary eta sin*)*)
-(*critBeta[\[Beta]_?NumberQ, n_?NumberQ]:=\[Eta]/.FindRoot[myfun[1,\[Beta],n,\[Eta]]==0,{\[Eta],0.6,0.2,1200}];*)
-
-
-(* ::Input:: *)
-(*(*Plot*)*)
-(*critTablevar=Table[{\[Beta],critBeta[\[Beta],#]},{\[Beta],0.41,0.939,0.01}]&/@nvals;*)
-(*critCurve=ListPlot[#&/@critTablevar,*)
-(*Joined->True,*)
-(*Frame->True,*)
-(*Axes->False,*)
-(*PlotRange->{All,All},*)
-(*(*Epilog\[Rule]points,*)*)
-(*PlotStyle->{{Black},{Black, Dashed}, {Black, DotDashed}, {Black, Dotted}},*)
-(*FrameLabel->{"\[Beta]",var},*)
-(*FrameStyle->Directive[Thickness[0.0035],Black],*)
-(*LabelStyle->{FontSize->18,Black,FontFamily->"Arial"},*)
-(*PlotLegends->leg,*)
-(*ImageSize->300,AspectRatio->1*)
-(*]*)
-(*Export[NotebookDirectory[]<>"varDelta_critcurve_" <>model<>"_"<>var<>".jpg",critCurve]*)
-
-
-(* ::InheritFromParent:: *)
-(*(*Export[NotebookDirectory[]<>"criticalcurve_newBetafunc_betaconstant_4Ks.csv",critTable[[#]],"CSV"]&/@Range[1]*)*)
-(*Export[NotebookDirectory[]<>"delta_criticalcurve_" <>model<>"_"<>var<>ToString[nvals[[#]]]<>".csv",critTablevar[[#]],"CSV","TableHeadings"->{\[Delta]/\[Lambda],\[Eta]}]&/@Range[Length[nvals]]*)
-(*Export[NotebookDirectory[]<>"deltafunction" <>model<>"_"<>var<>".txt",{beta[x,\[Eta]]}]*)
-
-
-
+(*If[Deadmode=="constant",Export[NotebookDirectory[]<>"beta_criticalcurve_" <>MSmode<>"_"<>var<>"_K="<>ToString[Kvals[[#]]]<>".csv",critTablevar[[#]],"CSV","TableHeadings"->{\[Mu],\[Beta]}]&/@Range[Length[Kvals]]];*)
+(*If[Deadmode=="constant",Export[NotebookDirectory[]<>"betafunction" <>MSmode<>"_"<>var<>".txt",{beta[i,\[Beta],MSmode]}]];*)
+(*If[MSmode=="constant",Export[NotebookDirectory[]<>"mu_criticalcurve_"<>Deadmode<>"_"<>var<>"_K="<>ToString[Kvals[[#]]]<>".csv",critTablevar[[#]],"CSV","TableHeadings"->{\[Beta],\[Mu]}]&/@Range[Length[Kvals]]];If[MSmode=="constant",Export[NotebookDirectory[]<>"mufunction"<>Deadmode<>"_"<>var<>".txt",{mu[i, \[Mu],K,Deadmode]}]];*)
