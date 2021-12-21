@@ -1,0 +1,420 @@
+---
+title: "Generate Figures"
+author: "Richard J Beck"
+date: "12/20/2021"
+output: html_document
+---
+Set correct root.dir for the project:
+(Note that code expects a subdirectory /expectedResults inside root.dir)
+```{r setup}
+knitr::opts_knit$set(root.dir = "path/to/dir")
+```
+
+Source required functions and load libraries:
+```{r}
+library(deSolve)
+library(pbapply)
+library(R.utils)
+library(ggplot2)
+library(ggpubr)
+library(stringr)
+library(deSolve)
+library(egg)
+source("ploidy_continuum_required_functions.R")
+```
+
+Demonstrate the various B/D functions:
+
+```{r}
+options(scipen=999)
+sweep <- function(BD,vals,maxchrom){
+  ik <- 1:maxchrom
+  res <- do.call(rbind,lapply(vals, function(v){
+    res <- sapply(ik,function(i) BD(v,i,label=FALSE,k=maxchrom))
+    data.frame(i=ik,res=res,vals=v)
+  }))
+
+  res$maxchrom <- maxchrom
+  res$id <- BD(NaN,NaN,TRUE)
+  res
+}
+
+BD <- B1
+vals <- seq(0.05,4.55,0.5)
+maxchrom <- 8
+x1 <- sweep(BD,vals,maxchrom)
+
+BD <- D2
+vals <- c(0.00005,0.0001,0.0005,0.001,0.005,0.1,0.99)
+maxchrom <- 8
+x2 <- sweep(BD,vals,maxchrom)
+
+x <- list(x1=x1,x2=x2)
+saveRDS(x,paste("expectedResults/","function_examples.Rds",sep=""))
+
+```
+
+Generate the critical curves:
+
+For each pairwise combination of model functions:
+For each value of the parameter K:
+
+1) Choose an appropriate range to vary the parameter eta
+2) For each eta, attempt to find the parameter delta resulting in the maximum real eigenvalue of the transition matrix q being = 0. 
+3) If no delta can be found, discard the value of eta (assuming that this value of eta cannot produce a valid point on the critical curve)
+4) For each valid eta, find the eigenvector corresponding to the previously found eigenvalue. This is the steady state population distribution. 
+5) Compute the population average statistics for that eigenvector.
+6) Return results.
+
+
+```{r}
+models <- list(list(B=B0,D=D0),list(B=B0,D=D1),list(B=B0,D=D2),
+               list(B=B1,D=D0),list(B=B1,D=D1),list(B=B1,D=D2),
+               list(B=B2,D=D0),list(B=B2,D=D1),list(B=B2,D=D2))
+
+maxchrom <- c(4,8,16,32)
+  
+x <- lapply(models,assess_all_models,maxchrom,granularity=100)
+x <- do.call(rbind,x)
+
+saveRDS(x,paste("expectedResults/","all_critical_curves.Rds",sep=""))
+
+colnames(x) <- c("pop_avg_misseg_rate","pop_avg_death_rate","beta","mu","B(i,beta)","D(i,mu)","maxchrom")
+write.csv(x,paste("expectedResults/","all_critical_curves.csv",sep=""),row.names = F)
+
+```
+
+Confirming that the critical curves are correct based on numerical simulations:
+```{r}
+x <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
+x <- x[x$B==B0(NaN,NaN,TRUE)&x$D==D0(NaN,NaN,TRUE)&x$maxchrom==" 8",]
+
+y <- expand.grid(eta=seq(0.05,0.95,0.1),delta=seq(0.05,0.95,0.1))
+z <- do.call(rbind,lapply(1:nrow(y), function(i){
+  run_model_check_growth(eta=y$eta[i],delta=y$delta[i],B=B0,D=D0,maxchrom=8)
+}))
+
+
+p <- ggplot(x,aes(x=delta,y=eta))+
+  geom_line(size=1.5,color="red")+
+  geom_point(data=z,aes(shape=grew),size=2)+
+  scale_x_continuous(expression(mu/lambda))+
+  scale_y_continuous(expression(beta))+
+  scale_shape_discrete("population \nexpands")+
+  theme_classic(base_size=14)+
+  theme(aspect.ratio=1)
+p
+
+ggsave(paste("figs/","02.png"),width=12,height=10,units="cm")
+
+```
+
+Find viable regions in the critical curve plot:
+
+For each pairwise combination of model functions:
+For each value of the parameter K:
+
+1) Manually curate values for eta and delta that maximally fill the critical curve diagram (this was done in the grid_search_models() and also in the eta_seq()/delta_seq() functions).
+2) Simulate model with all parameter combinations
+3) Manually find which parameter combinations result in simulated points that bound the viable areas (done in process_cloud() function)
+4) Return the points bounding the viable areas.
+```{r}
+models <- list(list(B=B0,D=D1),
+               list(B=B1,D=D0),list(B=B1,D=D1),
+               list(B=B1,D=D2),
+               list(B=B2,D=D1))
+
+x <- lapply(models,grid_search_models,maxchrom=c(4,8,16,32))
+x <- do.call(rbind,x)
+saveRDS(x,paste("expectedResults/","viable_regions.Rds",sep=""))
+```
+
+Find the time to reach steady state and the steady state ploidy for points along the critical curves.
+
+Notable here is that some of the found points "on" the critical curve are not actually on the critical curve - they are just very very close to it. This is due numerical inaccuracy (often many significant figures are needed to specify a point exactly on the critical curve - sometimes as many as 15 S.F or more...). To proceed, we assume that the steady state copy number distribution among the population is not significantly changed by small perturbations of the parameters near the critical curve (this assumption was manually investigated and appears to be true). Then we measure the time until the population distribution reaches a steady-state as a proxy for the model arriving at a steady state (if we had specified a point exactly on the critical curve, the population size would stop growing when the population distribution had arrived at a steady state). 
+```{r}
+x <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
+
+y <- pblapply(1:nrow(x), function(i){
+  print(i)
+  eta <- x$eta[i]
+  delta <- x$delta[i]
+  B <- x$B[i]
+  D <- x$D[i]
+  maxchrom <- as.numeric(x$maxchrom[i])
+  tryCatch(withTimeout(run_model_to_ss(eta,delta,B,D,maxchrom), timeout = 1, onTimeout = "error"),  error = function(e) data.frame(ploidy=NaN,time=NaN))
+  
+})
+
+y <- do.call(rbind,y)
+x <- cbind(y,x)
+saveRDS(x,paste("expectedResults/","c_crit_stats.Rds",sep=""))
+
+```
+
+Load critical curves and viable areas.
+Manually add points at the left edge of the plot for the central row (done after checking that the lines had become horizontal after the last found point - done because of difficulty in selecting an eta/delta combo exactly resulting in pop_D==0.999; although perhaps the effort should be made to do this).
+Preprocess viable region data for plotting (depending on whether the regions need to be plotted as horizontal (v2) or vertical (v1) geom_ribbons)
+
+
+```{r}
+
+
+
+v0 <- readRDS(paste("expectedResults/","viable_regions.Rds",sep=""))
+x <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
+
+vB <- unique(v0$B)
+vD <- unique(v0$D)
+vK <- unique(v0$maxchrom)
+v0 <- do.call(rbind,lapply(vD, function(Di){
+  do.call(rbind,lapply(vB, function(Bi){
+    do.call(rbind,lapply(vK, function(Ki){
+      vi <- v0[v0$D==Di&v0$B==Bi&v0$maxchrom==Ki,]
+      xi <- x[x$D==Di&x$B==Bi&x$maxchrom==Ki,]
+      if(Bi=="B(i)==1/(beta+e^sqrt( abs( i-3 ) ))"){
+        vix <- vi[nrow(vi),]
+        vix$eta <- NaN
+        vix$delta <- NaN
+        vix$pop_D <- 0.999
+        vi <- rbind(vi,vix)
+      }
+
+      return(vi)
+    }))
+  }))
+}))
+
+v1 <- v0[v0$B%in%c(B0(NaN,NaN,label=TRUE),B2(NaN,NaN,label=TRUE)),]
+v2 <- v0[!v0$B%in%c(B0(NaN,NaN,label=TRUE),B2(NaN,NaN,label=TRUE)),]
+
+labels <- expand.grid(B=unique(x$B),D=unique(x$D))
+labels$labl <- c("A","D","G","B","E","H","C","F","I")
+
+p <- ggplot(x,aes())+
+  facet_grid(rows=vars(B),cols=vars(D),labeller=label_parsed)+
+  geom_text(data=labels,x=-3.5,y=1.15,aes(label=labl),size=6)+
+  geom_ribbon(data=v2,aes(x=(1-pop_D),color=maxchrom,fill=maxchrom,ymin=pop_B,ymax=1),position="identity",alpha=0.2,linetype=2)+
+  geom_ribbon(data=v1,aes(xmin=1-pop_D,xmax=1,y=pop_B,color=maxchrom,fill=maxchrom),position="identity",alpha=0.2,linetype=2)+
+  theme_bw(base_size = 14)+
+  theme(panel.spacing.x = unit(2, "lines"))+ 
+  theme(panel.spacing.y = unit(1.5, "lines"))+
+  theme(aspect.ratio=1)+
+  theme(strip.background =element_rect(fill="white",color="black"))+
+  coord_cartesian(clip="off")+
+  geom_path(aes(x=(1-pop_D),y=pop_B,color=maxchrom,fill=maxchrom),size=2)+
+  scale_color_discrete("K")+
+  scale_fill_discrete("K")+
+  scale_x_log10(expression(Departure~from~homeostasis~(1-M[pop]/lambda)),limits=c(0.001,1))+
+  scale_y_continuous(expression(Population~average~mis-segregation~rate~(B[pop])))
+
+
+ggsave(paste("figs/","04.png"),width=24,height=18,units="cm")
+```
+
+
+
+```{r}
+x <- readRDS(paste("expectedResults/","c_crit_stats.Rds",sep=""))
+z <- x[!is.na(x$time)&!(x$ploidy<1),]
+
+labels <- expand.grid(B=unique(x$B),D=unique(x$D))
+labels$labl <- c("A","D","G","B","E","H","C","F","I")
+
+
+
+
+p <- ggplot(z)+
+  facet_grid(rows=vars(B),cols=vars(D),labeller=label_parsed)+
+  geom_line(aes(x=pop_B,y=time,color=as.character(maxchrom)))+
+  geom_text(data=labels,x=-.2,y=5.7,aes(label=labl),size=6)+
+  #geom_ribbon(data=v1,aes(xmin=0.001,xmax=1-pop_D),position="identity",alpha=0.2,linetype=2)+
+  theme_bw(base_size = 14)+
+  theme(panel.spacing.x = unit(2, "lines"))+ 
+  theme(panel.spacing.y = unit(1.5, "lines"))+
+  theme(aspect.ratio=1)+
+  theme(strip.background =element_rect(fill="white",color="black"))+
+  coord_cartesian(clip="off")+
+  scale_color_discrete("K")+
+  scale_y_log10("generations to reach steady state")+
+  scale_x_continuous(expression(Population~average~mis-segregation~rate~(B[pop])))
+p
+
+ggsave(paste("figs/","s3.png"),width=24,height=18,units="cm")
+
+
+```
+
+```{r}
+
+
+
+x1 <- readRDS(paste("expectedResults/","function_examples.Rds",sep=""))
+x2 <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
+
+pxi <- lapply(x1, function(xi1){
+  xi2 <- x2[((x2$B==xi1$id[1]&x2$D==D0(NaN,NaN,T))|x2$D==xi1$id[1]&x2$B==B0(NaN,NaN,T))&x2$maxchrom==" 8",]
+  
+  
+  B <- list(B0,B1,B2)[[which(c(B0(NaN,NaN,TRUE),B1(NaN,NaN,TRUE),B2(NaN,NaN,TRUE))==xi2$B[1])]]
+  D <- list(D0,D1,D2)[[which(c(D0(NaN,NaN,TRUE),D1(NaN,NaN,TRUE),D2(NaN,NaN,TRUE))==xi2$D[1])]]
+  
+  sel <- 60
+  df_sel <- xi2[sel,]
+  
+  out <- run_model(eta=xi2$eta[sel],delta=xi2$delta[sel],B = B, D=D,maxchrom=as.numeric(xi2$maxchrom[1]),t_end=25)
+  out <- data.frame(out)
+  out[,2:ncol(out)] <- out[,2:ncol(out)]/rowSums(out[,2:ncol(out)])
+  colnames(out) <- c("time",1:(ncol(out)-1))
+  out <- reshape2::melt(out,id.vars="time")
+
+p1 <- ggplot(xi1,aes(x=i,y=res,color=as.character(vals)))+
+  geom_line()+
+  theme_classic(base_size=8)+
+  theme(legend.key.height = unit(0.1, 'cm'))+
+  scale_x_continuous("ploidy")
+  if(xi2$B[1]==B0(NaN,NaN,T)){
+    p1 <- p1 +scale_y_continuous("Death rate (M)")+
+    scale_color_discrete(expression(mu))
+  }
+  if(xi2$D[1]==D0(NaN,NaN,T)){
+    p1 <- p1 +scale_y_continuous("Mis-segregation rate (B)")+
+    scale_color_discrete(expression(beta))
+  }
+
+
+
+p2 <- ggplot(xi2,aes(x=delta,y=eta))+
+  geom_line()+
+  geom_point(data=df_sel)+
+  theme_classic(base_size=8)
+if(xi2$B[1]==B0(NaN,NaN,T)){
+  p2 <- p2 +scale_x_log10(expression(mu))+
+    scale_y_continuous(expression(beta))
+}
+if(xi2$D[1]==D0(NaN,NaN,T)){
+  p2 <- p2 +scale_y_log10(expression(beta))+
+    scale_x_continuous(expression(mu))+
+    coord_flip()
+}
+
+p3 <- ggplot(out,aes(x=time,y=value,color=variable))+
+  geom_line()+
+  theme_classic(base_size=8)+
+  scale_x_continuous("time")+
+  scale_y_continuous("relative frequency")+
+    scale_color_discrete("copy\nnumber")+
+  theme(legend.key.height = unit(0.1, 'cm'))
+
+
+p4 <- ggplot(xi2,aes(x=1-pop_D,y=pop_B))+
+  geom_line()+
+  geom_point(data=df_sel)+
+  theme_classic(base_size=8)+
+  scale_x_continuous(expression(Departure~from~homeostasis))+
+  scale_y_continuous(expression(Mis-segregation~rate))
+
+
+
+list(p1,p2,p3,p4)
+})
+
+px1 <- ggpubr::ggarrange(pxi[[1]][[1]],pxi[[1]][[2]],pxi[[1]][[3]],pxi[[1]][[4]],
+                 nrow=1,labels=c("A","C","E","G"),font.label = list(size=10))
+ggsave(paste("figs/","03a.png"),plot=px1,width=24,height=5,units="cm")
+px2 <- ggpubr::ggarrange(pxi[[2]][[1]],pxi[[2]][[2]],pxi[[2]][[3]],pxi[[2]][[4]],
+                 nrow=1,labels=c("B","D","F","H"),font.label = list(size=10))
+ggsave(paste("figs/","03b.png"),plot=px2,width=24,height=5,units="cm")
+```
+
+```{r}
+options(scipen=0)
+
+
+for(fi in 1:2){
+x <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
+D <- D0
+B <- c(B0,B1)[[fi]]
+maxchrom <- " 8"
+
+
+x <- x[x$B==B(NaN,NaN,T)&x$D==D(NaN,NaN,T)&x$maxchrom==maxchrom,]
+maxchrom <- as.numeric(maxchrom)
+
+selected <- c(c(7,25)[fi],round(nrow(x)/2),nrow(x)-c(10,1)[fi])
+labz <- c("i","ii","iii")
+
+## df2 also generated... but do we use?
+df0 <- lapply(selected, function(n){
+  out <- run_model(x$eta[n],x$delta[n],B,D,maxchrom,150)
+  oi <- out[,2:ncol(out)]
+  oi <- oi/rowSums(oi)
+  Di <- sapply(1:ncol(oi), function(i) D(x$delta[n],i,k=maxchrom))
+  Bi <- sapply(1:ncol(oi), function(i) B(x$eta[n],i,k=maxchrom))
+  Bi <- 1-(1-Bi)^(1:ncol(oi))
+  Dpop <- oi%*%Di
+  Bpop <- oi%*%Bi
+  tt <- out[,1]
+
+  df1 <- data.frame(time=tt,Dpop,Bpop)
+  df2 <- data.frame(time=tt)
+  oi <- data.frame(oi)
+  colnames(oi) <- 1:ncol(oi)
+  df2 <- cbind(df2,oi)
+
+  df1 <- reshape2::melt(df1,id.vars="time")
+  df2 <- reshape2::melt(df2,id.vars="time")
+  df1$Bpop0 <- x$pop_B[n]
+  df2$Bpop0 <- x$pop_B[n]
+  
+  lab <- labz[n==selected]
+  df1$lab<-lab
+  df2$lab<- lab
+  
+  return(list(df1=df1,df2=df2))
+})
+
+df1 <- do.call(rbind,lapply(df0, function(f0) f0$df1))
+df2 <- do.call(rbind,lapply(df0, function(f0) f0$df2))
+
+labs <- x[1:nrow(x)%in%selected,]
+labs$lab <- c("i","ii","iii")
+
+p1 <- ggplot(x,aes(x=(1-pop_D),y=pop_B))+
+  annotate(geom="text",x=0.001,y=0.9,label=B(NaN,NaN,TRUE),parse=TRUE,size=3,hjust=0)+
+  annotate(geom="text",x=0.001,y=0.7,label=D(NaN,NaN,TRUE),parse=TRUE,size=3,hjust=0)+
+  geom_line()+
+  geom_point(data=labs)+
+  theme_bw(base_size=14)+
+  scale_x_log10(expression(1-M[pop]/lambda),limits=c(0.0005,1))+
+  scale_y_continuous(expression(B[pop]),limits=c(0,1))+
+  geom_text(data=labs,aes(label=lab), nudge_y = 0.05,nudge_x=-0.1)
+p1
+
+p2 <- ggplot(df1,aes(x=time,y=value,color=variable,linetype=lab))+
+  geom_line()+
+  theme_bw(base_size=14)+
+  scale_y_continuous("Rate")+
+  scale_x_continuous("Time")+
+  scale_color_discrete("",labels=c(expression(D[pop]/lambda),expression(B[pop])))+
+  theme(legend.spacing.y = unit(-0.2, "cm"))+
+  scale_linetype_discrete("")
+p2
+
+p3 <- ggplot(df2,aes(x=time,y=value,color=variable))+
+  facet_grid(rows=vars(lab))+
+  geom_line()+
+  theme_bw(base_size=14)+
+  theme(strip.background = element_blank())+
+  scale_y_continuous("Relative frequency")+
+  scale_x_continuous("Time")+
+  scale_color_discrete("copy\nnumber")
+p3
+
+plotlabs <- list(c("A","C","E"),c("B","D","F"))
+plotlabs <- plotlabs[[fi]]
+
+p <- ggarrange(p1,p2,p3,nrow=3,heights = c(1,1.2,2.5),labels=plotlabs)
+ggsave(paste("figs/","s4",c("a","b")[fi],".png",sep=""),plot=p,width=10,height=20,units="cm")
+}
+```
