@@ -72,13 +72,13 @@ inVec <- c(2, 4, 6, 8, 10, 12, 14, 16, 18)
 gRLN <- list()
 for (i in inVec) {
   gRLN[[growthRates$type[i]]] <-
-    rlnorm(100, meanlog = growthRates$g[i - 1], sdlog =  growthRates$g[i])
+    rlnorm(1000, meanlog = growthRates$g[i - 1], sdlog =  growthRates$g[i])
 }
 ### set up list of log norm distributed birth rate vectors
 bRLN <- list()
 for (i in inVec) {
   bRLN[[birthRates$type[i]]] <-
-    rlnorm(100, meanlog = birthRates$b[i - 1], sdlog =  birthRates$b[i])
+    rlnorm(1000, meanlog = birthRates$b[i - 1], sdlog =  birthRates$b[i])
 }
 ### set up list of death/birth dataframes where d=1-g/b
 dOVERb <- list()
@@ -123,40 +123,93 @@ inp <- inp[inp$group != "met",]
 
 # inp<-(inp[inp$group==c("HNSC","ESCA"),])
 
+dRates <- list()
+for (name in names(gRLN)){
+dRates[[name]] <- as.data.frame(bRLN[[name]] - gRLN[[name]])
+}
+dRatesUNLIST=as.data.frame(unlist(dRates));
+dRatesUNLIST$type <- type
+
+
 
 ### read in crit curves
-# critcurve2 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_5.csv", header = F)
-# critcurve3 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_8.csv", header = F)
-# critcurve4 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_20.csv", header = F)
-# critcurve40 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_40.csv", header = F)
-critcurve2 = read.csv("~/Downloads/criticalcurve_k2.csv", header = F)
-critcurve3 = read.csv("~/Downloads/criticalcurve_k3.csv", header = F)
-critcurve4 = read.csv("~/Downloads/criticalcurve_k4.csv", header = F)
+# critcurves = read.csv("~/Downloads/all_critical_curves.csv", header = F)
+# names(critcurves)=critcurves[1,]
+# critcurves=critcurves[-c(1),]
+# new_critcurves=critcurves[critcurves$`B(i,beta)` == " B(i)==beta" & critcurves$`D(i,mu)` == " D(i)==mu",];
+# new_critcurves=critcurves[critcurves$`B(i,beta)` == "B(i)==1/(beta+e^sqrt( abs( i-3 ) ))" & critcurves$`D(i,mu)` == " D(i)==mu",];
+
+
+critcurves = read.csv("~/Downloads/all_critical_curves.csv", header = T,check.names = F, stringsAsFactors = F,strip.white = T)
+critcurves=critcurves[critcurves$maxchrom==32,]
+new_critcurves=critcurves[critcurves$`B(i,beta)` == "B(i)==1/(beta+e^sqrt( abs( i-3 ) ))" & critcurves$`D(i,mu)` == " D(i)==mu",];
+old_critcurves=critcurves[critcurves$`B(i,beta)` == " B(i)==beta" & critcurves$`D(i,mu)` == " D(i)==mu",];
+plot((1-new_critcurves$pop_avg_death_rate),new_critcurves$pop_avg_misseg_rate,xlim=c(1E-3,1),ylim=c(0,1),log="x")
+
+
+tmp=old_critcurves[old_critcurves$pop_avg_death_rate<min(new_critcurves$pop_avg_death_rate),]
+tmp$`B(i,beta)`=unique(new_critcurves$`B(i,beta)`)
+tmp$pop_avg_misseg_rate=max(new_critcurves$pop_avg_misseg_rate)
+new_critcurves=rbind(new_critcurves,tmp)
+plot((1-new_critcurves$pop_avg_death_rate),new_critcurves$pop_avg_misseg_rate,xlim=c(1E-3,1),ylim=c(0,1),log="x")
+
+critcurve32_4=new_critcurves[-c(3:7)];
+critcurve32_1=old_critcurves[-c(3:7)]
+
 ### set names
-names(critcurve2) <- c("x1", "y1")
-names(critcurve3) <- c("x1", "y1")
-names(critcurve4) <- c("x1", "y1")
-names(critcurve40) <- c("x1", "y1")
-### replace last crit curve values with other values
-# critcurve2[11, 1:2] <- c(49999 / 50000, 0.0000324124)
-# critcurve3[11, 1:2] <- c(49999 / 50000, 0.0000597771)
-# critcurve4[11, 1:2] <- c(49999 / 50000, 0.000114273)
-# critcurve40[10000, 1:2] <- c(49999 / 50000, 0.000222757)
+names(critcurve32_4) <- c("y1", "x1")
+names(critcurve32_1) <- c("y1", "x1")
+
+## make numeric
+critcurve32_4$y1=as.numeric(critcurve32_4$y1)
+critcurve32_4$x1=as.numeric(critcurve32_4$x1)
+
+critcurve32_1$y1=as.numeric(critcurve32_1$y1)
+critcurve32_1$x1=as.numeric(critcurve32_1$x1)
+
 ### change x-values to 1-x for visualization later
-critcurve2$x1 <- (1 - critcurve2$x1)
-critcurve3$x1 <- (1 - critcurve3$x1)
-critcurve4$x1 <- (1 - critcurve4$x1)
-critcurve40$x1 <- (1 - critcurve40$x1)
+critcurve32_4$x1 <- (1 - critcurve32_4$x1)
+critcurve32_1$x1 <- (1 - critcurve32_1$x1)
+
+
 ### set any zero values to 10^-3
 # critcurve3$x1[critcurve3$x1 == 0] <- 10 ^ (-5)
 # critcurve2$x1[critcurve2$x1 == 0] <- 10 ^ (-5)
 # critcurve4$x1[critcurve4$x1 == 0] <- 10 ^ (-5)
 # critcurve40$x1[critcurve40$x1 == 0] <- 10 ^ (-5)
+
 ### have to add a category to the crit curves so it will work with ggplot down later
-critcurve40$category <- "Head and neck"
-critcurve4$category = "Head and neck"
-critcurve2$category = "Head and neck"
-critcurve3$category = "Head and neck"
+critcurve32_4$category = "Head and neck"
+critcurve32_1$category = "Head and neck"
+
+
+sampleTumors <- list()
+for (name in names(typeList)) {
+  sampleTumors[[name]] <-
+    as.data.frame(cbind(inp[inp$group == name, 'Lagging.Chromosome'], sample(
+      dRatesUNLIST[dRatesUNLIST$type == name, 'unlist(dRates)'], length(which(inp$group ==
+                                                                                name)), replace = TRUE
+    )))
+  names(sampleTumors[[name]])<-c("beta", "mu")
+}
+
+for (name in names(sampleTumors)) {
+  for (row in 1:nrow(sampleTumors[[name]])) {
+    mu_i = sampleTumors[[name]]$mu[row]
+    ii = which.min(abs(critcurve32_4$x1 - mu_i))
+    beta_crit = critcurve32_4$y1[ii]
+    if (sampleTumors[[name]]$beta[row] > beta_crit) {
+      sampleTumors[[name]]$aboveCRIT[row] = 1
+    }
+    else {
+      sampleTumors[[name]]$aboveCRIT[row] = 0
+    }
+  }
+}
+
+for (name in names(sampleTumors)){
+  print(paste(name,sum(sampleTumors[[name]]$aboveCRIT)/nrow(sampleTumors[[name]])))
+}
 
 ### Add 1-d/b to dOVERb dataframe (Again, for visualization)
 dOVERbUNLIST$one_minus_d_over_b <- (1 - dOVERbUNLIST$db)
@@ -171,7 +224,7 @@ if (adjVal==T) {
   xlab = expression(paste(mu,"/",lambda))
 } 
 
-ylab = expression(paste("Critical Mis-segregation Rate (", beta, ")"))
+ylab = expression(paste("Mis-segregation Rate (", beta, ")"))
 
 ##########################
 ### VISUALIZATION TIME ###
@@ -198,7 +251,7 @@ colnames(plot.y) <- paste0("y.", gsub("y", "", colnames(plot.y)))
 
 ### Set up df dataframe that will be used by ggplot
 df <- cbind(plot.x, plot.y)
-rm(plot.x, plot.y)
+#rm(plot.x, plot.y)
 df$category <- sort(unique(dOVERbUNLIST$type))
 df.outliers <- df %>%
   dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>%
@@ -210,7 +263,7 @@ df.outliers <-
 
 
 ### And here the magic happens - please set your legend on ine 308 before running
-pdf("../Results/2D_boxplots_3Beta_nologY.pdf", width = 7,height = 5)
+#pdf("../Results/2D_boxplots_3Beta_nologY.pdf", width = 7,height = 5)
 ggplot(df, aes(fill = category, color = category)) +
   geom_line(
     data = critcurve4,
@@ -219,20 +272,26 @@ ggplot(df, aes(fill = category, color = category)) +
     color = "black",
     linetype = "dotted"
   ) + geom_line(
-    data = critcurve2,
+    data = critcurve8,
     aes(x = x1, y = y1),
     size = 1,
     color = "black",
     linetype = "solid"
   ) + geom_line(
-    data = critcurve3,
+    data = critcurve16,
     aes(x = x1, y = y1),
     size =
       1,
     color = "black",
     linetype = "dashed"
-  )  +
-  
+  ) + geom_line(
+    data = critcurve32,
+    aes(x = x1, y = y1),
+    size =
+      1,
+    color = "black",
+    linetype = "dotdash"
+  ) +
   
   # 2D box defined by the Q1 & Q3 values in each dimension, with outline
   geom_rect(aes(
