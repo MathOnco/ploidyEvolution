@@ -1,35 +1,38 @@
-############################################################
-### Critical curves as a function of population-average ###
-### mis-segregations obtained from simulations ############
-X=read.csv("~/Desktop/final_distribution.csv")
-## parameters
-lambda <- 1
-model <- 2
-maxchrom <- 8
-## function for the missegregation rate
-B <- function(eta,i,model=2){
-  if(model==1) return(eta)
-  Bi <- 1-1/(eta+exp(sqrt(abs(i-2))))
-  return(Bi)
+library(ggplot2); library(gridExtra); library(matlab)
+library(magrittr)
+N_SAMPLES=1000
+WHICH_CURVE="constant"
+alpha=0.35
+SHADECOLOR="gray"
+###################################
+####### Read critical curves ######
+###################################
+critcurves = read.csv("~/Downloads/all_critical_curves (2).csv", header = T,check.names = F, stringsAsFactors = F,strip.white = T)
+critcurves=critcurves[critcurves$maxchrom==32,]
+critcurves$departFromHomeostasis = 1-critcurves$pop_avg_death_rate
+critcurves$category = "Head and neck"
+new_critcurves=critcurves[critcurves$`B(i,beta)` == "B(i)==1/(beta+e^sqrt( abs( i-3 ) ))" & critcurves$`D(i,mu)` == " D(i)==mu",];
+old_critcurves=critcurves[critcurves$`B(i,beta)` == " B(i)==beta" & critcurves$`D(i,mu)` == " D(i)==mu",];
+
+tmp=old_critcurves[old_critcurves$pop_avg_death_rate<min(new_critcurves$pop_avg_death_rate),]
+tmp$`B(i,beta)`=unique(new_critcurves$`B(i,beta)`)
+tmp$pop_avg_misseg_rate=max(new_critcurves$pop_avg_misseg_rate)
+new_critcurves=rbind(new_critcurves,tmp)
+
+
+plot(new_critcurves$departFromHomeostasis,new_critcurves$pop_avg_misseg_rate,xlim=c(1E-3,1),ylim=c(0,1),log="x")
+
+if(WHICH_CURVE=="constant"){
+  critcurves=old_critcurves
+}else{
+  critcurves=new_critcurves
 }
-avg_MS=c()
-for(i in 1:nrow(X)){
-  eta <- X$eta[i]
-  beta=sapply(1:maxchrom, function(x) B(eta,x))
-  avg_MS[i]=sum(beta*X[i,1:maxchrom])
-}
-plot(X$delta,avg_MS, type="l",xlab=expression(mu),ylab = expression(beta))
-
-
-
 
 ### 2DmisSegboxplots.R by Thomas Veith
 ####################################################
 ### produce 2D boxplots for any two sets of data ###
 ### Originally intended to be used for Chromosomal Mis-segregation over 1-death/birth
 ### It owes a lot to the walk-through here: https://stackoverflow.com/questions/46068074/double-box-plots-in-ggplot2
-
-library(ggplot2); library(gridExtra); library(matlab)
 
 ### Read in birth rate medians and sdNorms to generate log norm distribution
 birthRates = as.data.frame(
@@ -86,6 +89,7 @@ growthRates = as.data.frame(
     1.83844
   )
 )
+
 ### set name for growthRates vector
 names(growthRates) <- "g"
 
@@ -98,13 +102,13 @@ inVec <- c(2, 4, 6, 8, 10, 12, 14, 16, 18)
 gRLN <- list()
 for (i in inVec) {
   gRLN[[growthRates$type[i]]] <-
-    rlnorm(100, meanlog = growthRates$g[i - 1], sdlog =  growthRates$g[i])
+    rlnorm(N_SAMPLES, meanlog = growthRates$g[i - 1], sdlog =  growthRates$g[i])
 }
 ### set up list of log norm distributed birth rate vectors
 bRLN <- list()
 for (i in inVec) {
   bRLN[[birthRates$type[i]]] <-
-    rlnorm(100, meanlog = birthRates$b[i - 1], sdlog =  birthRates$b[i])
+    rlnorm(N_SAMPLES, meanlog = birthRates$b[i - 1], sdlog =  birthRates$b[i])
 }
 ### set up list of death/birth dataframes where d=1-g/b
 dOVERb <- list()
@@ -118,7 +122,7 @@ for (name in names(dOVERb)) {
 ### create vector to add type to d/b
 typeList <- list()
 for (name in names(dOVERb)) {
-  typeList[[name]] <- as.data.frame(repmat(name, 100, 1))
+  typeList[[name]] <- as.data.frame(repmat(name, N_SAMPLES, 1))
 }
 type <- unlist(typeList)
 ### make dataframe for all d/b
@@ -147,42 +151,6 @@ inp$group <- gsub("LUSC", "SC Lung", inp$group)
 ## remove mets
 inp <- inp[inp$group != "met",]
 
-# inp<-(inp[inp$group==c("HNSC","ESCA"),])
-
-
-### read in crit curves
-# critcurve2 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_5.csv", header = F)
-# critcurve3 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_8.csv", header = F)
-# critcurve4 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_20.csv", header = F)
-# critcurve40 = read.csv("~/Downloads/criticalcurve_newBetaFunc_Betaconstant_n_40.csv", header = F)
-critcurve2 = read.csv("~/Downloads/criticalcurve_k2.csv", header = F)
-critcurve3 = read.csv("~/Downloads/criticalcurve_k3.csv", header = F)
-critcurve4 = read.csv("~/Downloads/criticalcurve_k4.csv", header = F)
-### set names
-names(critcurve2) <- c("x1", "y1")
-names(critcurve3) <- c("x1", "y1")
-names(critcurve4) <- c("x1", "y1")
-names(critcurve40) <- c("x1", "y1")
-### replace last crit curve values with other values
-# critcurve2[11, 1:2] <- c(49999 / 50000, 0.0000324124)
-# critcurve3[11, 1:2] <- c(49999 / 50000, 0.0000597771)
-# critcurve4[11, 1:2] <- c(49999 / 50000, 0.000114273)
-# critcurve40[10000, 1:2] <- c(49999 / 50000, 0.000222757)
-### change x-values to 1-x for visualization later
-critcurve2$x1 <- (1 - critcurve2$x1)
-critcurve3$x1 <- (1 - critcurve3$x1)
-critcurve4$x1 <- (1 - critcurve4$x1)
-critcurve40$x1 <- (1 - critcurve40$x1)
-### set any zero values to 10^-3
-# critcurve3$x1[critcurve3$x1 == 0] <- 10 ^ (-5)
-# critcurve2$x1[critcurve2$x1 == 0] <- 10 ^ (-5)
-# critcurve4$x1[critcurve4$x1 == 0] <- 10 ^ (-5)
-# critcurve40$x1[critcurve40$x1 == 0] <- 10 ^ (-5)
-### have to add a category to the crit curves so it will work with ggplot down later
-critcurve40$category <- "Head and neck"
-critcurve4$category = "Head and neck"
-critcurve2$category = "Head and neck"
-critcurve3$category = "Head and neck"
 
 ### Add 1-d/b to dOVERb dataframe (Again, for visualization)
 dOVERbUNLIST$one_minus_d_over_b <- (1 - dOVERbUNLIST$db)
@@ -226,37 +194,18 @@ colnames(plot.y) <- paste0("y.", gsub("y", "", colnames(plot.y)))
 df <- cbind(plot.x, plot.y)
 rm(plot.x, plot.y)
 df$category <- sort(unique(dOVERbUNLIST$type))
-df.outliers <- df %>%
-  dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>%
-  data.table::data.table()
-df.outliers <-
-  df.outliers[, list(x.outliers = unlist(x.outliers),
-                     y.outliers = unlist(y.outliers)),
-              by = list(category, x.middle, y.middle)]
+df.outliers <- df %>% dplyr::select(category, x.middle, x.outliers, y.middle, y.outliers) %>% data.table::data.table()
 
 
 ### And here the magic happens - please set your legend on ine 308 before running
-pdf("../Results/2D_boxplots_3Beta_nologY.pdf", width = 7,height = 5)
+pdf(paste0("../Results/2D_boxplots_3Beta_nologY_",WHICH_CURVE,"_beta.pdf"), width = 7,height = 5)
 ggplot(df, aes(fill = category, color = category)) +
   geom_line(
-    data = critcurve4,
-    aes(x = x1, y = y1),
+    data = critcurves,
+    aes(x = departFromHomeostasis, y = pop_avg_misseg_rate),
     size = 1,
     color = "black",
     linetype = "dotted"
-  ) + geom_line(
-    data = critcurve2,
-    aes(x = x1, y = y1),
-    size = 1,
-    color = "black",
-    linetype = "solid"
-  ) + geom_line(
-    data = critcurve3,
-    aes(x = x1, y = y1),
-    size =
-      1,
-    color = "black",
-    linetype = "dashed"
   )  +
   
   
@@ -329,9 +278,24 @@ ggplot(df, aes(fill = category, color = category)) +
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     panel.background = element_rect(colour = "black", size = 4)
-  )
+  ) +
+  
+  # shaded areas
+  geom_ribbon(data=critcurves,
+              aes(x=departFromHomeostasis,y = pop_avg_misseg_rate,
+                  ymin=pop_avg_misseg_rate,ymax=1),
+              color = "gray",fill=SHADECOLOR,
+              position="identity",alpha=alpha,linetype=2,) +
+  
+  # shaded areas
+  geom_ribbon(data=critcurves,
+              aes(x=departFromHomeostasis,y = pop_avg_misseg_rate,
+                  ymin=max(pop_avg_misseg_rate),ymax=1),
+              color = "black",fill="black",
+              position="identity",alpha=0.2,linetype=2)      
+
+
 plot(0, type = 'n', axes = FALSE, ann = FALSE)
-legend("center",c(expression(paste(beta, "(4)")), expression(paste(beta, "(3)")), expression(paste(beta, "(2)"))), lty = c("dotted", "dashed", "solid"), lwd = 3)
-# legend("center",c("K=5","K=8","K=20","K=40"), lty = c("solid","dashed","dotdash", "dotted"), lwd = 3)
+legend("center",c("Not a steady state","Steady state leads to extinction","Steady state leads to exponential growth"),fill=c("black","gray","white"),cex=1.5)
 dev.off()
 
