@@ -4,6 +4,7 @@ N_SAMPLES=1000
 WHICH_CURVE="constant"
 alpha=0.35
 SHADECOLOR="gray"
+
 ###################################
 ####### Read critical curves ######
 ###################################
@@ -35,20 +36,9 @@ if(WHICH_CURVE=="constant"){
 ### It owes a lot to the walk-through here: https://stackoverflow.com/questions/46068074/double-box-plots-in-ggplot2
 
 ### Read in birth rate medians and sdNorms to generate log norm distribution
-birthRates = as.data.frame(
-  c(
-    -2.51405,
-    1.31437,-1.79009,
-    0.655826,-1.84878,
-    0.91377,-1.21294,
-    0.194515,-2.49839,
-    0.888437,-1.39956,
-    0.162913,-2.07355,
-    0.447807,-2.59514,
-    0.991364,-3.31508,
-    1.04925
-  )
-)
+birthRates = as.data.frame(c(-2.51405,1.31437,-1.79009,0.655826,-1.84878,0.91377,
+                             -1.21294,0.194515,-2.49839,0.888437,-1.39956,0.162913,
+                             -2.07355,0.447807,-2.59514,0.991364,-3.31508,1.04925 ))
 ### set names for birthRates dataframe
 names(birthRates) <- "b"
 

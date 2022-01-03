@@ -5,7 +5,7 @@ date: "12/20/2021"
 output: html_document
 ---
 Set correct root.dir for the project:
-(Note that code expects a subdirectory /expectedResults inside root.dir)
+(Note that code expects subdirectories /expectedResults and /figs inside root.dir)
 ```{r setup}
 knitr::opts_knit$set(root.dir = "path/to/dir")
 ```
@@ -136,7 +136,6 @@ Notable here is that some of the found points "on" the critical curve are not ac
 x <- readRDS(paste("expectedResults/","all_critical_curves.Rds",sep=""))
 
 y <- pblapply(1:nrow(x), function(i){
-  print(i)
   eta <- x$eta[i]
   delta <- x$delta[i]
   B <- x$B[i]
