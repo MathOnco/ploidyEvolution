@@ -6,6 +6,8 @@ library("curatedTCGAData")
 library(RMySQL)
 library(cloneid)
 devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
+devtools::source_url("https://github.com/MathOnco/ploidyEvolution/blob/main/R/Utils.R?raw=TRUE")
+setwd("../Data")
 
 ###########################################
 #### Cell lines: bulk expression & CNVs ###
@@ -52,7 +54,29 @@ clones_d = getSubProfiles(cellLine, whichP = "GenomePerspective")
 ## scRNA-seq derived clone profiles
 clones_r = getSubProfiles(cellLine, whichP = "TranscriptomePerspective")
 
-
+## Load single cell data and count karyotypes
+load('listOfSeurats_G0G1_d.RData')
+X=sapply(listOfSeurats, function(x) x$X)
+X=sapply(X, function(x) x[grep(":",rownames(x),fixed=T),])
+X=sapply(X, function(x) cbind(cloneid::parseLOCUS(rownames(x)),x))
+K=calculateKaryotypes(X)
+## How many karyotypes are present across multiple CLs
+Kunique=sapply(K, function(a) unique( apply(a,2,paste,collapse=",")))
+Kunique=do.call(c,Kunique)
+fr=plyr::count(Kunique)
+fr=fr[order(fr$freq,decreasing = T),]
+print(paste("Karyotypes are present across >1 CLs:",sum(fr$freq>1)))
+## Make sure to use only chromosomes represented by all cell lines
+fr=plyr::count(unlist(lapply(K,rownames)))
+fr=fr[fr$freq==length(X),]
+K=lapply(K, function(x) x[fr$x,])
+## Merge across CLs
+K=do.call(cbind,K)
+K=apply(K,2,paste,collapse=",")
+fr=plyr::count(K)
+fr=fr[order(fr$freq,decreasing = T),]
+ggplot(data.frame(fr$freq), aes(fr.freq)) + geom_histogram(bins = 30) +
+  scale_x_log10() +scale_y_log10() + ggtitle(paste(length(K),"cells:",nrow(fr),"unique karyotypes"))
 
 
 
