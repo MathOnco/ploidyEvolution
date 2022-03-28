@@ -4,10 +4,13 @@ library("GSVA")
 library("TCGAutils")
 library("curatedTCGAData")
 library(RMySQL)
+library(TCIApathfinder)
+library(oro.dicom)
+library(dcemriS4)
 library(cloneid)
 devtools::source_url("https://github.com/noemiandor/Utils/blob/master/grpstats.R?raw=TRUE")
 devtools::source_url("https://github.com/MathOnco/ploidyEvolution/blob/main/R/Utils.R?raw=TRUE")
-setwd("../Data")
+setwd("../data")
 
 ###########################################
 #### Cell lines: bulk expression & CNVs ###
@@ -89,11 +92,16 @@ clinical = read.xlsx(paste0(panDir,"Clinical/pcawg_donor_clinical_August2016_v9.
 clinical = clinical[!is.na(clinical$project_code),]
 ploidy = read.table(paste0(panDir,"CNV/consensus.20170218.purity.ploidy.txt"), sep="\t", check.names=F, stringsAsFactors=F, header=T)
 ploidy$icgc_donor_id = tables1$icgc_donor_id[ match(ploidy$samplename,tables1$tumour_specimen_aliquot_id) ]
+ploidy = ploidy[!is.na(ploidy$icgc_donor_id),]
+for(x in c("tcga_donor_uuid","donor_survival_time" ,"first_therapy_response","donor_interval_of_last_followup","donor_age_at_diagnosis","donor_vital_status","project_code")){
+  ploidy[,x] = clinical[ match(ploidy$icgc_donor_id,clinical$icgc_donor_id), x]
+}
 PANCAN = list()
 for(i in 1:nrow(ploidy)){
   f = list.files(paste0(panDir,"CNV/somatic.cna.tcga"), full.names = T, pattern = ploidy$samplename[i])
   PANCAN[[ploidy$samplename[i]]] = read.table(f, sep="\t", check.names=F, stringsAsFactors=F, header=T)
 }
+
 
 ####################################
 #### primary tumors: Expression ####
@@ -101,12 +109,27 @@ for(i in 1:nrow(ploidy)){
 cancers = unique(sapply(strsplit(clinical$project_code,"-"),"[[",1))
 TCGA = list()
 for(can in intersect(cancers,c("GBM","STAD"))){
-  TCGA[[can]]  <- curatedTCGAData(diseaseCode = can, assays = c("CNASeq", "RNASeq2*", "mRNAArray"), dry.run = FALSE)
+  TCGA[[can]]  <- curatedTCGAData(diseaseCode = can, version="1.1.38", assays = c("CNASeq", "RNASeq2*"), dry.run = FALSE)
 }
 
 
-
-
+##############################################
+#### primary tumors: MRI images from TCIA ####
+##############################################
+## @TODO: Need an API key to download TCIA data: https://wiki.cancerimagingarchive.net/display/Public/TCIA+Programmatic+Interface+%28REST+API%29+Usage+Guide
+X_ploidy = ploidy[ploidy$project_code =="GBM-US",]
+idmap=sapply(X_ploidy$tcga_donor_uuid, function(x) try(UUIDtoBarcode(x, from_type = "case_id")) )
+colnames(idmap)=idmap["submitter_id",]
+patients <- sapply(colnames(idmap), function(x) get_series_info(patient_id = x))
+patients = patients[, sapply(patients[1,], length)>0]
+## Read one example of DICOM images and create a 3D array of intensities 
+patient = colnames(patients)[1]
+protocols = patients[["series",patient]]
+i=1
+print(paste("processing protocol",protocols$protocol_name[i],"..."))
+ser <- save_extracted_image_series(series_instance_uid = as.character(protocols[i, "series_instance_uid"]), out_dir = paste0("~/Downloads", filesep,patient))
+dicom_list <- readDICOM(ser$dirs)
+    
 
 
 ############################################
