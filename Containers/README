@@ -1,1 +1,69 @@
 We align sequencing reads to NCBI Human Reference Genome Build 38 using the Burrows-Wheeler Aligner, version 0.7.10, with default parameter settings. PCR duplicates were eliminated using Picard 2.19. GATK 4.1.2.0 was used for base quality recalibration and for joint tumor/normal indel realignment. No GC bias correction was performed. Inherited variants for each normal sample were obtained with GATK UnifiedGenotyper (2.2-16-lite) and allele frequencies in tumor and normal were calculated using in-house Perl scripts. To calculate clone-specific copy-numbers applied the HATCHet algorithm, which simultaneously detects clonal copy number across multiple tumor samples. HATCHet and GATK are packed in Singularity containers, and pipelines are run using the WDL/Cromwell workflow language for transparency and reproducibility.
+
+
+1. Alignment
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_alignment.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell alignment \
+--input_yaml inputs/SC-1234/fastqs.yaml \
+--tmpdir temp/SC-1234/tmp \
+--pipelinedir pipeline/SC-1234  \
+--out_dir results/SC-1234/results/alignment \
+--bams_dir results/SC-1234/results/bams \
+--library_id A123123
+
+2. HMMcopy
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_hmmcopy.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell hmmcopy \
+ --input_yaml inputs/SC-1234/bams.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results/hmmcopy \
+ --library_id A123123
+
+3. Annotation
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_annotation.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell annotation \
+ --input_yaml inputs/SC-1234/annotation.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results/annotation \
+ --library_id A123123
+
+4. Variant Calling
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_variant.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell variant_calling \
+ --input_yaml inputs/SC-1234/variant_calling.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results
+
+5. Breakpoint calling
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_variant.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell breakpoint_calling \
+ --input_yaml inputs/SC-1234/breakpoint_calling.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results
+
+6. Haplotype calling
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_haplotypes.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell haplotype_calling \
+ --input_yaml inputs/SC-1234/haplotype_calling.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results
+
+7. QC
+export sif=/share/NGS/work/apps/singularity/singlecell/single_cell_pipeline_qc.sif
+singularity exec -B /share/dept_bbsr,/share/NGS --cleanenv ${sif} \
+single_cell pseudo_bulk_qc \
+ --input_yaml inputs/SC-1234/variant_counting.yaml \
+ --tmpdir temp/SC-1234/tmp \
+ --pipelinedir pipeline/SC-1234  \
+ --out_dir results/SC-1234/results
